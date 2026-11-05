@@ -4,7 +4,10 @@ App web para aprender guitarra: **afinador**, **acordes** y **canciones**, escuc
 
 ## Usarla
 
-Abre `dist/traste.html` en Chrome, Edge o Firefox y permite el micrófono. Funciona como archivo local (`file://`) o en cualquier hosting estático con https (por ejemplo, GitHub Pages o Netlify, para usarla desde el móvil).
+- **En el navegador o el móvil:** https://mesegstudio.github.io/Traste/ (GitHub Pages, sirve `index.html`).
+- **Sin conexión:** abre `dist/traste.html` en Chrome, Edge o Firefox.
+
+En ambos casos, permite el micrófono cuando el navegador lo pida.
 
 Primero pulsa **Calibrar**: mide el ruido, emite tonos por el altavoz para comprobar que el micrófono los oye afinados y ajusta la sensibilidad con tu guitarra.
 
@@ -24,7 +27,7 @@ src/dsp.js      DSP y teoría (funciones puras)
 src/data.js     acordes y canciones de dominio público
 src/app.js      interfaz
 src/body.html   estructura · src/styles.css  estilos
-build.js        genera dist/traste.html (Tailwind 3.4.17 compilado e incrustado)
+build.js        genera dist/traste.html e index.html (Tailwind 3.4.17 compilado e incrustado)
 test/           pruebas en Node con cuerdas sintetizadas
 ```
 
