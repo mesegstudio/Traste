@@ -15,7 +15,6 @@
         <button type="button" data-n="letter">C D E</button>
       </div>
       <button type="button" class="btn btn-ghost btn-icon md:hidden" id="notationMobile" aria-label="Cambiar nombres de notas"><span class="num text-xs" id="notationMobileLabel">Do</span></button>
-      <button type="button" class="btn btn-ghost" id="calBtn" title="Comprobar el micrófono"><span data-icon="equalizer-2-line"></span><span class="hidden lg:inline">Calibrar</span></button>
       <button type="button" class="mic-chip" id="micBtn" data-on="false" aria-label="Micrófono">
         <span id="micIcon" data-icon="mic-off-line"></span>
         <span class="meter" id="micMeter"><i></i><i></i><i></i><i></i><i></i></span>
@@ -24,7 +23,7 @@
   </div>
 </header>
 
-<main class="wrap">
+<main class="wrap pb-10">
   <!-- ======================= AFINADOR ======================= -->
   <section data-view="afinador" hidden>
     <div class="view-head">
@@ -62,6 +61,7 @@
             <button type="button" class="btn btn-primary btn-lg" data-action="mic-on"><span data-icon="mic-line"></span>Activar micrófono</button>
           </div>
         </div>
+        <div class="cal-host overlay" data-cal-host="afinador" hidden></div>
       </div>
       <aside class="card p-5 flex flex-col gap-4">
         <div class="flex items-center justify-between">
@@ -70,7 +70,11 @@
         </div>
         <div id="stringList" class="flex flex-col gap-1"></div>
         <button type="button" class="btn btn-ghost w-full" id="tnReset"><span data-icon="restart-line"></span>Empezar de nuevo</button>
-        <div class="tip"><span data-icon="lightbulb-line"></span><span>Afina siempre subiendo hacia la nota: si te pasas, afloja un poco y vuelve a subir. Así la cuerda no se desafina al tocar.</span></div>
+        <div class="mic-box" id="micBox" hidden>
+          <label class="label" for="micSelect">Micrófono</label>
+          <select id="micSelect"></select>
+          <button type="button" class="link-btn" id="recalBtn">Volver a comprobar el micrófono</button>
+        </div>
       </aside>
     </div>
   </section>
@@ -80,44 +84,12 @@
     <div class="view-head">
       <div>
         <h1>Acordes</h1>
-        <p>Coloca los dedos según el diagrama, rasguea solo las cuerdas marcadas y pulsa Practicar: te digo si suena bien y qué corregir.</p>
+        <p>Un acorde cada vez. Coloca los dedos, rasguea y te digo si suena bien.</p>
       </div>
+      <span class="pill" id="learnedCount">0 de 24 aprendidos</span>
     </div>
-    <div class="grid gap-5 lg:grid-cols-[250px_minmax(0,1fr)]">
-      <aside class="card p-4 self-start" id="chordList"></aside>
-      <div class="flex flex-col gap-5 min-w-0">
-        <div class="card p-5 sm:p-6" id="chordMain"></div>
-        <div class="grid gap-5 md:grid-cols-2">
-          <div class="card p-5 flex flex-col gap-4" id="practice">
-            <div class="flex items-center justify-between">
-              <span class="label">Practicar el acorde</span>
-              <div class="streak" id="streak" title="Tres aciertos seguidos y lo marco como aprendido"><i></i><i></i><i></i></div>
-            </div>
-            <div class="result" id="practiceResult">
-              <div class="ico"><span data-icon="mic-line"></span></div>
-              <div><strong>Pulsa Practicar y rasguea</strong><p>Escucho cada rasgueo y compruebo cuerda a cuerda.</p></div>
-            </div>
-            <button type="button" class="btn btn-primary" id="practiceBtn"><span data-icon="mic-line"></span>Practicar</button>
-          </div>
-          <div class="card p-5 flex flex-col gap-4" id="changes">
-            <div class="flex items-center justify-between gap-2">
-              <span class="label">Cambios en un minuto</span>
-              <span class="pill" id="chBest">Récord —</span>
-            </div>
-            <div class="flex items-center gap-2 text-sm">
-              <span class="pill pill-accent" id="chA">A</span>
-              <span data-icon="arrow-left-right-line" class="muted"></span>
-              <select id="chB" aria-label="Segundo acorde"></select>
-            </div>
-            <div class="flex items-end justify-between gap-4">
-              <div><div class="big-count num" id="chCount">0</div><div class="muted text-sm">cambios</div></div>
-              <div class="text-right"><div class="num text-2xl font-semibold" id="chTime">1:00</div><div class="muted text-sm" id="chNext">Alterna entre los dos acordes</div></div>
-            </div>
-            <button type="button" class="btn btn-ghost" id="chBtn"><span data-icon="timer-line"></span>Empezar</button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <nav class="lesson-path" id="lessonPath" aria-label="Lecciones"></nav>
+    <div id="lessonBody" class="mt-4"></div>
   </section>
 
   <!-- ======================= CANCIONES ======================= -->
@@ -126,96 +98,77 @@
       <div class="view-head">
         <div>
           <h1>Canciones</h1>
-          <p>Elige una canción y un nivel. En Fácil tocas solo las notas principales, en Medio la melodía entera y en Difícil el acompañamiento con acordes y rasgueo.</p>
+          <p><b class="text-[var(--text)] font-semibold">Fácil</b>: la melodía, nota a nota. <b class="text-[var(--text)] font-semibold">Difícil</b>: el acompañamiento con acordes y rasgueo.</p>
         </div>
       </div>
       <div class="song-grid" id="songGrid"></div>
-      <div class="card p-5 mt-5 flex flex-col gap-3" id="importCard">
-        <div class="flex items-center gap-2"><span data-icon="file-music-line" class="text-[var(--accent)]"></span><span class="label">Importar una tablatura</span></div>
-        <p class="muted text-sm">Pega una tablatura en texto (las seis líneas e|---, B|---, …), el formato que encontrarás en casi cualquier web de tabs. Como el texto no indica el ritmo, se toca en modo espera.</p>
-        <div class="grid gap-3 md:grid-cols-[1fr_260px]">
-          <textarea id="tabText" rows="7" spellcheck="false" placeholder="e|-----0-----0---|&#10;B|---1---1-----1-|&#10;G|-2-------2-----|&#10;D|---------------|&#10;A|-3-------------|&#10;E|---------------|"></textarea>
-          <div class="flex flex-col gap-3">
-            <input type="text" id="tabTitle" placeholder="Título" aria-label="Título de la canción">
-            <button type="button" class="btn btn-ghost" id="tabImport"><span data-icon="upload-2-line"></span>Importar</button>
-            <p class="text-xs muted" id="tabMsg"></p>
+      <details class="card mt-5 import" id="importCard">
+        <summary><span data-icon="file-music-line"></span>Importar una tablatura de internet<span data-icon="arrow-down-s-line" class="chev"></span></summary>
+        <div class="px-5 pb-5 flex flex-col gap-3">
+          <p class="muted text-sm">Pega las seis líneas de una tablatura en texto (e|---, B|---, …). Como el texto no indica el ritmo, se toca en modo espera.</p>
+          <div class="grid gap-3 md:grid-cols-[1fr_240px]">
+            <textarea id="tabText" rows="7" spellcheck="false" placeholder="e|-----0-----0---|&#10;B|---1---1-----1-|&#10;G|-2-------2-----|&#10;D|---------------|&#10;A|-3-------------|&#10;E|---------------|"></textarea>
+            <div class="flex flex-col gap-3">
+              <input type="text" id="tabTitle" placeholder="Título" aria-label="Título de la canción">
+              <button type="button" class="btn btn-ghost" id="tabImport"><span data-icon="upload-2-line"></span>Importar</button>
+              <p class="text-xs muted" id="tabMsg"></p>
+            </div>
           </div>
         </div>
-      </div>
+      </details>
     </div>
 
     <div id="player" hidden>
-      <div class="view-head">
-        <div class="flex items-center gap-3 min-w-0">
-          <button type="button" class="btn btn-ghost btn-icon" id="plBack" aria-label="Volver a las canciones"><span data-icon="arrow-left-line"></span></button>
-          <div class="min-w-0">
-            <h1 id="plTitle" class="truncate">—</h1>
-            <p id="plOrigin" class="!mt-1"></p>
-          </div>
+      <div class="player-head">
+        <button type="button" class="btn btn-ghost btn-icon" id="plBack" aria-label="Volver a las canciones"><span data-icon="arrow-left-line"></span></button>
+        <div class="min-w-0 flex-1">
+          <h1 id="plTitle" class="truncate">—</h1>
+          <p id="plOrigin" class="truncate"></p>
         </div>
         <div class="hud">
-          <div><b class="num" id="plScore">0/0</b> <span>aciertos</span></div>
-          <div><b class="num" id="plStreak">0</b> <span>racha</span></div>
+          <div><b class="num" id="plScore">0/0</b><span>aciertos</span></div>
+          <div class="hidden sm:block"><b class="num" id="plStreak">0</b><span>racha</span></div>
         </div>
       </div>
-      <div class="card p-4 mb-4">
+      <div class="card p-3 sm:p-4 mb-3">
         <div class="player-bar">
           <div class="seg" id="plLevel" role="group" aria-label="Nivel"></div>
-          <label class="flex items-center gap-3 text-sm muted">
-            <span data-icon="speed-up-line"></span>
-            <input type="range" id="plSpeed" min="40" max="120" step="5" value="80" aria-label="Velocidad">
-            <span class="num w-11 text-[var(--text)]" id="plSpeedVal">80%</span>
-          </label>
-          <label class="toggle"><input type="checkbox" id="plWait">Esperarme</label>
-          <label class="toggle"><input type="checkbox" id="plMetro">Metrónomo</label>
+          <div class="speed" role="group" aria-label="Velocidad">
+            <input type="range" id="plSpeed" min="0" max="3" step="1" value="1" aria-label="Velocidad" aria-valuetext="Lento">
+            <div class="speed-labels" id="plSpeedLabels"></div>
+          </div>
+          <div class="flex items-center gap-4">
+            <label class="toggle"><input type="checkbox" id="plWait">Esperarme</label>
+            <label class="toggle"><input type="checkbox" id="plMetro">Metrónomo</label>
+          </div>
           <div class="flex gap-2 ml-auto">
-            <button type="button" class="btn btn-ghost" id="plDemo"><span data-icon="headphone-line"></span>Escuchar</button>
-            <button type="button" class="btn btn-ghost btn-icon" id="plRestart" aria-label="Volver al principio"><span data-icon="restart-line"></span></button>
-            <button type="button" class="btn btn-primary" id="plPlay"><span data-icon="play-fill"></span><span>Tocar</span></button>
+            <button type="button" class="btn btn-ghost" id="plDemo"><span data-icon="headphone-line"></span><span class="hidden sm:inline">Escuchar</span></button>
+            <button type="button" class="btn btn-ghost btn-icon" id="plRestart" aria-label="Empezar desde el principio" title="Empezar desde el principio"><span data-icon="restart-line"></span></button>
+            <button type="button" class="btn btn-primary btn-icon" id="plPlay" aria-label="Tocar"><span data-icon="play-fill"></span></button>
           </div>
         </div>
       </div>
-      <div class="card highway"><canvas id="hw"></canvas></div>
-      <div class="grid gap-4 mt-4 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div class="card p-5">
-          <div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
-            <span class="label">Ahora</span>
-            <span id="plNowText" class="text-sm muted"></span>
+      <div class="card cal-card" data-cal-host="canciones" hidden></div>
+      <div class="card highway">
+        <canvas id="hw" aria-label="Partitura en movimiento: toca para empezar o pausar, desliza para moverte"></canvas>
+      </div>
+      <div class="card now-card mt-3">
+        <div class="now-row">
+          <div class="min-w-0 flex-1">
+            <div class="label">Ahora</div>
+            <div id="plNowText" class="now-text"></div>
+            <div id="plNext" class="text-sm muted mt-0.5"></div>
           </div>
-          <div class="fret-wrap" id="plFret"></div>
+          <button type="button" class="btn btn-ghost btn-sm" id="plFingersBtn" aria-expanded="false" aria-controls="plDetails"><span data-icon="hand"></span>Dedos<span data-icon="arrow-down-s-line" class="chev"></span></button>
         </div>
-        <div class="card p-5 flex flex-col gap-3">
-          <span class="label">Dedos</span>
-          <div id="plHand" class="flex justify-center"></div>
-          <div class="text-sm muted" id="plNext"></div>
+        <div id="plDetails" class="now-details" hidden>
+          <div class="fret-wrap" id="plFret"></div>
+          <div class="flex flex-col items-center gap-2" id="plHand"></div>
         </div>
       </div>
     </div>
   </section>
-
-  <footer class="foot">
-    Traste analiza el sonido en tu navegador; nada sale de tu equipo. Canciones tradicionales o de dominio público. Iconos de <a href="https://remixicon.com" target="_blank" rel="noopener">Remix Icon</a>.
-  </footer>
 </main>
-
-<!-- Calibración -->
-<div class="modal" id="calModal" hidden>
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="calTitle">
-    <div class="flex items-start justify-between gap-4">
-      <div>
-        <h2 id="calTitle">Comprobar el micrófono</h2>
-        <p class="muted text-sm mt-1">Mido el ruido de la sala, emito unos tonos por el altavoz para ver si el micrófono los oye bien y ajusto la sensibilidad a tu guitarra.</p>
-      </div>
-      <button type="button" class="btn btn-quiet btn-icon btn-sm" data-close aria-label="Cerrar"><span data-icon="close-line"></span></button>
-    </div>
-    <div class="steps" id="calSteps"></div>
-    <div class="flex items-center gap-3 mb-5"><span class="text-xs muted w-14">Nivel</span><div class="bar flex-1"><div id="calLevel"></div></div></div>
-    <div class="flex justify-end gap-2">
-      <button type="button" class="btn btn-ghost" data-close>Cerrar</button>
-      <button type="button" class="btn btn-primary" id="calStart"><span data-icon="play-fill"></span>Empezar</button>
-    </div>
-  </div>
-</div>
 
 <!-- Resultado de canción -->
 <div class="modal" id="resModal" hidden>
@@ -223,10 +176,11 @@
     <div class="stars mb-4" id="resStars"></div>
     <h2 id="resTitle">¡Bien tocado!</h2>
     <p class="muted mt-1" id="resText"></p>
+    <div class="timing-row" id="resTiming"></div>
     <div class="flex justify-center gap-2 mt-6 flex-wrap">
       <button type="button" class="btn btn-ghost" data-close>Cerrar</button>
       <button type="button" class="btn btn-ghost" id="resAgain"><span data-icon="restart-line"></span>Repetir</button>
-      <button type="button" class="btn btn-primary" id="resNext">Siguiente nivel</button>
+      <button type="button" class="btn btn-primary" id="resNext">Pasar a Difícil</button>
     </div>
   </div>
 </div>

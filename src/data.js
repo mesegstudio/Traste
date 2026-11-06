@@ -6,8 +6,8 @@
 const CHORDS = {
   A:     { frets: [-1, 0, 2, 2, 2, 0], fingers: [0, 0, 1, 2, 3, 0], tip: 'Los tres dedos van en el traste 2, muy juntos. Si no caben, inclínalos un poco.' },
   D:     { frets: [-1, -1, 0, 2, 3, 2], fingers: [0, 0, 0, 1, 3, 2], tip: 'Forma un pequeño triángulo. Rasguea solo desde la 4ª cuerda (Re).' },
-  E:     { frets: [0, 2, 2, 1, 0, 0], fingers: [0, 2, 3, 1, 0, 0], tip: 'Suenan las seis cuerdas. Pon primero el índice en la 3ª cuerda.' },
-  Am:    { frets: [-1, 0, 2, 2, 1, 0], fingers: [0, 0, 2, 3, 1, 0], tip: 'Es la forma de Mi mayor bajada una cuerda. No toques la 6ª.' },
+  E:     { frets: [0, 2, 2, 1, 0, 0], fingers: [0, 2, 3, 1, 0, 0], tip: 'Es la forma de Lam subida una cuerda. Suenan las seis cuerdas.' },
+  Am:    { frets: [-1, 0, 2, 2, 1, 0], fingers: [0, 0, 2, 3, 1, 0], tip: 'Pon los dedos 2 y 3 como en Mim y añade el índice en la 2ª cuerda. No toques la 6ª.' },
   Em:    { frets: [0, 2, 2, 0, 0, 0], fingers: [0, 2, 3, 0, 0, 0], tip: 'El acorde más fácil: dos dedos y suenan las seis cuerdas.' },
   Dm:    { frets: [-1, -1, 0, 2, 3, 1], fingers: [0, 0, 0, 2, 3, 1], tip: 'Como Re mayor, pero el índice baja al traste 1 de la 1ª cuerda.' },
   G:     { frets: [3, 2, 0, 0, 0, 3], fingers: [2, 1, 0, 0, 0, 3], tip: 'Abre bien la mano: dedos 1 y 2 en las graves, el 3 en la 1ª cuerda.' },
@@ -30,20 +30,14 @@ const CHORDS = {
   Bm:    { frets: [-1, 2, 4, 4, 3, 2], fingers: [0, 1, 3, 4, 2, 1], barre: { fret: 2, from: 5, to: 1, finger: 1 }, tip: 'Cejilla en el traste 2 desde la 5ª cuerda. Es la forma de La menor desplazada.' },
 };
 
-// Orden de aprendizaje inspirado en los cursos para principiantes (A-D-E primero)
+// Orden de aprendizaje: de 2 dedos a 3, formas que se parecen seguidas (Mim→Lam→Mi, La→Re),
+// luego Sol y Do (los más usados en canciones), séptimas, acordes "de color" y por último la cejilla.
 const CHORD_GROUPS = [
-  { name: 'Empieza aquí', ids: ['A', 'D', 'E'] },
-  { name: 'Menores', ids: ['Am', 'Em', 'Dm'] },
-  { name: 'Imprescindibles', ids: ['G', 'C'] },
+  { name: 'Primeros acordes', ids: ['Em', 'Am', 'E', 'A', 'D'] },
+  { name: 'Imprescindibles', ids: ['G', 'C', 'Dm'] },
   { name: 'Séptimas', ids: ['E7', 'A7', 'D7', 'G7', 'C7', 'B7'] },
   { name: 'Con color', ids: ['Asus2', 'Dsus2', 'Dsus4', 'Em7', 'Am7', 'Cadd9', 'Fmaj7'] },
   { name: 'Cejilla', ids: ['F_easy', 'F', 'Bm'] },
-];
-
-const STRUM_LIBRARY = [
-  { id: 'negras', name: 'Negras', bpb: 4, steps: ['D', '', 'D', '', 'D', '', 'D', ''] },
-  { id: 'pop', name: 'Pop', bpb: 4, steps: ['D', '', 'D', 'U', '', 'U', 'D', 'U'] },
-  { id: 'vals', name: 'Vals', bpb: 3, steps: ['D', '', 'D', 'U', 'D', 'U'] },
 ];
 
 // Canciones tradicionales o de dominio público. Melodía en notas y duración en tiempos.
@@ -91,4 +85,4 @@ const SONGS = [
   },
 ];
 
-if (typeof module !== 'undefined') module.exports = { CHORDS, CHORD_GROUPS, STRUM_LIBRARY, SONGS };
+if (typeof module !== 'undefined') module.exports = { CHORDS, CHORD_GROUPS, SONGS };

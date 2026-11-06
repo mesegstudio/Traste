@@ -90,16 +90,19 @@ function semitoneEnergies(mags, sr, fftSize, lo, hi) {
    apagada, con una cuerda "X" sonando y el resto de acordes. Gana la que mejor explica el sonido. */
 const V_LO = 40, V_HI = 92;
 const HARM = [[0, 1], [12, 0.75], [19, 0.55], [24, 0.45], [28, 0.32], [31, 0.28], [34, 0.18], [36, 0.16]];
+// Los micrófonos pequeños (móvil, portátil) apenas captan por debajo de ~150 Hz:
+// las parciales graves pesan la mitad para no "echar en falta" cuerdas que sí suenan.
 function voicingTemplate(midis, lo = V_LO, hi = V_HI) {
   const t = new Float32Array(hi - lo + 1);
-  for (const m of midis) for (const [off, w] of HARM) { const k = m + off - lo; if (k >= 0 && k < t.length) t[k] += w; }
+  for (const m of midis) for (const [off, w] of HARM) { const k = m + off - lo; if (k >= 0 && k < t.length) t[k] += w * (m + off < 52 ? 0.5 : 1); }
   for (let i = 0; i < t.length; i++) t[i] = Math.sqrt(t[i]);
   return t;
 }
+// Compresión logarítmica: iguala cuerdas tocadas con distinta fuerza y la coloración del micrófono
 function prepSemis(semis) {
   const v = new Float32Array(semis.length); let mx = 0;
   for (let i = 0; i < semis.length; i++) mx = Math.max(mx, semis[i]);
-  for (let i = 0; i < semis.length; i++) v[i] = mx > 0 ? Math.sqrt(semis[i] / mx) : 0;
+  for (let i = 0; i < semis.length; i++) v[i] = mx > 0 ? Math.log1p(30 * semis[i] / mx) : 0;
   return v;
 }
 function cosine(a, b) { let d = 0, x = 0, y = 0; for (let i = 0; i < a.length; i++) { d += a[i] * b[i]; x += a[i] * a[i]; y += b[i] * b[i]; } return x && y ? d / Math.sqrt(x * y) : 0; }
@@ -123,13 +126,39 @@ function chordHypotheses(expected, library) {
   return hyps.map((h) => ({ ...h, tpl: voicingTemplate(h.midis) }));
 }
 
-function matchChord(semis, hyps, margin = 0.012) {
+// ok: el acorde esperado explica el sonido (o casi tan bien como la mejor hipótesis).
+// confident: solo entonces se da un diagnóstico concreto; si no, se dice que no se ha oído claro.
+function matchChord(semis, hyps, margin = 0.02) {
   const v = prepSemis(semis);
-  let best = null;
+  let best = null, other = 0;
   const okScore = cosine(v, hyps[0].tpl);
-  for (const h of hyps) { const s = cosine(v, h.tpl); if (!best || s > best.score) best = { ...h, score: s }; }
-  const ok = okScore >= 0.62 && (best.kind === 'ok' || best.score - okScore < margin);
-  return { ok, score: okScore, best };
+  for (const h of hyps) {
+    const s = cosine(v, h.tpl);
+    if (h.kind === 'other' && s > other) other = s;
+    if (!best || s > best.score) best = { ...h, score: s };
+  }
+  // una cuerda de más o de menos del mismo acorde se tolera (margin); otro acorde (p. ej. Mi frente
+  // a Mi7, que se separan por una sola nota) nunca puede explicar el sonido mejor que el esperado
+  const ok = okScore >= 0.6 && other - okScore < 0.006 && (best.kind === 'ok' || best.score - okScore < margin);
+  const need = best.kind === 'missing' && best.string >= 5 ? 0.05 : 0.02;
+  const confident = !ok && okScore >= 0.5 && best.kind !== 'ok' && best.score - okScore >= need;
+  return { ok, score: okScore, best, confident };
+}
+
+// Nota nueva a partir de lo que "aparece" en el espectro tras un ataque (después − antes).
+// Funciona aunque la cuerda anterior siga sonando, que es donde el detector de nota única duda.
+const NOTE_TPL = [];
+function newNote(flux, minScore = 0.55) {
+  let mx = 0; for (const x of flux) if (x > mx) mx = x;
+  if (mx <= 0) return null;
+  const v = new Float32Array(flux.length);
+  for (let i = 0; i < flux.length; i++) v[i] = Math.log1p(30 * flux[i] / mx);
+  let best = null, bs = 0;
+  for (let m = 40; m <= 77; m++) {
+    const t = NOTE_TPL[m] || (NOTE_TPL[m] = voicingTemplate([m]));
+    const s = cosine(v, t); if (s > bs) { bs = s; best = m; }
+  }
+  return bs >= minScore ? best : null;
 }
 
 /* ---------- Síntesis de cuerda pulsada: Karplus-Strong con afinación fraccional ---------- */
@@ -231,11 +260,6 @@ function buildSong(song, chords) {
   const total = t;
   const pickup = song.pickup || 0;
   const chordTrack = parseChordBars(song.chords, song.bpb, pickup);
-  const strong = song.bpb === 4 ? [0, 2] : [0];
-  const easy = melodyEvents
-    .filter((e) => e.t >= pickup && strong.some((s) => Math.abs(((e.t - pickup) % song.bpb) - s) < 1e-6))
-    .map((e) => ({ ...e }));
-  easy.forEach((e, i) => { e.dur = Math.min(4, (easy[i + 1]?.t ?? total) - e.t); });
   const pattern = STRUM_PATTERNS[song.bpb] || STRUM_PATTERNS[4];
   const hard = [];
   for (const seg of chordTrack) {
@@ -249,7 +273,7 @@ function buildSong(song, chords) {
     }
   }
   hard.forEach((e, i) => { e.dur = Math.min(1, (hard[i + 1]?.t ?? total) - e.t); });
-  return { total, pickup, chordTrack, levels: { easy, medium: melodyEvents, hard } };
+  return { total, pickup, chordTrack, levels: { easy: melodyEvents, hard } };
 }
 
 /* ---------- Importar tablatura ASCII (el formato universal de internet) ---------- */
@@ -314,5 +338,5 @@ function parseAsciiTab(text, chords = {}) {
 if (typeof module !== 'undefined') module.exports = {
   OPEN_MIDI, stringMidi, LETTERS, LATIN, midiToFreq, freqToMidi, noteToMidi, yin, decimate, rms,
   semitoneEnergies, ksRender, parseMelody, firstPosition, parseChordBars,
-  chordNotes, voicingTemplate, chordHypotheses, matchChord, V_LO, V_HI, buildSong, parseAsciiTab, STRUM_PATTERNS,
+  chordNotes, voicingTemplate, chordHypotheses, matchChord, newNote, V_LO, V_HI, buildSong, parseAsciiTab, STRUM_PATTERNS,
 };

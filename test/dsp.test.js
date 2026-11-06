@@ -75,7 +75,7 @@ for (const s of SONGS) {
   // cada compás de melodía suma bpb
   const barsM = s.melody.split('|').map(x => D.parseMelody(x).reduce((a, n) => a + n.beats, 0));
   barsM.forEach((v, i) => { const want = (i === 0 && s.pickup) ? s.pickup : s.bpb; check(Math.abs(v - want) < 1e-6, `${s.id} compás ${i}: ${v} tiempos`); });
-  console.log(`${s.id}: fácil ${b.levels.easy.length} · medio ${b.levels.medium.length} · difícil ${b.levels.hard.length} eventos`);
+  console.log(`${s.id}: fácil (melodía) ${b.levels.easy.length} · difícil (acordes) ${b.levels.hard.length} eventos`);
 }
 
 // 4) Tablatura ASCII
