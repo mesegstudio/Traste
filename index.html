@@ -1116,6 +1116,27 @@ function chordNotes(chord, dir = 'D') {
   return dir === 'U' ? notes.filter((n) => n.string <= 4) : notes;
 }
 
+/* Arpegio: los acordes nota a nota. En cada tiempo una cuerda, como con los dedos p-i-m-a: el bajo del
+   acorde (su cuerda más grave) y después sus tres cuerdas más agudas. Al entrar un acorde, siempre el bajo.
+   En 3/4: bajo y las dos más agudas. Las notas se pisan con la forma del acorde (mismos dedos). */
+function arpeggiate(segs, getChord, bpb = 4, pickup = 0) {
+  const out = [], steps = bpb === 3 ? [0, 2, 3] : [0, 1, 2, 3];
+  for (const s of segs) {
+    const ch = getChord(s.chord); if (!ch) continue;
+    const ns = chordNotes(ch).sort((a, b) => b.string - a.string); // de la 6ª a la 1ª
+    const bass = ns[0], treble = ns.slice(1).slice(-3);
+    if (!treble.length) continue;
+    const end = s.t + s.dur;
+    for (let t = s.t; t < end - 1e-6; t = Math.floor(t + 1e-6) + 1) {
+      const pos = ((Math.floor(t - pickup + 1e-6) % bpb) + bpb) % bpb, k = t === s.t ? 0 : steps[pos % steps.length];
+      const n = k === 0 ? bass : treble[Math.min(k, treble.length) - 1];
+      out.push({ t, dur: 1, notes: [{ ...n }], of: s.chord });
+    }
+  }
+  out.sort((a, b) => a.t - b.t).forEach((e, i) => { e.dur = Math.min(1, (out[i + 1]?.t ?? e.t + 1) - e.t); });
+  return out;
+}
+
 function buildSong(song, chords) {
   const melody = parseMelody(song.melody);
   const melodyEvents = []; let t = 0;
@@ -1143,13 +1164,14 @@ function buildSong(song, chords) {
     }
   }
   hard.forEach((e, i) => { e.dur = Math.min(1, (hard[i + 1]?.t ?? total) - e.t); });
-  return { total, pickup, chordTrack, levels: { easy: melodyEvents, hard } };
+  const arp = arpeggiate(chordTrack, (id) => chords[id], song.bpb, pickup);
+  return { total, pickup, chordTrack, levels: { easy: melodyEvents, arp, hard } };
 }
 
 if (typeof module !== 'undefined') module.exports = {
   OPEN_MIDI, stringMidi, LETTERS, LATIN, midiToFreq, freqToMidi, noteToMidi, yin, decimate, rms,
   semitoneEnergies, ksRender, parseMelody, firstPosition, parseChordBars,
-  chordNotes, voicingTemplate, chordHypotheses, matchChord, newNote, fewHypotheses, notePresence, singleNoteLikeness, strumOk, V_LO, V_HI, buildSong, STRUM_PATTERNS,
+  chordNotes, voicingTemplate, chordHypotheses, matchChord, newNote, fewHypotheses, notePresence, singleNoteLikeness, strumOk, V_LO, V_HI, buildSong, STRUM_PATTERNS, arpeggiate,
 };
 
 /* ============================================================
@@ -1328,7 +1350,7 @@ if (typeof module !== 'undefined') module.exports = { CHORDS, CHORD_GROUPS, SONG
    Funciones puras: se prueban en Node (test/dsp.test.js).
    ============================================================ */
 // en el navegador usa las funciones de dsp.js ya cargadas; en Node las importa
-const DSP = typeof stringMidi === 'undefined' ? require('./dsp.js') : { stringMidi, chordNotes, STRUM_PATTERNS };
+const DSP = typeof stringMidi === 'undefined' ? require('./dsp.js') : { stringMidi, chordNotes, STRUM_PATTERNS, arpeggiate };
 const LATIN_ROOTS = { DO: 0, RE: 2, MI: 4, FA: 5, SOL: 7, LA: 9, SI: 11 };
 const LETTER_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const SHARP_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -1607,7 +1629,10 @@ function buildCifrado(parsed, { barsPerLine = 2, getChord }) {
   }
   const fin = (arr) => { const ev = [...arr, ...tabEv].sort((a, b) => a.t - b.t); ev.forEach((e, i) => { e.dur = Math.min(e.chord ? 1 : 2, Math.max(0.25, (ev[i + 1]?.t ?? total) - e.t)); }); return ev; };
   const chordList = [...new Set(segs.map((s) => s.chord))];
-  return { built: { total, pickup: 0, chordTrack: [], levels: { easy: fin(easy), hard: fin(hard) }, lyrics, sections }, chordList, nTab: tabEv.length };
+  const track = segs.map((s) => ({ chord: s.chord, t: s.t, dur: s.end - s.t }));
+  // solo tablatura: un único nivel, nota a nota
+  const levels = segs.length ? { easy: fin(easy), arp: fin(DSP.arpeggiate(track, getChord, 4, 0)), hard: fin(hard) } : { easy: fin([]) };
+  return { built: { total, pickup: 0, chordTrack: track, levels, lyrics, sections }, chordList, nTab: tabEv.length };
 }
 
 if (typeof module !== 'undefined') module.exports = { parseChordName, makeChord, parseCifrado, buildCifrado, isTabLine, parseTabBlock };
@@ -2099,6 +2124,7 @@ function fingerLegend(active) {
 
 // Lo que hay que tocar ahora: acorde → su diagrama (en la orientación elegida); nota → el mástil
 function fingersSVG(e) {
+  if (e && e.of) return fretboardSVG({ chord: e.of, notes: e.notes }); // arpegio: la forma del acorde y la cuerda que toca
   if (e && e.chord && state.diagram === 'v') return chordDiagram(CHORDS[e.chord]);
   return fretboardSVG(e);
 }
@@ -2294,8 +2320,8 @@ const Tuner = {
 /* ============================================================
    Canciones: catálogo y reproductor
    ============================================================ */
-const LEVELS = { easy: 'Fácil', hard: 'Difícil' };
-const LEVEL_HINT = { easy: 'melodía', hard: 'acordes' };
+const LEVELS = { easy: 'Fácil', arp: 'Arpegio', hard: 'Difícil' };
+const LEVEL_HINT = { easy: 'melodía', arp: 'acordes nota a nota', hard: 'acordes' };
 // Velocidades pensadas para aprender: la mitad para descifrar, 3/4 para practicar, la real y un reto
 const SPEEDS = [{ n: 'Muy lento', p: 0.5 }, { n: 'Lento', p: 0.75 }, { n: 'Normal', p: 1 }, { n: 'Rápido', p: 1.2 }];
 // Puntos: perfecto 100, pronto/tarde 50, y la racha multiplica (×2 desde 10, ×3 desde 20, ×4 desde 30).
@@ -2355,7 +2381,7 @@ const Songs = {
       return `<div class="song-row" role="button" tabindex="0" data-song="${s.id}">
         <div class="min-w-0"><h3>${esc(s.title)}${s.user ? '<span class="tag">Tuya</span>' : ''}</h3><div class="meta">${esc(s.origin)} · ${songChords(s).length ? songChords(s).map((c) => chordLabel(c)).join(' ') : 'tablatura'}</div></div>
         <span class="dots" title="Dificultad: ${['', 'fácil', 'media', 'difícil'][s.stars]}">${[1, 2, 3].map((k) => `<i class="${k <= s.stars ? 'on' : ''}"></i>`).join('')}</span>
-        <div class="best"><span>Fácil ${miniStars(b('easy')?.stars || 0)}</span><span>Difícil ${miniStars(b('hard')?.stars || 0)}</span></div>
+        <div class="best">${Object.keys(LEVELS).filter((l) => l !== 'arp' || songChords(s).length).map((l) => `<span>${LEVELS[l]} ${miniStars(b(l)?.stars || 0)}</span>`).join('')}</div>
       </div>`;
     }).join('') : `<div class="empty">No hay canciones con esos filtros.</div>`;
   },
@@ -2413,7 +2439,7 @@ const Player = {
     this.song = song; this.built = song.built || buildSong(song, CHORDS);
     const ex = !!song.exercise;
     $('#plLevel').hidden = ex;
-    $('#plLevel').innerHTML = Object.keys(LEVELS).map((l) => `<button type="button" data-l="${l}">${LEVELS[l]}<span class="hidden sm:inline font-medium opacity-60"> · ${song.levelHints?.[l] || LEVEL_HINT[l]}</span></button>`).join('');
+    $('#plLevel').innerHTML = Object.keys(LEVELS).filter((l) => this.built.levels[l]?.length).map((l) => `<button type="button" data-l="${l}">${LEVELS[l]}<span class="hidden sm:inline font-medium opacity-60"> · ${song.levelHints?.[l] || LEVEL_HINT[l]}</span></button>`).join('');
     $('#plTitle').textContent = song.title; $('#plOrigin').textContent = ex || song.user ? `${song.origin} · ${song.bpm} ppm` : `${song.origin} · ${song.bpm} ppm · ${song.bpb}/4`;
     $('#plEdit').hidden = !song.user; $('#songImport').hidden = true;
     if (ex) { this.metro = true; $('#plMetro').checked = true; }
@@ -2451,6 +2477,7 @@ const Player = {
   reset() {
     clearTimeout(this.resumeTimer); this.inertia = null; this.scrubbing = false;
     this.events = this.built.levels[this.level].map((e) => ({ ...e, st: 0, hitAt: 0, kind: '' }));
+    this.showTrack = !this.events.some((e) => e.chord);
     Object.assign(this, { status: 'idle', demo: false, beat: this.startBeat(), idx: 0, combo: 0, maxCombo: 0, points: 0, check: null, lastHitMidi: null, frozen: false, curIdx: -1, flash: null, deltas: [], stats: { perfect: 0, early: 0, late: 0, miss: 0, wrong: 0 } });
     this.attackBeats = new Map();
     this.renderHud(); this.renderButtons(); this.renderNow();
@@ -2505,7 +2532,7 @@ const Player = {
     }
     if (!$('#plDetails').hidden) {
       $('#plFret').innerHTML = fingersSVG(e);
-      const fingers = new Set((e ? (e.chord ? chordNotes(CHORDS[e.chord]) : e.notes) : []).map((n) => n.finger).filter(Boolean));
+      const fingers = new Set((e ? (e.chord || e.of ? chordNotes(CHORDS[e.chord || e.of]) : e.notes) : []).map((n) => n.finger).filter(Boolean));
       $('#plHand').innerHTML = handSVG(fingers, 140) + fingerLegend(fingers);
     }
   },
@@ -2516,6 +2543,7 @@ const Player = {
     }
     const n = e.notes[0];
     if (short) return `${pcName(n.midi)} (${n.string}ª${n.fret ? `, traste ${n.fret}` : ' al aire'})`;
+    if (e.of) return `<b>${pcName(n.midi)}</b> · ${n.string}ª cuerda · con la forma de <b>${chordLabel(e.of)}</b>`;
     const dot = n.fret ? `<span class="inline-block w-2.5 h-2.5 rounded-full align-middle mr-1" style="background:${fingerVar(n.finger)}"></span>` : '';
     return `<b>${pcName(n.midi)}</b> · ${n.string}ª cuerda ${n.fret ? `· traste ${n.fret} · ${dot}dedo ${n.finger}` : 'al aire'}`;
   },
@@ -2683,7 +2711,8 @@ const Player = {
     const doneKey = ex ? 'ex:' + ex.id : `song:${this.song.id}:${this.level}`;
     Learn.markDone(doneKey);
     const acts = [{ label: 'Repetir', icon: 'restart-line', fn: () => this.start(false) }];
-    if (!ex && this.level === 'easy' && this.built.levels.hard) acts.push({ label: 'Pasar a Difícil', fn: () => this.setLevel('hard') });
+    const order = Object.keys(LEVELS).filter((l) => this.built.levels[l]?.length), up = order[order.indexOf(this.level) + 1];
+    if (!ex && up) acts.push({ label: `Pasar a ${LEVELS[up]}`, fn: () => this.setLevel(up) });
     const nxt = Learn.nextAction(doneKey); if (nxt) acts.push(nxt);
     if (acts.length > 1) acts[acts.length - 1].kind = 'primary'; else acts[0].kind = 'primary';
     if (this.wait) {
@@ -2740,7 +2769,7 @@ const Player = {
       c.strokeStyle = PAL['line-2']; c.lineWidth = 1 + (s - 1) * 0.35;
       c.beginPath(); c.moveTo(gutter, ly(s)); c.lineTo(W, ly(s)); c.stroke();
     }
-    if (this.level !== 'hard' && this.built.chordTrack.length) {
+    if (this.showTrack && this.built.chordTrack.length) { // nombres de acordes arriba si los eventos no los llevan
       c.font = `650 13px ${FONT}`; c.textAlign = 'left';
       for (const seg of this.built.chordTrack) {
         const x = X(seg.t); if (x > W || x + seg.dur * ppb < gutter) continue;
@@ -3021,7 +3050,7 @@ const MySongs = {
     const r = this.compile(e);
     const song = { id: e.id, user: true, title: e.title || 'Sin título', origin: e.artist || 'Añadida por ti', bpm: +e.bpm || 90, bpb: 4, cat: 'mias',
       stars: this.difficulty(r.chordList, r.nTab), chordList: r.chordList, built: r.built,
-      levelHints: r.chordList.length ? { easy: 'un golpe por acorde', hard: 'rasgueo completo' } : { easy: 'nota a nota', hard: 'nota a nota' } };
+      levelHints: r.chordList.length ? { easy: 'un golpe por acorde', arp: 'acordes nota a nota', hard: 'rasgueo completo' } : { easy: 'nota a nota' } };
     const i = SONGS.findIndex((s) => s.id === e.id);
     if (i >= 0) SONGS[i] = song; else SONGS.unshift(song);
     return song;

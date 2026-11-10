@@ -279,6 +279,27 @@ function chordNotes(chord, dir = 'D') {
   return dir === 'U' ? notes.filter((n) => n.string <= 4) : notes;
 }
 
+/* Arpegio: los acordes nota a nota. En cada tiempo una cuerda, como con los dedos p-i-m-a: el bajo del
+   acorde (su cuerda más grave) y después sus tres cuerdas más agudas. Al entrar un acorde, siempre el bajo.
+   En 3/4: bajo y las dos más agudas. Las notas se pisan con la forma del acorde (mismos dedos). */
+function arpeggiate(segs, getChord, bpb = 4, pickup = 0) {
+  const out = [], steps = bpb === 3 ? [0, 2, 3] : [0, 1, 2, 3];
+  for (const s of segs) {
+    const ch = getChord(s.chord); if (!ch) continue;
+    const ns = chordNotes(ch).sort((a, b) => b.string - a.string); // de la 6ª a la 1ª
+    const bass = ns[0], treble = ns.slice(1).slice(-3);
+    if (!treble.length) continue;
+    const end = s.t + s.dur;
+    for (let t = s.t; t < end - 1e-6; t = Math.floor(t + 1e-6) + 1) {
+      const pos = ((Math.floor(t - pickup + 1e-6) % bpb) + bpb) % bpb, k = t === s.t ? 0 : steps[pos % steps.length];
+      const n = k === 0 ? bass : treble[Math.min(k, treble.length) - 1];
+      out.push({ t, dur: 1, notes: [{ ...n }], of: s.chord });
+    }
+  }
+  out.sort((a, b) => a.t - b.t).forEach((e, i) => { e.dur = Math.min(1, (out[i + 1]?.t ?? e.t + 1) - e.t); });
+  return out;
+}
+
 function buildSong(song, chords) {
   const melody = parseMelody(song.melody);
   const melodyEvents = []; let t = 0;
@@ -306,11 +327,12 @@ function buildSong(song, chords) {
     }
   }
   hard.forEach((e, i) => { e.dur = Math.min(1, (hard[i + 1]?.t ?? total) - e.t); });
-  return { total, pickup, chordTrack, levels: { easy: melodyEvents, hard } };
+  const arp = arpeggiate(chordTrack, (id) => chords[id], song.bpb, pickup);
+  return { total, pickup, chordTrack, levels: { easy: melodyEvents, arp, hard } };
 }
 
 if (typeof module !== 'undefined') module.exports = {
   OPEN_MIDI, stringMidi, LETTERS, LATIN, midiToFreq, freqToMidi, noteToMidi, yin, decimate, rms,
   semitoneEnergies, ksRender, parseMelody, firstPosition, parseChordBars,
-  chordNotes, voicingTemplate, chordHypotheses, matchChord, newNote, fewHypotheses, notePresence, singleNoteLikeness, strumOk, V_LO, V_HI, buildSong, STRUM_PATTERNS,
+  chordNotes, voicingTemplate, chordHypotheses, matchChord, newNote, fewHypotheses, notePresence, singleNoteLikeness, strumOk, V_LO, V_HI, buildSong, STRUM_PATTERNS, arpeggiate,
 };

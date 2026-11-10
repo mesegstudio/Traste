@@ -485,6 +485,7 @@ function fingerLegend(active) {
 
 // Lo que hay que tocar ahora: acorde → su diagrama (en la orientación elegida); nota → el mástil
 function fingersSVG(e) {
+  if (e && e.of) return fretboardSVG({ chord: e.of, notes: e.notes }); // arpegio: la forma del acorde y la cuerda que toca
   if (e && e.chord && state.diagram === 'v') return chordDiagram(CHORDS[e.chord]);
   return fretboardSVG(e);
 }
@@ -680,8 +681,8 @@ const Tuner = {
 /* ============================================================
    Canciones: catálogo y reproductor
    ============================================================ */
-const LEVELS = { easy: 'Fácil', hard: 'Difícil' };
-const LEVEL_HINT = { easy: 'melodía', hard: 'acordes' };
+const LEVELS = { easy: 'Fácil', arp: 'Arpegio', hard: 'Difícil' };
+const LEVEL_HINT = { easy: 'melodía', arp: 'acordes nota a nota', hard: 'acordes' };
 // Velocidades pensadas para aprender: la mitad para descifrar, 3/4 para practicar, la real y un reto
 const SPEEDS = [{ n: 'Muy lento', p: 0.5 }, { n: 'Lento', p: 0.75 }, { n: 'Normal', p: 1 }, { n: 'Rápido', p: 1.2 }];
 // Puntos: perfecto 100, pronto/tarde 50, y la racha multiplica (×2 desde 10, ×3 desde 20, ×4 desde 30).
@@ -741,7 +742,7 @@ const Songs = {
       return `<div class="song-row" role="button" tabindex="0" data-song="${s.id}">
         <div class="min-w-0"><h3>${esc(s.title)}${s.user ? '<span class="tag">Tuya</span>' : ''}</h3><div class="meta">${esc(s.origin)} · ${songChords(s).length ? songChords(s).map((c) => chordLabel(c)).join(' ') : 'tablatura'}</div></div>
         <span class="dots" title="Dificultad: ${['', 'fácil', 'media', 'difícil'][s.stars]}">${[1, 2, 3].map((k) => `<i class="${k <= s.stars ? 'on' : ''}"></i>`).join('')}</span>
-        <div class="best"><span>Fácil ${miniStars(b('easy')?.stars || 0)}</span><span>Difícil ${miniStars(b('hard')?.stars || 0)}</span></div>
+        <div class="best">${Object.keys(LEVELS).filter((l) => l !== 'arp' || songChords(s).length).map((l) => `<span>${LEVELS[l]} ${miniStars(b(l)?.stars || 0)}</span>`).join('')}</div>
       </div>`;
     }).join('') : `<div class="empty">No hay canciones con esos filtros.</div>`;
   },
@@ -799,7 +800,7 @@ const Player = {
     this.song = song; this.built = song.built || buildSong(song, CHORDS);
     const ex = !!song.exercise;
     $('#plLevel').hidden = ex;
-    $('#plLevel').innerHTML = Object.keys(LEVELS).map((l) => `<button type="button" data-l="${l}">${LEVELS[l]}<span class="hidden sm:inline font-medium opacity-60"> · ${song.levelHints?.[l] || LEVEL_HINT[l]}</span></button>`).join('');
+    $('#plLevel').innerHTML = Object.keys(LEVELS).filter((l) => this.built.levels[l]?.length).map((l) => `<button type="button" data-l="${l}">${LEVELS[l]}<span class="hidden sm:inline font-medium opacity-60"> · ${song.levelHints?.[l] || LEVEL_HINT[l]}</span></button>`).join('');
     $('#plTitle').textContent = song.title; $('#plOrigin').textContent = ex || song.user ? `${song.origin} · ${song.bpm} ppm` : `${song.origin} · ${song.bpm} ppm · ${song.bpb}/4`;
     $('#plEdit').hidden = !song.user; $('#songImport').hidden = true;
     if (ex) { this.metro = true; $('#plMetro').checked = true; }
@@ -837,6 +838,7 @@ const Player = {
   reset() {
     clearTimeout(this.resumeTimer); this.inertia = null; this.scrubbing = false;
     this.events = this.built.levels[this.level].map((e) => ({ ...e, st: 0, hitAt: 0, kind: '' }));
+    this.showTrack = !this.events.some((e) => e.chord);
     Object.assign(this, { status: 'idle', demo: false, beat: this.startBeat(), idx: 0, combo: 0, maxCombo: 0, points: 0, check: null, lastHitMidi: null, frozen: false, curIdx: -1, flash: null, deltas: [], stats: { perfect: 0, early: 0, late: 0, miss: 0, wrong: 0 } });
     this.attackBeats = new Map();
     this.renderHud(); this.renderButtons(); this.renderNow();
@@ -891,7 +893,7 @@ const Player = {
     }
     if (!$('#plDetails').hidden) {
       $('#plFret').innerHTML = fingersSVG(e);
-      const fingers = new Set((e ? (e.chord ? chordNotes(CHORDS[e.chord]) : e.notes) : []).map((n) => n.finger).filter(Boolean));
+      const fingers = new Set((e ? (e.chord || e.of ? chordNotes(CHORDS[e.chord || e.of]) : e.notes) : []).map((n) => n.finger).filter(Boolean));
       $('#plHand').innerHTML = handSVG(fingers, 140) + fingerLegend(fingers);
     }
   },
@@ -902,6 +904,7 @@ const Player = {
     }
     const n = e.notes[0];
     if (short) return `${pcName(n.midi)} (${n.string}ª${n.fret ? `, traste ${n.fret}` : ' al aire'})`;
+    if (e.of) return `<b>${pcName(n.midi)}</b> · ${n.string}ª cuerda · con la forma de <b>${chordLabel(e.of)}</b>`;
     const dot = n.fret ? `<span class="inline-block w-2.5 h-2.5 rounded-full align-middle mr-1" style="background:${fingerVar(n.finger)}"></span>` : '';
     return `<b>${pcName(n.midi)}</b> · ${n.string}ª cuerda ${n.fret ? `· traste ${n.fret} · ${dot}dedo ${n.finger}` : 'al aire'}`;
   },
@@ -1069,7 +1072,8 @@ const Player = {
     const doneKey = ex ? 'ex:' + ex.id : `song:${this.song.id}:${this.level}`;
     Learn.markDone(doneKey);
     const acts = [{ label: 'Repetir', icon: 'restart-line', fn: () => this.start(false) }];
-    if (!ex && this.level === 'easy' && this.built.levels.hard) acts.push({ label: 'Pasar a Difícil', fn: () => this.setLevel('hard') });
+    const order = Object.keys(LEVELS).filter((l) => this.built.levels[l]?.length), up = order[order.indexOf(this.level) + 1];
+    if (!ex && up) acts.push({ label: `Pasar a ${LEVELS[up]}`, fn: () => this.setLevel(up) });
     const nxt = Learn.nextAction(doneKey); if (nxt) acts.push(nxt);
     if (acts.length > 1) acts[acts.length - 1].kind = 'primary'; else acts[0].kind = 'primary';
     if (this.wait) {
@@ -1126,7 +1130,7 @@ const Player = {
       c.strokeStyle = PAL['line-2']; c.lineWidth = 1 + (s - 1) * 0.35;
       c.beginPath(); c.moveTo(gutter, ly(s)); c.lineTo(W, ly(s)); c.stroke();
     }
-    if (this.level !== 'hard' && this.built.chordTrack.length) {
+    if (this.showTrack && this.built.chordTrack.length) { // nombres de acordes arriba si los eventos no los llevan
       c.font = `650 13px ${FONT}`; c.textAlign = 'left';
       for (const seg of this.built.chordTrack) {
         const x = X(seg.t); if (x > W || x + seg.dur * ppb < gutter) continue;

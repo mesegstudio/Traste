@@ -6,7 +6,7 @@
    Funciones puras: se prueban en Node (test/dsp.test.js).
    ============================================================ */
 // en el navegador usa las funciones de dsp.js ya cargadas; en Node las importa
-const DSP = typeof stringMidi === 'undefined' ? require('./dsp.js') : { stringMidi, chordNotes, STRUM_PATTERNS };
+const DSP = typeof stringMidi === 'undefined' ? require('./dsp.js') : { stringMidi, chordNotes, STRUM_PATTERNS, arpeggiate };
 const LATIN_ROOTS = { DO: 0, RE: 2, MI: 4, FA: 5, SOL: 7, LA: 9, SI: 11 };
 const LETTER_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const SHARP_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -285,7 +285,10 @@ function buildCifrado(parsed, { barsPerLine = 2, getChord }) {
   }
   const fin = (arr) => { const ev = [...arr, ...tabEv].sort((a, b) => a.t - b.t); ev.forEach((e, i) => { e.dur = Math.min(e.chord ? 1 : 2, Math.max(0.25, (ev[i + 1]?.t ?? total) - e.t)); }); return ev; };
   const chordList = [...new Set(segs.map((s) => s.chord))];
-  return { built: { total, pickup: 0, chordTrack: [], levels: { easy: fin(easy), hard: fin(hard) }, lyrics, sections }, chordList, nTab: tabEv.length };
+  const track = segs.map((s) => ({ chord: s.chord, t: s.t, dur: s.end - s.t }));
+  // solo tablatura: un único nivel, nota a nota
+  const levels = segs.length ? { easy: fin(easy), arp: fin(DSP.arpeggiate(track, getChord, 4, 0)), hard: fin(hard) } : { easy: fin([]) };
+  return { built: { total, pickup: 0, chordTrack: track, levels, lyrics, sections }, chordList, nTab: tabEv.length };
 }
 
 if (typeof module !== 'undefined') module.exports = { parseChordName, makeChord, parseCifrado, buildCifrado, isTabLine, parseTabBlock };

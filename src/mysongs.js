@@ -35,7 +35,7 @@ const MySongs = {
     const r = this.compile(e);
     const song = { id: e.id, user: true, title: e.title || 'Sin título', origin: e.artist || 'Añadida por ti', bpm: +e.bpm || 90, bpb: 4, cat: 'mias',
       stars: this.difficulty(r.chordList, r.nTab), chordList: r.chordList, built: r.built,
-      levelHints: r.chordList.length ? { easy: 'un golpe por acorde', hard: 'rasgueo completo' } : { easy: 'nota a nota', hard: 'nota a nota' } };
+      levelHints: r.chordList.length ? { easy: 'un golpe por acorde', arp: 'acordes nota a nota', hard: 'rasgueo completo' } : { easy: 'nota a nota' } };
     const i = SONGS.findIndex((s) => s.id === e.id);
     if (i >= 0) SONGS[i] = song; else SONGS.unshift(song);
     return song;

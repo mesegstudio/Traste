@@ -77,7 +77,10 @@ for (const s of SONGS) {
   // cada compás de melodía suma bpb
   const barsM = s.melody.split('|').map(x => D.parseMelody(x).reduce((a, n) => a + n.beats, 0));
   barsM.forEach((v, i) => { const want = (i === 0 && s.pickup) ? s.pickup : s.bpb; check(Math.abs(v - want) < 1e-6, `${s.id} compás ${i}: ${v} tiempos`); });
-  console.log(`${s.id}: fácil (melodía) ${b.levels.easy.length} · difícil (acordes) ${b.levels.hard.length} eventos`);
+  console.log(`${s.id}: fácil (melodía) ${b.levels.easy.length} · arpegio ${b.levels.arp.length} · difícil (acordes) ${b.levels.hard.length} eventos`);
+  // arpegio: notas sueltas de cada acorde, y al entrar un acorde siempre su bajo
+  const bassOk = b.chordTrack.every((seg) => { const e = b.levels.arp.find((x) => Math.abs(x.t - seg.t) < 1e-6); const low = Math.max(...D.chordNotes(CHORDS[seg.chord]).map((n) => n.string)); return e && e.of === seg.chord && e.notes[0].string === low; });
+  check(b.levels.arp.length >= b.chordTrack.length && b.levels.arp.every((e) => e.notes.length === 1 && D.chordNotes(CHORDS[e.of]).some((n) => n.midi === e.notes[0].midi)) && bassOk, `${s.id}: arpegio`);
 }
 
 // 4) Rasgueo tolerante: acepta el acorde rasgueado y rechaza una sola cuerda
@@ -140,7 +143,8 @@ check(names.filter((n) => n === 'estribillo').length === 2 && pc.parts[3].lines.
 check(pc.parts.at(-1).lines[0].lyric.startsWith('Solo una'), '«Solo …» es letra, no una parte');
 const gen = {}, getChord = (id) => CHORDS[id] || (gen[id] ||= (() => { const c = C.parseChordName(id); return C.makeChord(c.pc, c.suffix); })());
 const bc = C.buildCifrado(pc, { barsPerLine: 2, getChord });
-check(bc.built.levels.hard.length > bc.built.levels.easy.length && bc.built.lyrics.length >= 8 && bc.nTab === 3 && bc.chordList.includes('Bm7b5'), 'canción construida');
+check(bc.built.levels.arp.length > 0 && bc.built.levels.arp.filter((e) => !e.also).every((e) => e.notes.length === 1 && e.of)
+  && bc.built.levels.hard.length > bc.built.levels.easy.length && bc.built.lyrics.length >= 8 && bc.nTab === 3 && bc.chordList.includes('Bm7b5'), 'canción construida');
 console.log(`Cifrado: ${pc.parts.length} partes · ${bc.chordList.join(' ')} · ${bc.built.levels.hard.length} rasgueos`);
 
 console.log(fails ? `\n${fails} fallos` : '\nTodo OK');
