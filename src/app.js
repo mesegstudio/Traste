@@ -243,7 +243,7 @@ async function fillMicSelect() {
   try {
     MicCard.devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'audioinput' && d.deviceId);
   } catch { MicCard.devs = []; }
-  MicCard.render();
+  MicCard.render(); Cal.sync();
 }
 const dbPct = (level) => clamp((20 * Math.log10(level + 1e-9) + 70) / 60, 0, 1) * 100;
 function timeAgo(at) {
@@ -257,46 +257,55 @@ const MicCard = {
   render() {
     $$('[data-mic-card]').forEach((el) => {
       const full = !el.classList.contains('compact');
+      if (!full) {
+        const cal = Mic.on && state.cals[Mic.key];
+        el.innerHTML = `<span class="mc-ring-wrap ${Mic.on ? '' : 'off'}" title="${Mic.on ? 'El anillo crece con lo que oye el micrófono' : 'Micrófono apagado'}"><i class="mc-ring"></i><span class="mc-ico ${Mic.on ? '' : 'off'}">${icon(Mic.on ? 'mic-line' : 'mic-off-line')}</span></span>`
+          + (Mic.on ? `<button type="button" class="btn ${cal ? 'btn-soft' : 'btn-primary'}" data-mic-cal>${icon('equalizer-2-line')}Calibrar micrófono</button>`
+            : `<button type="button" class="btn btn-primary" data-action="mic-on">${icon('mic-line')}Activar micrófono</button>`);
+        return;
+      }
       if (!Mic.on) {
         el.innerHTML = `<div class="mc-row"><span class="mc-ico off">${icon('mic-off-line')}</span>
           <div class="mc-txt"><b>Micrófono apagado</b><span>${full ? 'Traste lo usa para oír tu guitarra. El sonido se analiza en tu navegador y no sale de tu equipo.' : 'Actívalo para que Traste te oiga.'}</span></div>
           <button type="button" class="btn btn-primary btn-sm" data-action="mic-on">${icon('mic-line')}Activar</button></div>`;
         return;
       }
-      const cal = state.cals[Mic.key], devs = this.devs;
-      const cur = devs.find((d) => d.deviceId === Mic.deviceId) || devs.find((d) => micKey(d.label, d.deviceId) === Mic.key);
-      const name = devs.length > 1
-        ? `<select data-mic-select aria-label="Micrófono">${devs.map((d, i) => `<option value="${esc(d.deviceId)}" ${d === cur ? 'selected' : ''}>${esc(d.label || 'Micrófono ' + (i + 1))}</option>`).join('')}</select>`
-        : `<b class="mc-name">${esc(Mic.label)}</b>`;
+      const cal = state.cals[Mic.key];
+      const name = `<b class="mc-name">${esc(devLabel(Mic.label))}</b>`;
       const status = cal
-        ? `<span class="mc-st ok">${icon('checkbox-circle-fill')}Ajustado ${timeAgo(cal.at)} · ${cal.noise > 0.02 ? 'sala ruidosa' : 'sala tranquila'}${cal.toneOk ? '' : ' · no oyó el tono de prueba'}</span>`
-        : `<span class="mc-st warn">${icon('error-warning-line')}Sin ajustar: puede confundir ruido con notas</span>`;
+        ? `<span class="mc-st ok">${icon('checkbox-circle-fill')}Calibrado ${timeAgo(cal.at)} · ${cal.noise > 0.02 ? 'sala ruidosa' : 'sala tranquila'}${cal.toneOk ? '' : ' · no oyó el tono de prueba'}</span>`
+        : `<span class="mc-st warn">${icon('error-warning-line')}Sin calibrar: puede confundir ruido con notas</span>`;
       const gate = cal ? dbPct(cal.gate) : dbPct(Mic.gate());
       el.innerHTML = `
         <div class="mc-row">
           <span class="mc-ico">${icon('mic-line')}</span>
           <div class="mc-txt">${name}</div>
-          <button type="button" class="btn ${cal ? 'btn-soft' : 'btn-primary'} btn-sm" data-mic-cal>${icon('equalizer-2-line')}${cal ? (full ? 'Volver a ajustar' : 'Ajustar') : 'Ajustar ahora'}</button>
+          <button type="button" class="btn ${cal ? 'btn-soft' : 'btn-primary'} btn-sm" data-mic-cal>${icon('equalizer-2-line')}${cal ? 'Volver a calibrar' : 'Calibrar'}</button>
         </div>
         <div class="mc-status">${status}</div>
         <div class="mc-meter"><div class="lv"><i class="fill"></i><i class="gate" style="left:${gate.toFixed(1)}%"></i></div>
-          <span>${full ? 'Nivel de entrada. Lo que queda a la izquierda de la marca se ignora como ruido de la sala.' : 'El ajuste mide el ruido de la sala y comprueba que el micro oye bien las notas.'}</span></div>
-        ${full ? `<button type="button" class="link-btn mc-off" data-mic-off>Apagar el micrófono</button>` : ''}`;
+          <span>Nivel de entrada. Lo que queda a la izquierda de la marca se ignora como ruido de la sala.</span></div>
+        <button type="button" class="link-btn mc-off" data-mic-off>Apagar el micrófono</button>`;
     });
   },
   frame(level) {
-    const w = dbPct(level).toFixed(1) + '%', hot = level > (state.cals[Mic.key]?.gate ?? Mic.gate());
-    $$('[data-mic-card] .fill').forEach((el) => { el.style.width = w; el.classList.toggle('hot', hot); });
+    const gate = state.cals[Mic.key]?.gate ?? Mic.gate(), p = dbPct(level), g = dbPct(gate), hot = level > gate;
+    $$('[data-mic-card] .fill').forEach((el) => { el.style.width = p.toFixed(1) + '%'; el.classList.toggle('hot', hot); });
+    // anillo: apenas se mueve con el ruido de fondo y crece cuando suena algo por encima del umbral
+    const s = hot ? 1.12 + 0.4 * Math.min(1, ((p - g) / Math.max(10, 100 - g)) * 1.8) : 1 + 0.1 * clamp(p / Math.max(1, g), 0, 1);
+    $$('[data-mic-card] .mc-ring').forEach((el) => { el.style.transform = `scale(${s.toFixed(3)})`; el.classList.toggle('hot', hot); });
   },
 };
 document.addEventListener('click', (e) => {
   if (e.target.closest('[data-mic-cal]')) Cal.recheck();
   if (e.target.closest('[data-mic-off]')) Mic.stop();
 });
-document.addEventListener('change', async (e) => {
-  if (!e.target.matches('[data-mic-select]')) return;
-  try { await Mic.start(e.target.value); } catch { toast('No he podido abrir ese micrófono.'); fillMicSelect(); }
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-cal-dev]'); if (!b || Cal.running) return;
+  try { await Mic.start(b.dataset.calDev); } catch { toast('No he podido abrir ese micrófono.'); fillMicSelect(); }
 });
+// "Predeterminado - Micrófono (Realtek) (0bda:4014)" → "Micrófono (Realtek)"
+const devLabel = (l) => (l || 'Micrófono').replace(/\s*\([0-9a-f]{4}:[0-9a-f]{4}\)\s*$/i, '');
 
 /* ============================================================
    Comprobación del micrófono (silencio + tono de prueba), por micrófono
@@ -321,8 +330,12 @@ const Cal = {
     else if (this.phase === 'run') acts = `<button type="button" class="btn btn-soft btn-lg w-full" disabled>Comprobando…</button>`;
     else acts = `<div class="flex gap-2">${this.allOk ? '' : `<button type="button" class="btn btn-soft btn-lg flex-1" data-cal="start">${icon('restart-line')}Repetir</button>`}<button type="button" class="btn btn-primary btn-lg flex-1" data-cal="done">${this.allOk ? icon('check-line') + 'Listo' : 'Seguir así'}</button></div>`;
     h.innerHTML = `<div class="cal">
-      <h3>${this.phase === 'done' ? (this.allOk ? 'Micrófono ajustado' : 'Micrófono comprobado') : 'Ajustemos tu micrófono'}</h3>
-      ${this.phase === 'done' ? '' : `<p class="muted">Así distingo el ruido de tu sala de lo que tocas. Son unos 8 segundos y se guarda para este micrófono${Mic.label ? ` (${esc(Mic.label)})` : ''}.</p>`}
+      <h3>${this.phase === 'done' ? (this.allOk ? 'Micrófono calibrado' : 'Micrófono comprobado') : 'Ajustemos tu micrófono'}</h3>
+      ${this.phase === 'intro' && MicCard.devs.length > 1 ? `<div class="cal-devs" role="group" aria-label="Micrófono">${MicCard.devs.map((d, i) => {
+        const on = d.deviceId === Mic.deviceId || (!MicCard.devs.some((x) => x.deviceId === Mic.deviceId) && micKey(d.label, d.deviceId) === Mic.key && i === MicCard.devs.findIndex((x) => micKey(x.label, x.deviceId) === Mic.key));
+        const lab = devLabel(d.label || 'Micrófono ' + (i + 1)), tag = /^(predeterminado|default|por defecto|comunicaciones|communications)\s*[-–:]\s*/i.exec(lab);
+        return `<button type="button" class="dev" data-cal-dev="${esc(d.deviceId)}" aria-pressed="${on}">${icon('mic-line')}<span>${esc(tag ? lab.slice(tag[0].length) : lab)}${tag ? `<small>${/^(com)/i.test(tag[1]) ? 'Comunicaciones' : 'Predeterminado del sistema'}</small>` : ''}</span>${on ? icon('check-line', 'ck') : ''}</button>`;
+      }).join('')}</div>` : ''}
       ${this.phase === 'intro' ? `<div class="vol-note">${icon('volume-up-line')}Sube el volumen y quítate los auriculares.</div>` : ''}
       <div class="cal-list">${items.map(([t, d], i) => `<div class="cal-item" data-s="${this.steps[i].s}"><div class="st">${stIcon(this.steps[i].s, i)}</div><div><b>${t}</b><p>${d}</p>${this.steps[i].res ? `<div class="res">${this.steps[i].res}</div>` : ''}</div></div>`).join('')}</div>
       ${this.phase === 'run' ? '<div class="bar"><div data-cal-level></div></div>' : ''}
@@ -570,7 +583,7 @@ const Tuner = {
       AudioEngine.pluck(midiToFreq(stringMidi(s)), 0, 0.7);
     });
     $('#tnMode').addEventListener('click', () => { if (this.mode === 'manual') this.setMode('auto'); else toast('Para elegir una cuerda, tócala en el dibujo.', 3500, 'information-line'); });
-    $('#tnReset').addEventListener('click', () => { this.done.clear(); this.hold = 0; this.renderStrings(); });
+    $('#tnHint').addEventListener('click', (e) => { if (e.target.closest('[data-tn-reset]')) { this.done.clear(); this.hold = 0; this.renderStrings(); } });
     this.renderStrings();
   },
   setMode(m) {
@@ -588,9 +601,6 @@ const Tuner = {
         <span class="wire"><svg viewBox="0 0 400 26" preserveAspectRatio="none"><path d="M0 13 L400 13" fill="none" stroke-width="${STRING_TH[s]}" stroke-linecap="round"/></svg></span>
         <span class="info">${this.done.has(s) ? 'Afinada' : `${s}ª`}</span>
       </button>`).join('');
-    const n = this.done.size;
-    $('#tnProg').innerHTML = `<span class="pips">${[1, 2, 3, 4, 5, 6].map((s) => `<i class="${this.done.has(s) ? 'on' : ''}"></i>`).join('')}</span><b>${n === 6 ? '¡Afinada!' : `${n} de 6`}</b><span class="muted">${n === 6 ? '' : 'afinadas'}</span>`;
-    $('#tnReset').hidden = n === 0;
   },
   set(id, html) { if (this.last[id] !== html) { this.last[id] = html; $(id).innerHTML = html; } },
   frame(f, dt, now) {
@@ -651,7 +661,7 @@ const Tuner = {
     } else {
       this.set('#tnFreq', '');
       this.set('#tnSub', this.mode === 'manual' ? `Pulsa la ${this.sel}ª cuerda al aire` : 'Pulsa una cuerda al aire');
-      this.set('#tnHint', this.done.size === 6 ? `<span style="color:var(--ok)">${icon('checkbox-circle-fill')}</span><span style="color:var(--ok)">¡Guitarra afinada!</span>` : '');
+      this.set('#tnHint', this.done.size === 6 ? `<span style="color:var(--ok)">${icon('checkbox-circle-fill')}</span><span style="color:var(--ok)">¡Guitarra afinada!</span><button type="button" class="link-btn" data-tn-reset>Empezar de nuevo</button>` : '');
     }
   },
 };
@@ -1275,7 +1285,7 @@ const Settings = {
       <h1 class="set-title">Ajustes</h1>
       <section class="set-card">
         <div class="set-head"><h2>${icon('mic-line')}Micrófono</h2>
-          <p>Traste escucha tu guitarra con el micrófono. El <b>ajuste</b> tarda unos 8 segundos: mide el ruido de tu sala (para no confundirlo con notas) y hace sonar tres notas por el altavoz para comprobar que el micro las oye afinadas. Se guarda para cada micrófono; repítelo si cambias de sitio o notas que falla más de la cuenta.</p></div>
+          <p>Traste escucha tu guitarra con el micrófono. <b>Calibrarlo</b> tarda unos 8 segundos: mide el ruido de tu sala (para no confundirlo con notas) y hace sonar tres notas por el altavoz para comprobar que el micro las oye afinadas. Se guarda para cada micrófono; repítelo si cambias de sitio o notas que falla más de la cuenta.</p></div>
         <div class="mic-card" data-mic-card></div>
         <div class="cal-host" hidden></div>
       </section>

@@ -628,13 +628,11 @@ const Learn = {
     const nPunteo = EXERCISES.filter((e) => e.track === 'punteo' && bestStars(e) > 0).length, totPunteo = EXERCISES.filter((e) => e.track === 'punteo').length;
     const allDone = nDone === steps.length;
     return `<div class="screen"><div class="scr-body scroll"><div class="lh">
-      <div class="lh-head">
-        <h1>Aprender</h1>
-        <div class="seg lh-lvl" role="group" aria-label="Tu nivel">${[1, 2, 3].map((l) => `<button type="button" data-level="${l}" aria-pressed="${l === lvl}">${LVL[l].n}</button>`).join('')}</div>
-      </div>
-      <p class="lh-desc">${LVL[lvl].d}</p>
+      <h1 class="lh-title">Aprender</h1>
       <div class="lh-grid">
-        <div class="tracks">
+        <section class="card">
+          <div class="card-head"><div><h2>${icon('compass-3-line')}¿Qué quieres aprender?</h2><p>Elige y practica a tu aire</p></div></div>
+          <div class="tracks">
           <a class="track" href="#aprender/acordes">
             <span class="tr-ico">${icon('hand')}</span>
             <span class="tr-txt"><b>Acordes</b><span>Formas, cambios entre acordes y rasgueo</span><span class="tr-meta"><span class="tr-bar"><i style="width:${(nLearned / CHORD_ORDER.length) * 100}%"></i></span>${nLearned} de ${CHORD_ORDER.length} aprendidos</span></span>
@@ -645,12 +643,17 @@ const Learn = {
             <span class="tr-txt"><b>Punteo</b><span>Dedos ágiles, notas del mástil y escalas</span><span class="tr-meta"><span class="tr-bar"><i style="width:${(nPunteo / totPunteo) * 100}%"></i></span>${nPunteo} de ${totPunteo} ejercicios superados</span></span>
             ${icon('arrow-right-s-line', 'chev')}
           </a>
-          ${lvl === 1 && nLearned === 0 ? `<a class="guide-link" href="#aprender/guia">${icon('book-open-line')}<span><b>¿Primera vez con una guitarra?</b> Cómo sujetarla, pisar y leer un diagrama</span>${icon('arrow-right-s-line', 'chev')}</a>` : ''}
-        </div>
-        <section class="today">
-          <div class="today-head">
+          </div>
+          ${nLearned === 0 ? `<a class="guide-link" href="#aprender/guia">${icon('book-open-line')}<span><b>¿Primera vez con una guitarra?</b> Cómo sujetarla, pisar y leer un diagrama</span>${icon('arrow-right-s-line', 'chev')}</a>` : ''}
+        </section>
+        <section class="card today">
+          <div class="card-head">
             <div><h2>${icon('calendar-check-line')}Práctica de hoy</h2><p>Unos ${mins} minutos · ${allDone ? '¡hecha!' : `${nDone} de ${steps.length} hechos`}</p></div>
             <button type="button" class="btn ${allDone ? 'btn-soft' : 'btn-primary'}" data-today-go>${allDone ? icon('restart-line') + 'Repetir' : icon('play-fill') + (nDone ? 'Seguir' : 'Empezar')}</button>
+          </div>
+          <div class="lh-lvl">
+            <div class="seg" role="group" aria-label="Tu nivel">${[1, 2, 3].map((l) => `<button type="button" data-level="${l}" aria-pressed="${l === lvl}">${LVL[l].n}</button>`).join('')}</div>
+            <p>${LVL[lvl].d}</p>
           </div>
           <ol class="today-list">${steps.map((s, i) => { const ok = done.includes(s.key); return `<li><button type="button" class="tstep ${ok ? 'done' : ''}" data-today="${esc(s.key)}">
               <span class="ts-n">${ok ? icon('check-line') : i + 1}</span>
