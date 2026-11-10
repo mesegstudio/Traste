@@ -197,6 +197,7 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 .set-card .cal-host { padding: 18px 4px 4px; }
 .cal { width: min(420px, 100%); min-width: 0; display: flex; flex-direction: column; gap: 14px; }
 .cal h3 { font-size: 24px; }
+.cal-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .cal-list { display: flex; flex-direction: column; gap: 10px; }
 .cal-item { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; font-size: 14px; }
 .cal-item .st { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); color: var(--muted); font-weight: 700; font-size: 12.5px; }
@@ -1578,7 +1579,8 @@ const devLabel = (l) => (l || 'Micrófono').replace(/\s*\([0-9a-f]{4}:[0-9a-f]{4
    ============================================================ */
 const Cal = {
   running: false, phase: 'intro', forced: false, steps: [{ s: '', res: '' }, { s: '', res: '' }], allOk: false, listener: null,
-  needed() { return Mic.on && (this.forced || this.running || this.phase === 'done' || !state.cals[Mic.key]); },
+  skipped: new Set(), aborted: false, abortRes: null, // micros que se han dejado sin calibrar (hasta recargar)
+  needed() { return Mic.on && (this.forced || this.running || this.phase === 'done' || (!state.cals[Mic.key] && !this.skipped.has(Mic.key))); },
   // se muestra en la vista actual: dentro del reproductor si está abierto en ella, si no en su hueco propio
   sync() {
     const sec = $(`section[data-view="${state.view}"]`), pl = $('#player');
@@ -1596,7 +1598,8 @@ const Cal = {
     else if (this.phase === 'run') acts = `<button type="button" class="btn btn-soft btn-lg w-full" disabled>Comprobando…</button>`;
     else acts = `<div class="flex gap-2">${this.allOk ? '' : `<button type="button" class="btn btn-soft btn-lg flex-1" data-cal="start">${icon('restart-line')}Repetir</button>`}<button type="button" class="btn btn-primary btn-lg flex-1" data-cal="done">${this.allOk ? icon('check-line') + 'Listo' : 'Seguir así'}</button></div>`;
     h.innerHTML = `<div class="cal">
-      <h3>${this.phase === 'done' ? (this.allOk ? 'Micrófono calibrado' : 'Micrófono comprobado') : 'Ajustemos tu micrófono'}</h3>
+      <div class="cal-top"><h3>${this.phase === 'done' ? (this.allOk ? 'Micrófono calibrado' : 'Micrófono comprobado') : 'Ajustemos tu micrófono'}</h3>
+        <button type="button" class="btn btn-soft btn-icon" data-cal="close" aria-label="Cerrar" title="Cerrar">${icon('close-line')}</button></div>
       ${this.phase === 'intro' && MicCard.devs.length > 1 ? `<div class="cal-devs" role="group" aria-label="Micrófono">${MicCard.devs.map((d, i) => {
         const on = d.deviceId === Mic.deviceId || (!MicCard.devs.some((x) => x.deviceId === Mic.deviceId) && micKey(d.label, d.deviceId) === Mic.key && i === MicCard.devs.findIndex((x) => micKey(x.label, x.deviceId) === Mic.key));
         const lab = devLabel(d.label || 'Micrófono ' + (i + 1)), tag = /^(predeterminado|default|por defecto|comunicaciones|communications)\s*[-–:]\s*/i.exec(lab);
@@ -1609,7 +1612,7 @@ const Cal = {
     </div>`;
   },
   setStep(i, s, res) { this.steps[i] = { s, res: res ?? this.steps[i].res }; this.sync(); },
-  collect(ms, fn) { return new Promise((res) => { const t0 = performance.now(); this.listener = (f, now) => { fn(f, now); if (now - t0 >= ms) { this.listener = null; res(); } }; }); },
+  collect(ms, fn) { return new Promise((res) => { const t0 = performance.now(); this.abortRes = res; this.listener = (f, now) => { fn(f, now); if (now - t0 >= ms) { this.listener = null; res(); } }; }); },
   async testTone(freq) {
     const t0 = performance.now(); let first = null; const errs = [];
     Mic.ignoreUntil = 0;
@@ -1624,17 +1627,18 @@ const Cal = {
   },
   async run() {
     if (this.running || !(await ensureMic())) return;
-    this.running = true; this.phase = 'run'; this.steps = [{ s: 'run', res: '' }, { s: '', res: '' }]; this.sync();
+    this.running = true; this.aborted = false; this.phase = 'run'; this.steps = [{ s: 'run', res: '' }, { s: '', res: '' }]; this.sync();
     const key = Mic.key;
     try {
       const lv = []; await this.collect(2000, (f) => lv.push(f.level));
+      if (this.aborted) return;
       lv.sort((a, b) => a - b);
       // percentil 30: un golpe o una cuerda que suene durante la medida no dispara el umbral
       const noise = lv[Math.floor(lv.length * 0.3)] || 0.001, noisy = noise > 0.02;
       this.setStep(0, noisy ? 'warn' : 'ok', noisy ? 'Hay bastante ruido. Funcionará, pero mejor en un sitio tranquilo.' : 'Sala tranquila.');
       this.setStep(1, 'run');
       const rs = [];
-      for (const fq of [196, 330, 440]) { rs.push(await this.testTone(fq)); await new Promise((r) => setTimeout(r, 200)); }
+      for (const fq of [196, 330, 440]) { rs.push(await this.testTone(fq)); if (this.aborted) return; await new Promise((r) => setTimeout(r, 200)); }
       const good = rs.filter((r) => r.ok);
       const lats = good.map((r) => r.latency).sort((a, b) => a - b);
       const latency = lats.length ? lats[lats.length >> 1] : 0.12;
@@ -1654,6 +1658,12 @@ const Cal = {
   },
   finish() { this.phase = 'intro'; this.forced = false; this.steps = [{ s: '', res: '' }, { s: '', res: '' }]; this.sync(); MicCard.render(); },
   recheck() { this.forced = true; this.phase = 'intro'; this.sync(); },
+  // cerrar (X o Escape): se puede usar la app sin calibrar; el botón del afinador sigue proponiéndolo
+  close() {
+    if (this.running) { this.aborted = true; this.listener = null; this.abortRes?.(); }
+    if (Mic.on && !state.cals[Mic.key]) this.skipped.add(Mic.key);
+    this.finish();
+  },
   frame(f, now) {
     if (!f) return;
     if (this.running) { const w = clamp((20 * Math.log10(f.level + 1e-9) + 70) / 60, 0, 1) * 100 + '%'; $$('[data-cal-level]').forEach((el) => { el.style.width = w; }); }
@@ -1662,8 +1672,9 @@ const Cal = {
 };
 document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-cal]'); if (!b) return;
-  if (b.dataset.cal === 'start') Cal.run(); else Cal.finish();
+  if (b.dataset.cal === 'start') Cal.run(); else if (b.dataset.cal === 'close') Cal.close(); else Cal.finish();
 });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && Cal.needed() && $$('.cal-host, .cal-card').some((h) => !h.hidden)) Cal.close(); });
 
 /* ============================================================
    Dibujos SVG: diagrama de acorde, mano, mástil
