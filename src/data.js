@@ -28,6 +28,7 @@ const CHORDS = {
   F_easy:{ sym: 'F', variant: 'versión fácil', frets: [-1, -1, 3, 2, 1, 1], fingers: [0, 0, 3, 2, 1, 1], barre: { fret: 1, from: 2, to: 1, finger: 1 }, tip: 'Mini-cejilla: el índice pisa las cuerdas 1 y 2 a la vez.' },
   F:     { frets: [1, 3, 3, 2, 1, 1], fingers: [1, 3, 4, 2, 1, 1], barre: { fret: 1, from: 6, to: 1, finger: 1 }, tip: 'Cejilla completa: el índice pisa las seis cuerdas. Gira un poco el dedo hacia el lado del hueso.' },
   Bm:    { frets: [-1, 2, 4, 4, 3, 2], fingers: [0, 1, 3, 4, 2, 1], barre: { fret: 2, from: 5, to: 1, finger: 1 }, tip: 'Cejilla en el traste 2 desde la 5ª cuerda. Es la forma de La menor desplazada.' },
+  'F#m': { frets: [2, 4, 4, 2, 2, 2], fingers: [1, 3, 4, 1, 1, 1], barre: { fret: 2, from: 6, to: 1, finger: 1 }, tip: 'La forma de Mim con cejilla en el traste 2: el índice hace de cejuela.' },
 };
 
 // Orden de aprendizaje: de 2 dedos a 3, formas que se parecen seguidas (Mim→Lam→Mi, La→Re),
@@ -37,26 +38,26 @@ const CHORD_GROUPS = [
   { name: 'Imprescindibles', ids: ['G', 'C', 'Dm'] },
   { name: 'Séptimas', ids: ['E7', 'A7', 'D7', 'G7', 'C7', 'B7'] },
   { name: 'Con color', ids: ['Asus2', 'Dsus2', 'Dsus4', 'Em7', 'Am7', 'Cadd9', 'Fmaj7'] },
-  { name: 'Cejilla', ids: ['F_easy', 'F', 'Bm'] },
+  { name: 'Cejilla', ids: ['F_easy', 'F', 'Bm', 'F#m'] },
 ];
 
 // Canciones tradicionales o de dominio público. Melodía en notas y duración en tiempos.
 const SONGS = [
   {
-    id: 'martinillo', title: 'Martinillo', origin: 'Tradicional francesa', bpm: 96, bpb: 4, stars: 1,
+    id: 'martinillo', cat: 'infantil', title: 'Martinillo', origin: 'Tradicional francesa', bpm: 96, bpb: 4, stars: 1,
     melody: `G3 A3 B3 G3 | G3 A3 B3 G3 | B3 C4 D4:2 | B3 C4 D4:2 |
              D4:0.5 E4:0.5 D4:0.5 C4:0.5 B3 G3 | D4:0.5 E4:0.5 D4:0.5 C4:0.5 B3 G3 | G3 D3 G3:2 | G3 D3 G3:2`,
     chords: `G | G | G | G | G | G | G | G`,
   },
   {
-    id: 'estrellita', title: 'Estrellita, ¿dónde estás?', origin: 'Tradicional', bpm: 92, bpb: 4, stars: 1,
+    id: 'estrellita', cat: 'infantil', title: 'Estrellita, ¿dónde estás?', origin: 'Tradicional', bpm: 92, bpb: 4, stars: 1,
     melody: `G3 G3 D4 D4 | E4 E4 D4:2 | C4 C4 B3 B3 | A3 A3 G3:2 |
              D4 D4 C4 C4 | B3 B3 A3:2 | D4 D4 C4 C4 | B3 B3 A3:2 |
              G3 G3 D4 D4 | E4 E4 D4:2 | C4 C4 B3 B3 | A3 A3 G3:2`,
     chords: `G | C G | C G | D G | G C | G D | G C | G D | G | C G | C G | D G`,
   },
   {
-    id: 'himno', title: 'Himno de la alegría', origin: 'L. v. Beethoven, 1824', bpm: 100, bpb: 4, stars: 2,
+    id: 'himno', cat: 'clasica', title: 'Himno de la alegría', origin: 'L. v. Beethoven, 1824', bpm: 100, bpb: 4, stars: 2,
     melody: `E4 E4 F4 G4 | G4 F4 E4 D4 | C4 C4 D4 E4 | E4:1.5 D4:0.5 D4:2 |
              E4 E4 F4 G4 | G4 F4 E4 D4 | C4 C4 D4 E4 | D4:1.5 C4:0.5 C4:2 |
              D4 D4 E4 C4 | D4 E4:0.5 F4:0.5 E4 C4 | D4 E4:0.5 F4:0.5 E4 D4 | C4 D4 G3:2 |
@@ -64,13 +65,13 @@ const SONGS = [
     chords: `C | G | C | G | C | G | C | G C | G | C | G | C G | C | G | C | G C`,
   },
   {
-    id: 'cumple', title: 'Cumpleaños feliz', origin: 'Hermanas Hill, 1893', bpm: 90, bpb: 3, pickup: 1, stars: 2,
+    id: 'cumple', cat: 'infantil', title: 'Cumpleaños feliz', origin: 'Hermanas Hill, 1893', bpm: 90, bpb: 3, pickup: 1, stars: 2,
     melody: `G3:0.75 G3:0.25 | A3 G3 C4 | B3:2 G3:0.75 G3:0.25 | A3 G3 D4 | C4:2 G3:0.75 G3:0.25 |
              G4 E4 C4 | B3 A3 F4:0.75 F4:0.25 | E4 C4 D4 | C4:3`,
     chords: `C | G7 | G7 | C | C | F_easy | C G7 | C`,
   },
   {
-    id: 'jingle', title: 'Jingle Bells', origin: 'J. Pierpont, 1857', bpm: 112, bpb: 4, stars: 2,
+    id: 'jingle', cat: 'navidad', title: 'Jingle Bells', origin: 'J. Pierpont, 1857', bpm: 112, bpb: 4, stars: 2,
     melody: `B3 B3 B3:2 | B3 B3 B3:2 | B3 D4 G3:1.5 A3:0.5 | B3:4 |
              C4 C4 C4:1.5 C4:0.5 | C4 B3 B3 B3:0.5 B3:0.5 | B3 A3 A3 B3 | A3:2 D4:2 |
              B3 B3 B3:2 | B3 B3 B3:2 | B3 D4 G3:1.5 A3:0.5 | B3:4 |
@@ -78,11 +79,89 @@ const SONGS = [
     chords: `G | G | G | G | C | G | A7 | D7 | G | G | G | G | C | G | D7 | G`,
   },
   {
-    id: 'greensleeves', title: 'Greensleeves', origin: 'Tradicional inglesa, s. XVI', bpm: 100, bpb: 3, pickup: 1, stars: 3,
+    id: 'greensleeves', cat: 'tradicional', title: 'Greensleeves', origin: 'Tradicional inglesa, s. XVI', bpm: 100, bpb: 3, pickup: 1, stars: 3,
     melody: `A3 | C4:2 D4 | E4:1.5 F4:0.5 E4 | D4:2 B3 | G3:1.5 A3:0.5 B3 | C4:2 A3 | A3:1.5 G#3:0.5 A3 | B3:2 G#3 | E3:2 A3 |
              C4:2 D4 | E4:1.5 F4:0.5 E4 | D4:2 B3 | G3:1.5 A3:0.5 B3 | C4:1.5 B3:0.5 A3 | G#3:1.5 F#3:0.5 G#3 | A3:3 | R:3`,
     chords: `Am | C | G | Em | Am | E | E | Am | Am | C | G | Em | Am | E | Am | Am`,
   },
+  {
+    id: 'mary', cat: 'infantil', title: 'María tenía un corderito', origin: 'Tradicional (EE. UU., 1830)', bpm: 96, bpb: 4, stars: 1,
+    melody: `E4 D4 C4 D4 | E4 E4 E4:2 | D4 D4 D4:2 | E4 G4 G4:2 |
+             E4 D4 C4 D4 | E4 E4 E4 E4 | D4 D4 E4 D4 | C4:4`,
+    chords: `C | C | G | C | C | C | G | C`,
+  },
+  {
+    id: 'macdonald', cat: 'infantil', title: 'En la granja del viejo MacDonald', origin: 'Tradicional', bpm: 104, bpb: 4, stars: 1,
+    melody: `G3 G3 G3 D3 | E3 E3 D3:2 | B3 B3 A3 A3 | G3:3 D3 |
+             G3 G3 G3 D3 | E3 E3 D3:2 | B3 B3 A3 A3 | G3:4`,
+    chords: `G | C G | G D | G | G | C G | G D | G`,
+  },
+  {
+    id: 'london', cat: 'infantil', title: 'El puente de Londres', origin: 'Tradicional inglesa', bpm: 100, bpb: 4, stars: 1,
+    melody: `G4:1.5 A4:0.5 G4 F4 | E4 F4 G4:2 | D4 E4 F4:2 | E4 F4 G4:2 |
+             G4:1.5 A4:0.5 G4 F4 | E4 F4 G4:2 | D4:2 G4:2 | E4 C4:3`,
+    chords: `C | C | G | C | C | C | G | C`,
+  },
+  {
+    id: 'santos', cat: 'tradicional', title: 'When the Saints Go Marching In', origin: 'Espiritual tradicional', bpm: 120, bpb: 4, stars: 2,
+    melody: `R C4 E4 F4 | G4:4 | R C4 E4 F4 | G4:4 | R C4 E4 F4 | G4:2 E4:2 | C4:2 E4:2 | D4:4 |
+             R E4 E4 D4 | C4:3 C4 | E4:2 G4:2 | G4 F4:3 | R E4 F4 G4 | E4:2 C4:2 | D4:4 | C4:4`,
+    chords: `C | C | C | C | C | C | C | G | G | C | C | F_easy | C | C | G | C`,
+  },
+  {
+    id: 'auld', cat: 'tradicional', title: 'Auld Lang Syne', origin: 'Tradicional escocesa, 1788', bpm: 84, bpb: 4, pickup: 1, stars: 2,
+    melody: `D3 | G3:1.5 G3:0.5 G3 B3 | A3:1.5 G3:0.5 A3 B3 | G3:1.5 G3:0.5 B3 D4 | E4:3 E4 |
+             D4:1.5 B3:0.5 B3 G3 | A3:1.5 G3:0.5 A3 B3 | G3:1.5 E3:0.5 E3 D3 | G3:4`,
+    chords: `G | D | G | C | G | D | C D | G`,
+  },
+  {
+    id: 'korobeiniki', cat: 'tradicional', title: 'Korobéiniki', origin: 'Tradicional rusa · la música de Tetris', bpm: 120, bpb: 4, stars: 2,
+    melody: `E4 B3:0.5 C4:0.5 D4 C4:0.5 B3:0.5 | A3 A3:0.5 C4:0.5 E4 D4:0.5 C4:0.5 | B3:1.5 C4:0.5 D4 E4 | C4 A3 A3:2 |
+             R:0.5 D4 F4:0.5 A4 G4:0.5 F4:0.5 | E4:1.5 C4:0.5 E4 D4:0.5 C4:0.5 | B3 B3:0.5 C4:0.5 D4 E4 | C4 A3 A3:2`,
+    chords: `Am | Am | E | Am | Dm | Am | E | Am`,
+  },
+  {
+    id: 'minueto', cat: 'clasica', title: 'Minueto en Sol', origin: 'C. Petzold, c. 1725', bpm: 112, bpb: 3, stars: 3,
+    melody: `D4 G3:0.5 A3:0.5 B3:0.5 C4:0.5 | D4 G3 G3 | E4 C4:0.5 D4:0.5 E4:0.5 F#4:0.5 | G4 G3 G3 |
+             C4 D4:0.5 C4:0.5 B3:0.5 A3:0.5 | B3 C4:0.5 B3:0.5 A3:0.5 G3:0.5 | F#3 G3:0.5 A3:0.5 B3:0.5 G3:0.5 | A3:3 |
+             D4 G3:0.5 A3:0.5 B3:0.5 C4:0.5 | D4 G3 G3 | E4 C4:0.5 D4:0.5 E4:0.5 F#4:0.5 | G4 G3 G3 |
+             C4 D4:0.5 C4:0.5 B3:0.5 A3:0.5 | B3 C4:0.5 B3:0.5 A3:0.5 G3:0.5 | A3 B3:0.5 A3:0.5 G3:0.5 F#3:0.5 | G3:3`,
+    chords: `G | G | C | G | C | G | D | D | G | G | C | G | C | G | D | G`,
+  },
+  {
+    id: 'elisa', cat: 'clasica', title: 'Para Elisa', origin: 'L. v. Beethoven, 1810', bpm: 132, bpb: 3, pickup: 1, stars: 3, strum: 'bar',
+    melody: `E4:0.5 D#4:0.5 | E4:0.5 D#4:0.5 E4:0.5 B3:0.5 D4:0.5 C4:0.5 | A3 R:0.5 C3:0.5 E3:0.5 A3:0.5 | B3 R:0.5 E3:0.5 G#3:0.5 B3:0.5 | C4 R:0.5 E3:0.5 E4:0.5 D#4:0.5 |
+             E4:0.5 D#4:0.5 E4:0.5 B3:0.5 D4:0.5 C4:0.5 | A3 R:0.5 C3:0.5 E3:0.5 A3:0.5 | B3 R:0.5 E3:0.5 C4:0.5 B3:0.5 | A3:3`,
+    chords: `E | Am | E | Am | E | Am | E | Am`,
+  },
+  {
+    id: 'canon', cat: 'clasica', title: 'Canon en Re', origin: 'J. Pachelbel, c. 1690', bpm: 72, bpb: 4, stars: 2,
+    melody: `F#4:2 E4:2 | D4:2 C#4:2 | B3:2 A3:2 | B3:2 C#4:2 |
+             D4:2 C#4:2 | B3:2 A3:2 | G3:2 F#3:2 | G3:2 E3:2`,
+    chords: `D A | Bm F#m | G D | G A | D A | Bm F#m | G D | G A`,
+  },
+  {
+    id: 'nochedepaz', cat: 'navidad', title: 'Noche de paz', origin: 'F. X. Gruber, 1818', bpm: 96, bpb: 3, stars: 2,
+    melody: `G3:1.5 A3:0.5 G3 | E3:3 | G3:1.5 A3:0.5 G3 | E3:3 | D4:2 D4 | B3:3 | C4:2 C4 | G3:3 |
+             A3:2 A3 | C4:1.5 B3:0.5 A3 | G3:1.5 A3:0.5 G3 | E3:3 | A3:2 A3 | C4:1.5 B3:0.5 A3 | G3:1.5 A3:0.5 G3 | E3:3 |
+             D4:2 D4 | F4:1.5 D4:0.5 B3 | C4:3 | E4:3 | C4:1.5 G3:0.5 E3 | G3:1.5 F3:0.5 D3 | C3:3`,
+    chords: `C | C | C | C | G | G | C | C | F_easy | F_easy | C | C | F_easy | F_easy | C | C | G | G | C | C | C | G | C`,
+  },
+  {
+    id: 'navidad', cat: 'navidad', title: 'Os deseamos feliz Navidad', origin: 'Villancico tradicional inglés', bpm: 120, bpb: 3, pickup: 1, stars: 2,
+    melody: `D3 | G3 G3:0.5 A3:0.5 G3:0.5 F#3:0.5 | E3 E3 E3 | A3 A3:0.5 B3:0.5 A3:0.5 G3:0.5 | F#3 D3 D3 |
+             B3 B3:0.5 C4:0.5 B3:0.5 A3:0.5 | G3 E3 D3:0.5 D3:0.5 | E3 A3 F#3 | G3:3`,
+    chords: `G | C | A7 | D | B7 | Em | C D | G`,
+  },
 ];
 
-if (typeof module !== 'undefined') module.exports = { CHORDS, CHORD_GROUPS, SONGS };
+// Categorías del catálogo (en el orden en que se muestran)
+const SONG_CATS = [
+  { id: 'infantil', name: 'Infantiles' },
+  { id: 'tradicional', name: 'Tradicionales' },
+  { id: 'clasica', name: 'Clásica' },
+  { id: 'navidad', name: 'Navidad' },
+];
+
+
+if (typeof module !== 'undefined') module.exports = { CHORDS, CHORD_GROUPS, SONGS, SONG_CATS };

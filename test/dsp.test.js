@@ -78,19 +78,18 @@ for (const s of SONGS) {
   console.log(`${s.id}: fácil (melodía) ${b.levels.easy.length} · difícil (acordes) ${b.levels.hard.length} eventos`);
 }
 
-// 4) Tablatura ASCII
-const tab = `
-e|-----0-----0---|-------------3-|
-B|---1---1-----1-|-----0-----0---|
-G|-2-------2-----|---0---0-------|
-D|---------------|-0-------------|
-A|-3-------------|---------------|
-E|---------------|-------------3-|`;
-const ev = D.parseAsciiTab(tab, CHORDS);
-console.log('Tab importada:', ev.length, 'eventos; primeros:', ev.slice(0,3).map(e => e.notes.map(n=>`${n.string}/${n.fret}(d${n.finger})`).join('+') + '@' + e.t).join('  '));
-check(ev.length === 13, 'número de eventos de la tab: ' + ev.length);
-const tab2 = `e|--0--|\nB|--1--|\nG|--0--|\nD|--2--|\nA|--3--|\nE|-----|`;
-const ev2 = D.parseAsciiTab(tab2, CHORDS); check(ev2[0].chord === 'C', 'acorde detectado en tab: ' + ev2[0].chord);
+// 4) Rasgueo tolerante: acepta el acorde rasgueado y rechaza una sola cuerda
+let strumOk = 0, singleOk = 0, nStr = 0;
+for (const id of ids) {
+  const notes = D.chordNotes(CHORDS[id]); nStr++;
+  const hyps = D.chordHypotheses({ notes }, Object.keys(CHORDS).filter(x => x !== id).map(x => [x, D.chordNotes(CHORDS[x])])), few = D.fewHypotheses(notes);
+  const N = 16384, sem = (sig) => D.semitoneEnergies(fftMag(sig.subarray(Math.floor(0.05 * sr)), N), sr, N, D.V_LO, D.V_HI);
+  if (D.strumOk(sem(strum(notes)), hyps, few, notes)) strumOk++;
+  const one = notes[Math.floor(Math.random() * notes.length)];
+  if (D.strumOk(sem(strum([one])), hyps, few, notes)) singleOk++;
+}
+console.log(`Rasgueo tolerante: acordes aceptados ${strumOk}/${nStr} · una sola cuerda aceptada ${singleOk}/${nStr}`);
+check(strumOk >= nStr - 2 && singleOk <= 1, 'rasgueo tolerante');
 
 console.log(fails ? `\n${fails} fallos` : '\nTodo OK');
 process.exit(fails ? 1 : 0);
