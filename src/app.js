@@ -739,7 +739,7 @@ const Songs = {
     $('#songGrid').innerHTML = list.length ? list.map((s) => {
       const b = (l) => state.best[`${s.id}:${l}`];
       return `<div class="song-row" role="button" tabindex="0" data-song="${s.id}">
-        <div class="min-w-0"><h3>${esc(s.title)}${s.user ? '<span class="tag">Tuya</span>' : ''}</h3><div class="meta">${esc(s.origin)} · ${songChords(s).map((c) => chordLabel(c)).join(' ')}</div></div>
+        <div class="min-w-0"><h3>${esc(s.title)}${s.user ? '<span class="tag">Tuya</span>' : ''}</h3><div class="meta">${esc(s.origin)} · ${songChords(s).length ? songChords(s).map((c) => chordLabel(c)).join(' ') : 'tablatura'}</div></div>
         <span class="dots" title="Dificultad: ${['', 'fácil', 'media', 'difícil'][s.stars]}">${[1, 2, 3].map((k) => `<i class="${k <= s.stars ? 'on' : ''}"></i>`).join('')}</span>
         <div class="best"><span>Fácil ${miniStars(b('easy')?.stars || 0)}</span><span>Difícil ${miniStars(b('hard')?.stars || 0)}</span></div>
       </div>`;
@@ -1214,6 +1214,7 @@ const Player = {
   drawNote(c, e, x, ly, ppb, now) {
     const n = e.notes[0], y = ly(n.string), len = e.dur * ppb - 22, a = c.globalAlpha;
     if (len > 4) { c.fillStyle = fingerHex(n.finger); c.globalAlpha = a * 0.25; c.beginPath(); c.roundRect(x, y - 4, len, 8, 4); c.fill(); c.globalAlpha = a; }
+    for (const m of e.also || []) this.drawDot(c, x, ly(m.string), m, this.r * 0.8); // otras cuerdas de la misma pulsación (tablaturas)
     this.drawDot(c, x, y, n, this.r);
     this.drawHit(c, e, x, y, this.r, now);
   },

@@ -26,14 +26,16 @@ const MySongs = {
     const parsed = parseCifrado(e.text);
     return { parsed, ...buildCifrado(parsed, { barsPerLine: +e.bars || 2, getChord: (id) => this.chord(id) }) };
   },
-  difficulty(chords) {
+  difficulty(chords, nTab = 0) {
+    if (!chords.length) return nTab > 40 ? 3 : 2; // solo tablatura
     if (chords.some((id) => CHORDS[id]?.barre && id !== 'F_easy')) return 3;
     return chords.every((id) => BASIC_CHORDS.has(id)) ? 1 : 2;
   },
   register(e) {
     const r = this.compile(e);
     const song = { id: e.id, user: true, title: e.title || 'Sin título', origin: e.artist || 'Añadida por ti', bpm: +e.bpm || 90, bpb: 4, cat: 'mias',
-      stars: this.difficulty(r.chordList), chordList: r.chordList, built: r.built, levelHints: { easy: 'un golpe por acorde', hard: 'rasgueo completo' } };
+      stars: this.difficulty(r.chordList, r.nTab), chordList: r.chordList, built: r.built,
+      levelHints: r.chordList.length ? { easy: 'un golpe por acorde', hard: 'rasgueo completo' } : { easy: 'nota a nota', hard: 'nota a nota' } };
     const i = SONGS.findIndex((s) => s.id === e.id);
     if (i >= 0) SONGS[i] = song; else SONGS.unshift(song);
     return song;
@@ -89,9 +91,9 @@ const MySongs = {
       <ol><li>Abre la canción en La Cuerda, Ultimate Guitar o Cifra Club.</li><li>Selecciona desde el primer acorde hasta el final y cópialo. Si copias la página entera no pasa nada, me quedo con lo que sirve.</li><li>Pégalo a la izquierda.</li></ol></div>`;
     let r;
     try { r = this.compile(d); } catch (err) { console.error(err); return `<div class="imp-empty">${icon('error-warning-line')}<b>No he podido leerlo</b></div>`; }
-    this.lastOk = r.chordList.length > 0;
-    if (!this.lastOk) return `<div class="imp-empty">${icon('error-warning-line')}<b>No encuentro acordes</b><p>Comprueba que has copiado las líneas de acordes que van encima de la letra.</p></div>`;
-    const secs = r.built.total / 4, mins = (r.built.total / d.bpm), stars = this.difficulty(r.chordList);
+    this.lastOk = r.chordList.length > 0 || r.nTab > 0;
+    if (!this.lastOk) return `<div class="imp-empty">${icon('error-warning-line')}<b>No encuentro acordes ni tablatura</b><p>Comprueba que has copiado las líneas de acordes que van encima de la letra, o las seis líneas de la tablatura.</p></div>`;
+    const secs = r.built.total / 4, mins = (r.built.total / d.bpm), stars = this.difficulty(r.chordList, r.nTab);
     const chips = r.chordList.map((id) => { const c = CHORDS[id]; return `<span class="imp-chord ${c.generated ? 'new' : ''}" title="${c.generated ? 'Nuevo en Traste, con cejilla' : ''}">${chordLabel(id)}${c.barre && id !== 'F_easy' ? '<small>cejilla</small>' : ''}</span>`; }).join('');
     const parts = r.parsed.parts.map((p) => {
       if (p.tab) return `<div class="imp-part"><h4>${esc(cap(p.name))}<span>tablatura · ${p.tab.notes.length} notas</span></h4></div>`;
@@ -99,12 +101,12 @@ const MySongs = {
       return `<div class="imp-part"><h4>${esc(cap(p.name))}${p.repeat ? '<span>se repite</span>' : p.copied ? '<span>acordes de la anterior</span>' : ''}</h4>${lines}</div>`;
     }).join('');
     return `<div class="imp-sum">
-        <div><b class="num">${r.chordList.length}</b><span>acordes</span></div>
+        ${r.chordList.length ? `<div><b class="num">${r.chordList.length}</b><span>acordes</span></div>` : `<div><b class="num">${r.nTab}</b><span>notas</span></div>`}
         <div><b class="num">${Math.round(secs)}</b><span>compases</span></div>
         <div><b class="num">${Math.floor(mins)}:${String(Math.round((mins % 1) * 60)).padStart(2, '0')}</b><span>minutos</span></div>
         <div><span class="dots">${[1, 2, 3].map((k) => `<i class="${k <= stars ? 'on' : ''}"></i>`).join('')}</span><span>${['', 'fácil', 'media', 'difícil'][stars]}</span></div>
       </div>
-      <div class="imp-chords">${chips}</div>
+      ${chips ? `<div class="imp-chords">${chips}</div>` : ''}
       ${r.parsed.warnings.filter((w) => IMPORT_NOTES[w]).map((w) => `<p class="imp-warn">${icon('information-line')}${IMPORT_NOTES[w]}</p>`).join('')}
       <div class="imp-parts">${parts}</div>`;
   },
