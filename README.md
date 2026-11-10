@@ -1,18 +1,21 @@
 # Traste
 
-App web para aprender guitarra: **afinador**, **acordes** y **canciones**, escuchando tu guitarra por el micrófono. Todo el análisis ocurre en el navegador.
+App web para aprender guitarra: **afinador**, **aprender** (acordes y punteo), **canciones** y **ajustes**, escuchando tu guitarra por el micrófono. Todo el análisis ocurre en el navegador.
 
 ## Usarla
 
 - **En el navegador o el móvil:** https://mesegstudio.github.io/Traste/ (GitHub Pages, sirve `index.html`).
 - **Sin conexión:** abre `dist/traste.html` en Chrome, Edge o Firefox.
 
-En ambos casos, permite el micrófono cuando el navegador lo pida. La primera vez con cada micrófono, Traste lo comprueba (unos 8 segundos: silencio y tres notas por el altavoz) y guarda el resultado en el navegador.
+En ambos casos, permite el micrófono cuando el navegador lo pida. La primera vez con cada micrófono, Traste lo ajusta (unos 8 segundos: mide el ruido de la sala y hace sonar tres notas por el altavoz) y guarda el resultado en el navegador. Se puede repetir desde el afinador o desde Ajustes.
 
 ## Qué tiene
 
-- **Afinador**: automático (detecta la cuerda que pulsas) o eligiendo la cuerda en el dibujo. La cuerda que suena vibra en pantalla; se queda "anclada" a la cuerda pulsada para que las resonancias no muevan la lectura.
-- **Acordes**: primeros pasos, 25 acordes en orden de aprendizaje con diagrama y pasos por dedo, **comprobación cuerda a cuerda** con el micrófono, repaso de memoria y cambios en un minuto.
+- **Afinador**: automático (detecta la cuerda que pulsas) o eligiendo la cuerda en el dibujo, con la 6ª (la más grave) abajo. La cuerda que suena vibra en pantalla; se queda "anclada" a la cuerda pulsada para que las resonancias no muevan la lectura. Debajo, la tarjeta del micrófono: nivel en vivo con la marca del umbral de ruido y estado del ajuste.
+- **Aprender**: eliges nivel (Empiezo, Básico, Intermedio) y sigues la **práctica de hoy** (calentar, acorde nuevo, cambios, ritmo, notas, escala y una canción; unos 15-25 minutos) o entras en:
+  - **Acordes**: 25 acordes en orden de aprendizaje, cada uno en tres pasos (colócalo → **compruébalo cuerda a cuerda** con el micrófono → cámbialo), repaso de memoria, **cambios de un minuto** (cuenta los cambios y cuáles suenan limpios) y rasgueo con metrónomo (negras, corcheas y ↓ ↓↑ ↑↓↑).
+  - **Punteo**: araña 1-2-3-4 y variantes, cuerdas al aire, **encuentra la nota** (6ª, 5ª o todo el mástil) y escalas (Do mayor, pentatónica menor de La, Sol mayor). Modos contrarreloj (cada nota equivocada suma 1 s), con metrónomo, 60 segundos o 10 notas, con récord y estrellas.
+- **Ajustes**: micrófono y su ajuste, notación Do Re Mi / C D E, diagramas verticales u horizontales (6ª abajo, como la tablatura), diestro o zurdo (dibujos en espejo), tema y borrar el progreso.
 - **Canciones**: 17 canciones de dominio público con buscador y categorías. Fácil (melodía) y Difícil (acordes con rasgueo), velocidad Muy lento 50 % · Lento 75 % · Normal 100 % · Rápido 120 %. Bola que salta a la nota que toca, avisos Perfecto / Pronto / Tarde / Fallo, puntos con multiplicador de racha (×2 a 10, ×3 a 20, ×4 a 30) y estrellas por precisión (perfecto 1, pronto/tarde 0,5, fallo 0: 40 % / 65 % / 85 %). Toca la partitura para empezar o pausar; desliza (con inercia) para moverte.
 
 ## Cómo escucha
@@ -39,7 +42,8 @@ Melodías tradicionales o de compositores en dominio público, transcritas a man
 ```
 src/dsp.js      DSP y teoría (funciones puras)
 src/data.js     acordes, canciones de dominio público y categorías
-src/app.js      interfaz
+src/app.js      interfaz: afinador, micrófono, diagramas, canciones, ajustes
+src/learn.js    Aprender: niveles, práctica de hoy, lecciones y ejercicios
 src/body.html   estructura · src/styles.css  estilos
 build.js        genera dist/traste.html e index.html (Tailwind 3.4.17 compilado e incrustado)
 test/           pruebas en Node con cuerdas sintetizadas

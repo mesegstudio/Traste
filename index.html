@@ -98,14 +98,7 @@ h1, h2, h3 { font-family: var(--display); font-weight: 700; letter-spacing: -0.0
 .rail-item[aria-current="page"] { color: var(--text); background: var(--surface-2); }
 .rail-item[aria-current="page"] .ri { color: var(--accent); }
 .rail-end { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.rail-item .key { font-family: var(--display); font-size: 17px; font-weight: 800; line-height: 23px; color: var(--text); }
-.rail-item.mic[data-on="true"] { color: var(--text); }
-.rail-item.mic[data-on="true"] .ri { color: var(--ok); }
-.meter { display: flex; gap: 2px; align-items: flex-end; height: 10px; }
-.meter i { width: 3px; border-radius: 2px; background: var(--line-2); transition: background .08s; }
-.meter i:nth-child(1) { height: 3px } .meter i:nth-child(2) { height: 5px } .meter i:nth-child(3) { height: 7px } .meter i:nth-child(4) { height: 9px } .meter i:nth-child(5) { height: 10px }
-.meter i.lit { background: var(--ok); }
-.meter i.lit.hot { background: var(--warn); }
+.rail-dot { position: absolute; top: 8px; right: 19px; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px var(--bg-2); }
 
 @media (orientation: portrait) and (max-width: 760px) {
   .app { flex-direction: column; }
@@ -140,8 +133,9 @@ h1, h2, h3 { font-family: var(--display); font-weight: 700; letter-spacing: -0.0
 .btn-lg.btn-icon { width: 50px; }
 .btn-sm.btn-icon { width: 36px; }
 .seg { display: inline-flex; padding: 4px; background: var(--surface-2); border-radius: 999px; gap: 2px; flex: none; }
-.seg button { height: 32px; padding: 0 14px; border-radius: 999px; font: 600 13.5px/1 var(--font); color: var(--muted); background: transparent; border: 0; cursor: pointer; transition: all .2s var(--ease); white-space: nowrap; }
+.seg button { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 14px; border-radius: 999px; font: 600 13.5px/1 var(--font); color: var(--muted); background: transparent; border: 0; cursor: pointer; transition: all .2s var(--ease); white-space: nowrap; }
 .seg button:hover { color: var(--text); }
+.seg button .ri { width: 16px; height: 16px; }
 .seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: 0 2px 8px rgba(0, 0, 0, .2); }
 .chip { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 999px; font: 600 13.5px/1 var(--font); color: var(--muted); background: var(--surface-2); border: 0; cursor: pointer; transition: all .2s; white-space: nowrap; flex: none; }
 .chip:hover { color: var(--text); }
@@ -169,10 +163,38 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 .overlay-cta h3 { font-size: 26px; }
 .overlay-cta p { color: var(--muted); max-width: 36ch; margin: 8px auto 20px; }
 
+/* ---------- Tarjeta del micrófono ---------- */
+.mic-card { padding: 12px 14px; border-radius: 18px; background: var(--surface); }
+.mc-row { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.mc-ico { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--ok-soft); color: var(--ok); }
+.mc-ico.off { background: var(--surface-2); color: var(--faint); }
+.mc-ico .ri { width: 19px; height: 19px; }
+.mc-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mc-txt b { font-weight: 650; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc-txt > span { font-size: 13px; color: var(--muted); }
+.mc-txt select { width: 100%; height: 34px; max-width: 100%; padding: 0 8px; font-weight: 600; font-size: 14px; text-overflow: ellipsis; }
+.mc-status { margin-top: 8px; }
+@media (max-width: 480px) {
+  .set-card .mc-row { grid-template-columns: 36px minmax(0, 1fr); }
+  .set-card .mc-row .btn { grid-column: 1 / -1; justify-self: start; }
+}
+.mc-st { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 550; }
+.mc-st .ri { width: 15px; height: 15px; }
+.mc-st.ok { color: var(--ok); }
+.mc-st.warn { color: var(--warn); }
+.mc-meter { margin-top: 10px; }
+.mc-meter .lv { position: relative; height: 8px; border-radius: 8px; background: var(--surface-3); }
+.mc-meter .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 8px; background: var(--faint); transition: width .08s linear, background .2s; }
+.mc-meter .fill.hot { background: var(--ok); }
+.mc-meter .gate { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; border-radius: 2px; background: var(--text); }
+.mc-meter > span { display: block; margin-top: 6px; font-size: 12.5px; color: var(--faint); }
+.mc-off { margin-top: 10px; font-size: 13px; }
+
 /* ---------- Comprobación del micrófono ---------- */
 .cal-host.overlay { position: absolute; inset: 0; z-index: 7; background: var(--bg); display: grid; place-items: center; padding: 20px; overflow: auto; }
 .cal-card { flex: 1; min-height: 0; overflow: auto; display: grid; place-items: center; padding: 20px; }
 .cal-card:not([hidden]) ~ .highway, .cal-card:not([hidden]) ~ .now-strip { display: none; }
+.set-card .cal-host { padding: 18px 4px 4px; }
 .cal { width: min(420px, 100%); display: flex; flex-direction: column; gap: 14px; }
 .cal h3 { font-size: 24px; }
 .cal-list { display: flex; flex-direction: column; gap: 10px; }
@@ -216,8 +238,14 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 .gauge-scale { display: flex; justify-content: space-between; color: var(--faint); font-size: 12px; padding: 0 2px; }
 .hint { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 34px; margin-top: 6px; font-size: 17px; font-weight: 650; }
 .hint .ri { width: 22px; height: 22px; }
-.t-strings { display: flex; flex-direction: column; min-height: 0; gap: 8px; }
-.strings { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+.t-strings { display: flex; flex-direction: column; justify-content: center; min-height: 0; gap: 8px; }
+.t-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; padding: 0 6px; }
+.t-prog { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+.t-prog b { font-weight: 650; }
+.pips { display: inline-flex; gap: 4px; }
+.pips i { width: 8px; height: 8px; border-radius: 50%; background: var(--surface-3); transition: background .3s; }
+.pips i.on { background: var(--ok); }
+.strings { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
 .str { flex: 0 1 54px; height: 54px; min-height: 32px; display: grid; grid-template-columns: 50px 1fr 52px; align-items: center; gap: 12px; padding: 0 6px; border-radius: 16px; cursor: pointer; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; transition: background .2s; }
 .str:hover { background: var(--surface); }
 .str .peg { width: auto; height: min(40px, calc(100% - 4px)); aspect-ratio: 1; justify-self: center; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); font-family: var(--display); font-weight: 700; font-size: 14.5px; transition: all .3s var(--spring); }
@@ -231,48 +259,150 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 .str.active .peg { transform: scale(1.08); box-shadow: 0 0 0 5px var(--surface-3); }
 .str.done .peg { background: var(--ok); color: var(--dot-ink); }
 .str.done .info { color: var(--ok); }
-.t-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; font-size: 13.5px; padding: 0 6px; }
 /* horizontal / pantallas anchas: dos columnas */
 @media (min-aspect-ratio: 5/4) {
   .tuner { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 40px; align-items: stretch; align-content: stretch; }
   .note-big { font-size: clamp(56px, 19vh, 150px); }
   .gauge { height: clamp(50px, 12vh, 96px); }
 }
+@media (max-height: 760px) {
+  .t-strings .mc-meter > span { display: none; }
+  .t-strings .mc-meter { margin-top: 8px; }
+}
 @media (max-height: 520px) {
+  .t-strings .mic-card { padding: 8px 12px; }
+  .t-strings .mc-meter { display: none; }
+  .t-head { min-height: 30px; }
   .readout .sub { margin-top: 2px; }
   .hint { font-size: 15px; min-height: 28px; margin-top: 2px; }
   .str .peg { height: min(34px, calc(100% - 4px)); font-size: 13px; }
   .str { grid-template-columns: 42px 1fr 46px; gap: 8px; }
 }
 
-/* ---------- Acordes ---------- */
-.lesson-path { flex: none; display: flex; gap: 2px; overflow-x: auto; padding: 0 0 10px; scrollbar-width: none; scroll-snap-type: x proximity; mask-image: linear-gradient(90deg, #000 90%, transparent); }
-.lesson-path::-webkit-scrollbar { display: none; }
-.lesson-path button { position: relative; flex: none; display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 13px; border-radius: 999px; background: transparent; border: 0; color: var(--muted); font: 650 14.5px/1 var(--font); cursor: pointer; scroll-snap-align: start; transition: all .2s; white-space: nowrap; }
-.lesson-path button:hover { color: var(--text); background: var(--surface-2); }
-.lesson-path button.learned { color: var(--text); }
-.lesson-path button.learned::after { content: ""; position: absolute; left: 50%; bottom: 3px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--ok); }
-.lesson-path button[aria-current="true"] { background: var(--text); color: var(--bg); }
-.lesson-path button[aria-current="true"]::after { display: none; }
-.lesson-path .sep { flex: none; width: 1px; background: var(--line-2); margin: 8px 6px; }
-.lesson-body { flex: 1; min-height: 0; }
-.lesson { display: grid; gap: 18px 36px; grid-template-columns: minmax(0, 1fr); align-content: start; max-width: 1040px; margin: 0 auto; padding-bottom: 8px; }
-.lesson-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
-.chord-name { font-family: var(--display); font-size: clamp(48px, 8vh, 80px); font-weight: 700; line-height: .95; letter-spacing: -0.05em; }
-.chord-name small { display: block; font-family: var(--font); font-size: 14.5px; color: var(--muted); font-weight: 500; letter-spacing: 0; margin-top: 8px; }
+/* ---------- Pantallas internas (aprender) ---------- */
+.learn { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.screen { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; }
+.scr-top { flex: none; display: flex; align-items: center; gap: 10px; }
+.scr-title { flex: 1; min-width: 0; }
+.scr-title h1 { font-size: 22px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scr-title p { color: var(--muted); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scr-title .chord-h { font-size: 30px; letter-spacing: -0.04em; }
+.scr-body { flex: 1; min-height: 0; }
+.chev { color: var(--faint); width: 20px; height: 20px; }
+
+/* inicio */
+.lh { max-width: 1120px; margin: 0 auto; padding-bottom: 12px; }
+.lh-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.lh-head h1 { font-size: 30px; }
+.lh-desc { color: var(--muted); margin: 6px 0 16px; font-size: 14.5px; }
+.lh-grid { display: grid; gap: 16px; align-items: start; }
+.tracks { display: flex; flex-direction: column; gap: 10px; }
+.track { display: grid; grid-template-columns: 54px minmax(0, 1fr) 20px; gap: 14px; align-items: center; padding: 16px; border-radius: 24px; background: var(--surface); color: inherit; text-decoration: none; transition: background .2s, transform .2s var(--ease); }
+.track:hover { background: var(--surface-2); }
+.track:active { transform: scale(.985); }
+.tr-ico { width: 54px; height: 54px; border-radius: 18px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.tr-ico.alt { background: color-mix(in srgb, var(--f2) 16%, transparent); color: var(--f2); }
+.tr-ico .ri { width: 27px; height: 27px; }
+.tr-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tr-txt b { font-family: var(--display); font-size: 21px; font-weight: 700; letter-spacing: -0.02em; }
+.tr-txt > span { color: var(--muted); font-size: 14px; }
+.tr-txt .tr-meta { display: flex; align-items: center; gap: 10px; margin-top: 6px; font-size: 12.5px; color: var(--faint); }
+.tr-bar { flex: 0 0 72px; height: 5px; border-radius: 5px; background: var(--surface-3); overflow: hidden; }
+.tr-bar i { display: block; height: 100%; background: var(--ok); border-radius: 5px; }
+.guide-link { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 18px; border: 1.5px dashed var(--line-2); color: var(--muted); font-size: 14px; text-decoration: none; transition: border-color .2s, color .2s; }
+.guide-link:hover { border-color: var(--faint); color: var(--text); }
+.guide-link > .ri:first-child { color: var(--accent); width: 20px; height: 20px; }
+.guide-link span { flex: 1; }
+.guide-link b { color: var(--text); font-weight: 650; margin-right: 4px; }
+.today { padding: 16px; border-radius: 24px; background: var(--surface); }
+.today-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 2px 4px 10px; }
+.today-head h2 { display: flex; align-items: center; gap: 8px; font-size: 19px; }
+.today-head h2 .ri { color: var(--accent); }
+.today-head p { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
+.today-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.tstep { width: 100%; display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 9px 8px; border: 0; border-radius: 16px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; transition: background .2s; }
+.tstep:hover { background: var(--surface-2); }
+.ts-n { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); color: var(--muted); font-weight: 700; font-size: 13px; }
+.ts-n .ri { width: 17px; height: 17px; }
+.tstep.done .ts-n { background: var(--ok); color: var(--dot-ink); }
+.tstep.done .ts-txt b { color: var(--muted); }
+.ts-txt { display: flex; flex-direction: column; min-width: 0; }
+.ts-txt em { font-style: normal; font-size: 11.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); }
+.tstep.done .ts-txt em { color: var(--faint); }
+.ts-txt b { font-weight: 650; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ts-txt > span { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ts-min { font-size: 12.5px; color: var(--faint); white-space: nowrap; }
+@media (min-width: 880px), (min-aspect-ratio: 5/4) and (min-width: 640px) {
+  .lh-grid { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); }
+}
+
+/* pistas: acordes y punteo */
+.trk { max-width: 940px; margin: 0 auto; padding-bottom: 16px; display: flex; flex-direction: column; gap: 18px; }
+.trk-h { display: flex; align-items: baseline; gap: 8px; font-family: var(--font); font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin: 0 4px 8px; }
+.trk-h span { color: var(--faint); font-weight: 600; letter-spacing: 0; }
+.ctiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.ctile { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 12px 12px 10px; border-radius: 18px; background: var(--surface); color: inherit; text-decoration: none; transition: background .2s, transform .2s var(--ease); }
+.ctile:hover { background: var(--surface-2); }
+.ctile:active { transform: scale(.97); }
+.ctile b { font-family: var(--display); font-size: 23px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; }
+.ctile span { font-size: 12px; color: var(--muted); }
+.ctile .ck { position: absolute; top: 10px; right: 10px; width: 18px; height: 18px; color: var(--ok); }
+.ctile.learned b { color: var(--text); }
+.ctile.next { box-shadow: inset 0 0 0 2px var(--accent); }
+.ctile.next span { color: var(--accent); font-weight: 650; }
+.ex-list { display: flex; flex-direction: column; gap: 4px; }
+.ex-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto 20px; gap: 14px; align-items: center; padding: 10px 10px 10px 10px; border-radius: 18px; background: var(--surface); color: inherit; text-decoration: none; transition: background .2s; }
+.ex-row:hover { background: var(--surface-2); }
+.ex-row.off { opacity: .5; pointer-events: none; }
+.ex-ico { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--surface-2); color: var(--text); }
+.ex-ico .ri { width: 21px; height: 21px; }
+.ex-txt { display: flex; flex-direction: column; min-width: 0; }
+.ex-txt b { font-weight: 650; font-size: 15px; }
+.ex-txt span { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ex-row.above .ex-txt b { color: var(--muted); }
+.ex-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.lvl-pips { display: inline-flex; gap: 2px; align-items: flex-end; }
+.lvl-pips i { width: 4px; border-radius: 2px; background: var(--surface-3); }
+.lvl-pips i:nth-child(1) { height: 6px; } .lvl-pips i:nth-child(2) { height: 9px; } .lvl-pips i:nth-child(3) { height: 12px; }
+.lvl-pips i.on { background: var(--muted); }
+
+/* lección de un acorde */
+.stepper { flex: none; display: flex; align-items: center; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.stepper::-webkit-scrollbar { display: none; }
+.stepper button { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px 0 6px; border-radius: 999px; border: 0; background: transparent; color: var(--muted); font: 600 14px/1 var(--font); cursor: pointer; transition: background .2s, color .2s; }
+.stepper button:hover { color: var(--text); }
+.stepper button i { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); font-style: normal; font-size: 13px; font-weight: 700; }
+.stepper button i .ri { width: 16px; height: 16px; }
+.stepper button[aria-selected="true"] { background: var(--surface-2); color: var(--text); }
+.stepper button[aria-selected="true"] i { background: var(--accent); color: var(--accent-ink); }
+.stepper button.done i { background: var(--ok); color: var(--dot-ink); }
+.stepper .sl { flex: 0 0 14px; height: 2px; border-radius: 2px; background: var(--line-2); }
+.ls-grid { display: grid; gap: 16px 36px; grid-template-columns: minmax(0, 1fr); max-width: 1040px; margin: 0 auto; align-items: start; }
 .diagram { display: grid; place-items: center; background: var(--bg-2); border-radius: 22px; padding: 14px 10px 8px; min-height: 0; }
 .diagram svg { max-height: 30vh; width: auto; }
-.lesson-info { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.diagram.ghost { min-height: 200px; color: var(--faint); }
+.diagram.ghost div { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 14px; }
+.diagram.ghost .ri { width: 32px; height: 32px; }
+.diagram.sm { padding: 10px 8px 6px; border-radius: 18px; }
+.diagram.sm svg { max-height: clamp(110px, 24vh, 200px); }
+.ls-panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.ls-lead { font-size: 15.5px; }
+.ls-lead b { font-weight: 650; }
+.ls-actions { position: sticky; bottom: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 0 2px; margin-top: -4px; background: linear-gradient(to bottom, transparent, var(--bg) 12px); }
+.pair-pick { display: flex; flex-direction: column; gap: 8px; }
+.pair-pick .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip small { font-size: 11px; font-weight: 600; opacity: .7; }
+.mini-pair { display: flex; align-items: center; gap: 16px; }
+.mini-pair p { color: var(--muted); font-size: 14px; }
+.rec-line { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; color: var(--text); }
+.rec-line .ri { color: var(--warn); }
 .steps-list { display: flex; flex-direction: column; gap: 12px; list-style: none; padding: 0; margin: 0; }
 .steps-list li { display: grid; grid-template-columns: 32px 1fr; gap: 14px; align-items: center; font-size: 15px; line-height: 1.35; }
 .steps-list li b { font-weight: 650; }
-.fdot { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: 750; font-size: 14px; color: var(--dot-ink); }
+.fdot { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: 750; font-size: 14px; color: var(--dot-ink); flex: none; }
 .fdot.strum { background: var(--surface-3); color: var(--text); }
 .fdot.mute { background: transparent; box-shadow: inset 0 0 0 1.5px var(--line-2); color: var(--muted); }
 .fdot .ri { width: 17px; height: 17px; }
-.lesson-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.lesson-foot { position: sticky; bottom: 0; z-index: 2; padding: 14px 0 2px; margin-top: -4px; background: linear-gradient(to bottom, transparent, var(--bg) 14px); }
-.panel { padding: 16px; border-radius: 22px; background: var(--surface); }
 .check-strings { display: flex; gap: 6px; flex-wrap: wrap; }
 .cs { width: 44px; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; color: var(--faint); font-weight: 600; }
 .cs b { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); color: var(--muted); font-family: var(--display); font-size: 13.5px; transition: all .3s var(--spring); }
@@ -280,28 +410,27 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 .cs.now b { background: var(--accent); color: var(--accent-ink); transform: scale(1.12); animation: pulse 1.4s infinite; }
 .cs.ok b { background: var(--ok); color: var(--dot-ink); }
 .cs.bad b { background: var(--bad); color: #fff; }
-.check-msg { margin-top: 12px; font-size: 15.5px; font-weight: 650; min-height: 22px; }
-.check-msg p { font-weight: 400; color: var(--muted); font-size: 14px; }
-.drill-count { font-family: var(--display); font-size: 46px; font-weight: 700; line-height: 1; letter-spacing: -0.03em; }
+.check-msg { font-size: 16px; font-weight: 650; min-height: 22px; }
+.check-msg p { font-weight: 400; color: var(--muted); font-size: 14px; margin-top: 2px; }
 @media (min-aspect-ratio: 5/4) {
-  .lesson { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-  .lesson .lesson-head { grid-column: 2; }
-  .lesson .diagram { grid-row: 1 / span 2; grid-column: 1; align-self: start; }
-  .lesson .lesson-info { grid-column: 2; }
-  .diagram svg { max-height: calc(100vh - 150px); }
+  .ls-grid { grid-template-columns: auto minmax(0, 1fr); }
+  .ls-grid .diagram svg { max-height: calc(100vh - 210px); }
 }
 @media (min-aspect-ratio: 5/4) and (min-height: 640px) {
-  .lesson { min-height: 100%; align-content: center; grid-template-rows: auto auto; }
-  .lesson .diagram { padding: 26px 22px 16px; }
-  .lesson .diagram svg { width: clamp(220px, 26vw, 330px); height: auto; max-height: calc(100vh - 170px); }
+  .ls-grid { min-height: 100%; align-content: center; }
+  .ls-grid > .diagram { padding: 26px 22px 16px; }
+  .ls-grid > .diagram svg { width: clamp(220px, 26vw, 320px); height: auto; }
 }
 @media (max-height: 520px), (orientation: portrait) and (max-height: 760px) {
-  .chord-name { font-size: 44px; }
-  .chord-name small { margin-top: 6px; }
+  .scr-title .chord-h { font-size: 26px; }
   .steps-list { gap: 7px; }
   .steps-list li { font-size: 14px; grid-template-columns: 28px 1fr; gap: 12px; }
   .fdot { width: 28px; height: 28px; font-size: 13px; }
-  .lesson .tip { display: none; }
+  .ls-panel .tip { display: none; }
+  .screen { gap: 10px; }
+}
+@media (max-width: 460px) {
+  .stepper button:not([aria-selected="true"]) { font-size: 0; gap: 0; padding: 0 6px; }
 }
 .guide-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); align-items: start; max-width: 1100px; margin: 0 auto; }
 .guide-card { padding: 20px; display: flex; flex-direction: column; gap: 10px; background: var(--surface); border-radius: 22px; }
@@ -312,6 +441,104 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend i { width: 10px; height: 10px; border-radius: 50%; }
+
+/* ejercicios */
+.dr-stats { display: flex; gap: 18px; flex: none; }
+.dr-stat { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; }
+.dr-stat b { font-family: var(--display); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+.dr-stat span { font-size: 11.5px; color: var(--muted); }
+.dr-stat.rec b { font-size: 17px; margin-top: 2px; }
+.dr-intro { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; }
+.dr-why { flex: 1 1 380px; color: var(--muted); font-size: 14.5px; max-width: 75ch; }
+.dr-stage { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 16px; padding: 16px; border-radius: 24px; background: var(--bg-2); overflow: auto; }
+.neck-wrap { width: 100%; min-height: 0; display: flex; overflow-x: auto; scrollbar-width: thin; }
+.neck-wrap svg { width: 100%; max-width: 820px; height: auto; max-height: 50vh; flex: none; margin: 0 auto; }
+.neck-wrap svg.wide { min-width: 560px; }
+.neck .ring { transform-box: fill-box; transform-origin: center; animation: ring 1.2s var(--ease) infinite; }
+@keyframes ring { 0% { opacity: .9; transform: scale(.75); } 100% { opacity: 0; transform: scale(1.25); } }
+.dr-prompt { display: flex; align-items: center; gap: 14px; width: min(560px, 100%); }
+.dr-prompt .fdot { width: 44px; height: 44px; font-size: 18px; }
+.dr-prompt div:not(.dr-bar) { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.dr-prompt b { font-size: 19px; font-weight: 700; }
+.dr-prompt span { color: var(--muted); font-size: 14px; }
+.dr-bar { flex: 0 0 90px; height: 6px; border-radius: 6px; background: var(--surface-3); overflow: hidden; }
+.dr-bar i { display: block; height: 100%; background: var(--accent); border-radius: 6px; transition: width .2s; }
+.find-target { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.find-target b { font-family: var(--display); font-size: clamp(54px, 13vh, 112px); font-weight: 700; line-height: 1; letter-spacing: -0.05em; animation: rise .3s var(--spring); }
+.find-target span { color: var(--muted); font-size: 16px; margin-top: 4px; }
+.find-target.idle b { color: var(--faint); }
+.dr-count { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-size: 120px; font-weight: 800; background: color-mix(in srgb, var(--bg-2) 70%, transparent); backdrop-filter: blur(3px); z-index: 3; }
+.dr-count:empty { display: none; }
+.chg-pair { display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%; }
+.chg-card { flex: 0 1 300px; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px; border-radius: 22px; background: var(--surface); transition: box-shadow .25s, transform .25s var(--spring), opacity .25s; min-width: 0; }
+.chg-card .diagram { width: 100%; }
+.chg-card .diagram svg { max-height: clamp(120px, 36vh, 290px); }
+.chg-card b { font-family: var(--display); font-size: 24px; font-weight: 700; }
+.chg-card.on { box-shadow: 0 0 0 3px var(--accent); transform: scale(1.04); }
+.drill .dr-stage .chg-card:not(.on) { opacity: .75; }
+.chg-now { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.chg-card.on .chg-now { color: var(--accent); }
+.chg-card select { height: 32px; font-weight: 650; }
+.chg-arrow { color: var(--faint); }
+.rh-pattern { display: grid; grid-template-columns: repeat(8, minmax(30px, 52px)); gap: 4px; }
+.rh-pattern span { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0 8px; border-radius: 14px; background: var(--surface); }
+.rh-pattern i { font-style: normal; display: grid; place-items: center; height: 28px; font-size: 22px; font-weight: 700; color: var(--faint); }
+.rh-pattern i .ri { width: 26px; height: 26px; }
+.rh-pattern .D i { color: var(--accent); }
+.rh-pattern .U i { color: var(--text); }
+.rh-pattern .rest { background: transparent; box-shadow: inset 0 0 0 1.5px var(--line); }
+.rh-pattern em { font-style: normal; font-size: 12px; font-weight: 650; color: var(--muted); }
+.rh-seq { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; max-width: 520px; }
+.rh-seq span { min-width: 44px; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); font-size: 13px; font-weight: 650; text-align: center; }
+.rh-seq span.rep { color: var(--faint); background: transparent; box-shadow: inset 0 0 0 1px var(--line-2); }
+.rhythm-chords { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.rhythm-chords .diagram { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.rhythm-chords .diagram svg { max-height: clamp(90px, 20vh, 170px); }
+@media (max-width: 640px) { .rhythm-chords .diagram svg { max-height: 110px; } .rhythm-chords { gap: 6px; } }
+@media (max-height: 520px) { .rhythm-chords { display: none; } }
+.dr-foot { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 50px; }
+.dr-msg { flex: 1; min-width: 0; font-size: 15px; font-weight: 650; }
+.dr-msg[data-k=""] { color: var(--muted); font-weight: 450; font-size: 14px; }
+.dr-msg[data-k="ok"] { color: var(--ok); }
+.dr-msg[data-k="bad"] { color: var(--bad); }
+.dr-msg[data-k="warn"] { color: var(--warn); }
+@media (max-width: 640px) {
+  .drill .scr-title p { display: none; }
+  .dr-stats { gap: 12px; }
+  .dr-stat b { font-size: 20px; }
+  .chg-pair { gap: 8px; }
+  .dr-why { font-size: 14px; }
+}
+@media (max-height: 520px) {
+  .dr-why { display: none; }
+  .dr-stage { padding: 10px; gap: 8px; }
+  .find-target b { font-size: 52px; }
+  .dr-foot { min-height: 44px; }
+  .drill .scr-title p { display: none; }
+}
+
+/* ---------- Ajustes ---------- */
+.settings { flex: 1; }
+.set-wrap { max-width: 700px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; padding-bottom: 20px; }
+.set-title { font-size: 30px; }
+.set-card { padding: 18px; border-radius: 24px; background: var(--surface); }
+.set-card .mic-card { background: var(--bg-2); }
+.set-head h2 { display: flex; align-items: center; gap: 8px; font-size: 19px; }
+.set-head h2 .ri { color: var(--accent); }
+.set-head p { color: var(--muted); font-size: 14px; margin: 6px 0 14px; }
+.set-head p b { color: var(--text); font-weight: 600; }
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 10px 18px; padding: 14px 0; border-top: 1px solid var(--line); }
+.set-row:first-child { border-top: 0; padding-top: 2px; }
+.set-row:last-child { padding-bottom: 2px; }
+.set-row h3 { font-family: var(--font); font-size: 15px; font-weight: 650; letter-spacing: 0; }
+.set-row p { color: var(--muted); font-size: 13.5px; }
+.set-preview { display: flex; align-items: center; gap: 16px; padding: 4px 0 14px; }
+.set-preview .diagram svg { max-height: 150px; }
+.set-preview p { color: var(--faint); font-size: 13px; }
+.set-foot { text-align: center; color: var(--faint); font-size: 13px; padding: 4px 16px; }
+@media (max-width: 600px) {
+  .set-row { flex-direction: column; align-items: flex-start; }
+}
 
 /* ---------- Canciones: catálogo ---------- */
 .list-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
@@ -417,7 +644,7 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
-.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:.75rem}.mr-1{margin-right:.25rem}.mt-1{margin-top:.25rem}.mt-3{margin-top:.75rem}.mt-5{margin-top:1.25rem}.mt-6{margin-top:1.5rem}.block{display:block}.inline-block{display:inline-block}.inline{display:inline}.flex{display:flex}.hidden{display:none}.h-2\.5{height:.625rem}.w-2\.5{width:.625rem}.w-full{width:100%}.min-w-0{min-width:0}.min-w-\[160px\]{min-width:160px}.flex-1{flex:1 1 0%}.transform{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.resize{resize:both}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}.justify-center{justify-content:center}.gap-1\.5{gap:.375rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-x-6{-moz-column-gap:1.5rem;column-gap:1.5rem}.gap-y-3{row-gap:.75rem}.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rounded-full{border-radius:9999px}.py-1{padding-top:.25rem;padding-bottom:.25rem}.align-middle{vertical-align:middle}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.font-medium{font-weight:500}.font-semibold{font-weight:600}.opacity-60{opacity:.6}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}@media (min-width:640px){.sm\:inline{display:inline}}
+.mb-3{margin-bottom:.75rem}.mr-1{margin-right:.25rem}.mt-1{margin-top:.25rem}.inline-block{display:inline-block}.flex{display:flex}.\!grid{display:grid!important}.grid{display:grid}.hidden{display:none}.h-2\.5{height:.625rem}.w-2\.5{width:.625rem}.w-full{width:100%}.min-w-0{min-width:0}.flex-1{flex:1 1 0%}.transform{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.resize{resize:both}.flex-col{flex-direction:column}.items-center{align-items:center}.gap-2{gap:.5rem}.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rounded-full{border-radius:9999px}.align-middle{vertical-align:middle}.text-sm{font-size:.875rem;line-height:1.25rem}.font-medium{font-weight:500}.opacity-60{opacity:.6}.ring{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}@media (min-width:640px){.sm\:inline{display:inline}}
 </style>
 </head>
 <body>
@@ -427,11 +654,10 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
       <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2.5c-7.4 0-12.5 3.2-12.5 8.6 0 6.6 6.6 14 11 18.1a2.2 2.2 0 0 0 3 0c4.4-4.1 11-11.5 11-18.1C28.5 5.7 23.4 2.5 16 2.5Z" fill="var(--accent)"/><path d="M9.5 11h13M11 15.5h10M13 20h6" stroke="var(--accent-ink)" stroke-width="1.9" stroke-linecap="round" opacity=".5"/></svg>
     </a>
     <a class="rail-item" href="#afinador" data-tab="afinador"><span data-icon="dashboard-3-line"></span>Afinar</a>
-    <a class="rail-item" href="#acordes" data-tab="acordes"><span data-icon="hand"></span>Acordes</a>
+    <a class="rail-item" href="#aprender" data-tab="aprender"><span data-icon="graduation-cap-line"></span>Aprender</a>
     <a class="rail-item" href="#canciones" data-tab="canciones"><span data-icon="music-2-line"></span>Canciones</a>
     <div class="rail-end">
-      <button type="button" class="rail-item" id="notationBtn" title="Nombres de las notas: Do Re Mi o C D E"><span class="key" id="notationKey">Do</span>Notas</button>
-      <button type="button" class="rail-item mic" id="micBtn" data-on="false"><span id="micIcon" data-icon="mic-off-line"></span><span class="meter" id="micMeter"><i></i><i></i><i></i><i></i><i></i></span></button>
+      <a class="rail-item" href="#ajustes" data-tab="ajustes"><span data-icon="settings-3-line"></span>Ajustes<i class="rail-dot" id="railMicDot" hidden></i></a>
     </div>
   </nav>
 
@@ -457,14 +683,12 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
           <div class="hint" id="tnHint" aria-live="polite"></div>
         </div>
         <div class="t-strings">
-          <div class="strings" id="tnStrings"></div>
-          <div class="t-foot">
-            <span><b id="tnProgress">0</b> <span class="muted">de 6 afinadas ·</span> <button type="button" class="link-btn" id="tnReset">empezar de nuevo</button></span>
-            <span class="flex items-center gap-3" id="micBox" hidden>
-              <select id="micSelect" aria-label="Micrófono"></select>
-              <button type="button" class="link-btn" id="recalBtn">Comprobar micro</button>
-            </span>
+          <div class="t-head">
+            <span class="t-prog" id="tnProg"></span>
+            <button type="button" class="btn btn-ghost btn-sm" id="tnReset" title="Marcar todas como sin afinar"><span data-icon="restart-line"></span>Reiniciar</button>
           </div>
+          <div class="strings" id="tnStrings"></div>
+          <div class="mic-card compact" data-mic-card></div>
         </div>
         <div class="overlay-cta" id="tunerCta">
           <div>
@@ -474,14 +698,13 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
           </div>
         </div>
       </div>
-      <div class="cal-host overlay" data-cal-host="afinador" hidden></div>
+      <div class="cal-host overlay" hidden></div>
     </section>
 
-    <!-- ======================= ACORDES ======================= -->
-    <section class="view" data-view="acordes" hidden>
-      <nav class="lesson-path" id="lessonPath" aria-label="Lecciones"></nav>
-      <div class="lesson-body scroll" id="lessonBody"></div>
-      <div class="cal-host overlay" data-cal-host="acordes" hidden></div>
+    <!-- ======================= APRENDER ======================= -->
+    <section class="view" data-view="aprender" hidden>
+      <div class="learn" id="learn"></div>
+      <div class="cal-host overlay" hidden></div>
     </section>
 
     <!-- ======================= CANCIONES ======================= -->
@@ -518,7 +741,7 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
           <label class="toggle" title="Modo práctica: la canción se para hasta que tocas la nota (sin puntuación)"><input type="checkbox" id="plWait">Esperarme</label>
           <label class="toggle"><input type="checkbox" id="plMetro">Metrónomo</label>
         </div>
-        <div class="cal-card" data-cal-host="canciones" hidden></div>
+        <div class="cal-card" hidden></div>
         <div class="highway"><canvas id="hw" aria-label="Partitura en movimiento: toca para empezar o pausar, desliza para moverte"></canvas></div>
         <div class="now-strip">
           <div class="min-w-0 flex-1">
@@ -533,6 +756,10 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
         </div>
       </div>
     </section>
+    <!-- ======================= AJUSTES ======================= -->
+    <section class="view" data-view="ajustes" hidden>
+      <div class="settings scroll" id="settings"></div>
+    </section>
   </main>
 </div>
 
@@ -544,17 +771,13 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
     <p class="muted mt-1" id="resText"></p>
     <div class="res-big" id="resBig"></div>
     <div class="res-grid" id="resGrid"></div>
-    <div class="flex justify-center gap-2 mt-6 flex-wrap">
-      <button type="button" class="btn btn-ghost" data-close>Cerrar</button>
-      <button type="button" class="btn btn-soft" id="resAgain"><span data-icon="restart-line"></span>Repetir</button>
-      <button type="button" class="btn btn-primary" id="resNext">Pasar a Difícil</button>
-    </div>
+    <div class="res-actions" id="resActions"></div>
   </div>
 </div>
 
 <script>
 /* Remix Icon v4.5.0 (Apache-2.0) — https://remixicon.com */
-const RI = {"mic-line":"<path d=\"M11.9998 3C10.3429 3 8.99976 4.34315 8.99976 6V10C8.99976 11.6569 10.3429 13 11.9998 13C13.6566 13 14.9998 11.6569 14.9998 10V6C14.9998 4.34315 13.6566 3 11.9998 3ZM11.9998 1C14.7612 1 16.9998 3.23858 16.9998 6V10C16.9998 12.7614 14.7612 15 11.9998 15C9.23833 15 6.99976 12.7614 6.99976 10V6C6.99976 3.23858 9.23833 1 11.9998 1ZM3.05469 11H5.07065C5.55588 14.3923 8.47329 17 11.9998 17C15.5262 17 18.4436 14.3923 18.9289 11H20.9448C20.4837 15.1716 17.1714 18.4839 12.9998 18.9451V23H10.9998V18.9451C6.82814 18.4839 3.51584 15.1716 3.05469 11Z\"/>","mic-off-line":"<path d=\"M16.4249 17.839L21.1925 22.6066L22.6068 21.1924L2.80777 1.3934L1.39355 2.80761L7.00016 8.41421V10C7.00016 12.7614 9.23873 15 12.0002 15C12.4825 15 12.9489 14.9317 13.3902 14.8042L14.9404 16.3544C14.0464 16.7688 13.0503 17 12.0002 17C8.47368 17 5.55627 14.3923 5.07105 11H3.05509C3.51623 15.1716 6.82854 18.4839 11.0002 18.9451V23H13.0002V18.9451C14.2341 18.8087 15.3929 18.4228 16.4249 17.839ZM11.5528 12.9669C10.2541 12.7727 9.22745 11.7461 9.03328 10.4473L11.5528 12.9669ZM19.3747 15.1604L17.9323 13.7179C18.4407 12.9084 18.788 11.9874 18.9293 11H20.9452C20.7754 12.5366 20.2187 13.9565 19.3747 15.1604ZM16.4658 12.2514L14.9173 10.703C14.9715 10.4775 15.0002 10.2421 15.0002 10V6C15.0002 4.34315 13.657 3 12.0002 3C10.7059 3 9.6031 3.81956 9.18237 4.96802L7.68575 3.47139C8.55427 1.99268 10.1613 1 12.0002 1C14.7616 1 17.0002 3.23858 17.0002 6V10C17.0002 10.8099 16.8076 11.5748 16.4658 12.2514Z\"/>","play-fill":"<path d=\"M19.376 12.4161L8.77735 19.4818C8.54759 19.635 8.23715 19.5729 8.08397 19.3432C8.02922 19.261 8 19.1645 8 19.0658V4.93433C8 4.65818 8.22386 4.43433 8.5 4.43433C8.59871 4.43433 8.69522 4.46355 8.77735 4.5183L19.376 11.584C19.6057 11.7372 19.6678 12.0477 19.5146 12.2774C19.478 12.3323 19.4309 12.3795 19.376 12.4161Z\"/>","pause-fill":"<path d=\"M6 5H8V19H6V5ZM16 5H18V19H16V5Z\"/>","restart-line":"<path d=\"M18.5374 19.5674C16.7844 21.0831 14.4993 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 14.1361 21.3302 16.1158 20.1892 17.7406L17 12H20C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C14.1502 20 16.1022 19.1517 17.5398 17.7716L18.5374 19.5674Z\"/>","volume-up-line":"<path d=\"M6.60282 10.0001L10 7.22056V16.7796L6.60282 14.0001H3V10.0001H6.60282ZM2 16.0001H5.88889L11.1834 20.3319C11.2727 20.405 11.3846 20.4449 11.5 20.4449C11.7761 20.4449 12 20.2211 12 19.9449V4.05519C12 3.93977 11.9601 3.8279 11.887 3.73857C11.7121 3.52485 11.3971 3.49335 11.1834 3.66821L5.88889 8.00007H2C1.44772 8.00007 1 8.44778 1 9.00007V15.0001C1 15.5524 1.44772 16.0001 2 16.0001ZM23 12C23 15.292 21.5539 18.2463 19.2622 20.2622L17.8445 18.8444C19.7758 17.1937 21 14.7398 21 12C21 9.26016 19.7758 6.80629 17.8445 5.15557L19.2622 3.73779C21.5539 5.75368 23 8.70795 23 12ZM18 12C18 10.0883 17.106 8.38548 15.7133 7.28673L14.2842 8.71584C15.3213 9.43855 16 10.64 16 12C16 13.36 15.3213 14.5614 14.2842 15.2841L15.7133 16.7132C17.106 15.6145 18 13.9116 18 12Z\"/>","check-line":"<path d=\"M9.9997 15.1709L19.1921 5.97852L20.6063 7.39273L9.9997 17.9993L3.63574 11.6354L5.04996 10.2212L9.9997 15.1709Z\"/>","close-line":"<path d=\"M11.9997 10.5865L16.9495 5.63672L18.3637 7.05093L13.4139 12.0007L18.3637 16.9504L16.9495 18.3646L11.9997 13.4149L7.04996 18.3646L5.63574 16.9504L10.5855 12.0007L5.63574 7.05093L7.04996 5.63672L11.9997 10.5865Z\"/>","arrow-up-line":"<path d=\"M13.0001 7.82843V20H11.0001V7.82843L5.63614 13.1924L4.22192 11.7782L12.0001 4L19.7783 11.7782L18.3641 13.1924L13.0001 7.82843Z\"/>","arrow-down-line":"<path d=\"M13.0001 16.1716L18.3641 10.8076L19.7783 12.2218L12.0001 20L4.22192 12.2218L5.63614 10.8076L11.0001 16.1716V4H13.0001V16.1716Z\"/>","timer-line":"<path d=\"M17.6177 5.9681L19.0711 4.51472L20.4853 5.92893L19.0319 7.38231C20.2635 8.92199 21 10.875 21 13C21 17.9706 16.9706 22 12 22C7.02944 22 3 17.9706 3 13C3 8.02944 7.02944 4 12 4C14.125 4 16.078 4.73647 17.6177 5.9681ZM12 20C15.866 20 19 16.866 19 13C19 9.13401 15.866 6 12 6C8.13401 6 5 9.13401 5 13C5 16.866 8.13401 20 12 20ZM11 8H13V14H11V8ZM8 1H16V3H8V1Z\"/>","star-fill":"<path d=\"M12.0006 18.26L4.94715 22.2082L6.52248 14.2799L0.587891 8.7918L8.61493 7.84006L12.0006 0.5L15.3862 7.84006L23.4132 8.7918L17.4787 14.2799L19.054 22.2082L12.0006 18.26Z\"/>","music-2-line":"<path d=\"M20 3V17C20 19.2091 18.2091 21 16 21C13.7909 21 12 19.2091 12 17C12 14.7909 13.7909 13 16 13C16.7286 13 17.4117 13.1948 18 13.5351V5H9V17C9 19.2091 7.20914 21 5 21C2.79086 21 1 19.2091 1 17C1 14.7909 2.79086 13 5 13C5.72857 13 6.41165 13.1948 7 13.5351V3H20ZM5 19C6.10457 19 7 18.1046 7 17C7 15.8954 6.10457 15 5 15C3.89543 15 3 15.8954 3 17C3 18.1046 3.89543 19 5 19ZM16 19C17.1046 19 18 18.1046 18 17C18 15.8954 17.1046 15 16 15C14.8954 15 14 15.8954 14 17C14 18.1046 14.8954 19 16 19Z\"/>","arrow-left-line":"<path d=\"M7.82843 10.9999H20V12.9999H7.82843L13.1924 18.3638L11.7782 19.778L4 11.9999L11.7782 4.22168L13.1924 5.63589L7.82843 10.9999Z\"/>","arrow-right-line":"<path d=\"M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z\"/>","arrow-down-s-line":"<path d=\"M11.9999 13.1714L16.9497 8.22168L18.3639 9.63589L11.9999 15.9999L5.63599 9.63589L7.0502 8.22168L11.9999 13.1714Z\"/>","lightbulb-line":"<path d=\"M9.97308 18H11V13H13V18H14.0269C14.1589 16.7984 14.7721 15.8065 15.7676 14.7226C15.8797 14.6006 16.5988 13.8564 16.6841 13.7501C17.5318 12.6931 18 11.385 18 10C18 6.68629 15.3137 4 12 4C8.68629 4 6 6.68629 6 10C6 11.3843 6.46774 12.6917 7.31462 13.7484C7.40004 13.855 8.12081 14.6012 8.23154 14.7218C9.22766 15.8064 9.84103 16.7984 9.97308 18ZM10 20V21H14V20H10ZM5.75395 14.9992C4.65645 13.6297 4 11.8915 4 10C4 5.58172 7.58172 2 12 2C16.4183 2 20 5.58172 20 10C20 11.8925 19.3428 13.6315 18.2443 15.0014C17.624 15.7748 16 17 16 18.5V21C16 22.1046 15.1046 23 14 23H10C8.89543 23 8 22.1046 8 21V18.5C8 17 6.37458 15.7736 5.75395 14.9992Z\"/>","dashboard-3-line":"<path d=\"M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM15.8329 7.33748C16.0697 7.17128 16.3916 7.19926 16.5962 7.40381C16.8002 7.60784 16.8267 7.92955 16.6587 8.16418C14.479 11.2095 13.2796 12.8417 13.0607 13.0607C12.4749 13.6464 11.5251 13.6464 10.9393 13.0607C10.3536 12.4749 10.3536 11.5251 10.9393 10.9393C11.3126 10.5661 12.9438 9.36549 15.8329 7.33748ZM17.5 11C18.0523 11 18.5 11.4477 18.5 12C18.5 12.5523 18.0523 13 17.5 13C16.9477 13 16.5 12.5523 16.5 12C16.5 11.4477 16.9477 11 17.5 11ZM6.5 11C7.05228 11 7.5 11.4477 7.5 12C7.5 12.5523 7.05228 13 6.5 13C5.94772 13 5.5 12.5523 5.5 12C5.5 11.4477 5.94772 11 6.5 11ZM8.81802 7.40381C9.20854 7.79433 9.20854 8.4275 8.81802 8.81802C8.4275 9.20854 7.79433 9.20854 7.40381 8.81802C7.01328 8.4275 7.01328 7.79433 7.40381 7.40381C7.79433 7.01328 8.4275 7.01328 8.81802 7.40381ZM12 5.5C12.5523 5.5 13 5.94772 13 6.5C13 7.05228 12.5523 7.5 12 7.5C11.4477 7.5 11 7.05228 11 6.5C11 5.94772 11.4477 5.5 12 5.5Z\"/>","hand":"<path d=\"M12.5002 2C12.2241 2 12.0002 2.22386 12.0002 2.5V12H10.0002V4.5C10.0002 4.22386 9.77634 4 9.5002 4C9.22405 4 9.0002 4.22386 9.0002 4.5V14C8.64653 14 7.00024 14 7.00024 14C6.61911 12.3792 5.64236 11.4407 4.5954 11.3216C4.87926 12.0664 5.36117 13.2592 6.16634 15.0995C7.02511 17.0622 7.89128 18.5218 9.00374 19.4986C10.0783 20.442 11.4586 21 13.5002 21C16.5378 21 19.0002 18.5377 19.0002 15.5002V7C19.0002 6.72386 18.7763 6.5 18.5002 6.5C18.2241 6.5 18.0002 6.72386 18.0002 7V12H16.0002V4C16.0002 3.72386 15.7763 3.5 15.5002 3.5C15.2241 3.5 15.0002 3.72386 15.0002 4V12H13.0002V2.5C13.0002 2.22386 12.7763 2 12.5002 2ZM21.0002 15.5002C21.0002 19.6424 17.6423 23 13.5002 23C11.0417 23 9.17214 22.308 7.68416 21.0015C6.23411 19.7283 5.22528 17.9381 4.33405 15.9012C3.40393 13.7753 2.89004 12.4804 2.60991 11.7235C2.25318 10.7597 2.74616 9.41212 4.08583 9.31846C5.24076 9.23771 6.22061 9.61249 7.0002 10.2587V4.5C7.0002 3.11929 8.11949 2 9.5002 2C9.68522 2 9.86554 2.0201 10.0391 2.05823C10.2477 0.888227 11.2702 0 12.5002 0C13.5602 0 14.4661 0.659694 14.8298 1.59091C15.0431 1.53167 15.268 1.5 15.5002 1.5C16.8809 1.5 18.0002 2.61929 18.0002 4V4.55001C18.1618 4.51722 18.329 4.5 18.5002 4.5C19.8809 4.5 21.0002 5.61929 21.0002 7V15.5002Z\"/>","headphone-line":"<path d=\"M12 4C7.58172 4 4 7.58172 4 12H7C8.10457 12 9 12.8954 9 14V19C9 20.1046 8.10457 21 7 21H4C2.89543 21 2 20.1046 2 19V12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12V19C22 20.1046 21.1046 21 20 21H17C15.8954 21 15 20.1046 15 19V14C15 12.8954 15.8954 12 17 12H20C20 7.58172 16.4183 4 12 4ZM4 14V19H7V14H4ZM17 14V19H20V14H17Z\"/>","error-warning-line":"<path d=\"M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM11 15H13V17H11V15ZM11 7H13V13H11V7Z\"/>","checkbox-circle-fill":"<path d=\"M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM11.0026 16L18.0737 8.92893L16.6595 7.51472L11.0026 13.1716L8.17421 10.3431L6.75999 11.7574L11.0026 16Z\"/>","information-line":"<path d=\"M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM11 7H13V9H11V7ZM11 11H13V17H11V11Z\"/>","book-open-line":"<path d=\"M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z\"/>","eye-line":"<path d=\"M12.0003 3C17.3924 3 21.8784 6.87976 22.8189 12C21.8784 17.1202 17.3924 21 12.0003 21C6.60812 21 2.12215 17.1202 1.18164 12C2.12215 6.87976 6.60812 3 12.0003 3ZM12.0003 19C16.2359 19 19.8603 16.052 20.7777 12C19.8603 7.94803 16.2359 5 12.0003 5C7.7646 5 4.14022 7.94803 3.22278 12C4.14022 16.052 7.7646 19 12.0003 19ZM12.0003 16.5C9.51498 16.5 7.50026 14.4853 7.50026 12C7.50026 9.51472 9.51498 7.5 12.0003 7.5C14.4855 7.5 16.5003 9.51472 16.5003 12C16.5003 14.4853 14.4855 16.5 12.0003 16.5ZM12.0003 14.5C13.381 14.5 14.5003 13.3807 14.5003 12C14.5003 10.6193 13.381 9.5 12.0003 9.5C10.6196 9.5 9.50026 10.6193 9.50026 12C9.50026 13.3807 10.6196 14.5 12.0003 14.5Z\"/>","search-line":"<path d=\"M18.031 16.6168L22.3137 20.8995L20.8995 22.3137L16.6168 18.031C15.0769 19.263 13.124 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2C15.968 2 20 6.032 20 11C20 13.124 19.263 15.0769 18.031 16.6168ZM16.0247 15.8748C17.2475 14.6146 18 12.8956 18 11C18 7.1325 14.8675 4 11 4C7.1325 4 4 7.1325 4 11C4 14.8675 7.1325 18 11 18C12.8956 18 14.6146 17.2475 15.8748 16.0247L16.0247 15.8748Z\"/>","shuffle-line":"<path d=\"M18 17.8832V16L23 19L18 22V19.9095C14.9224 19.4698 12.2513 17.4584 11.0029 14.5453L11 14.5386L10.9971 14.5453C9.57893 17.8544 6.32508 20 2.72483 20H2V18H2.72483C5.52503 18 8.05579 16.3312 9.15885 13.7574L9.91203 12L9.15885 10.2426C8.05579 7.66878 5.52503 6 2.72483 6H2V4H2.72483C6.32508 4 9.57893 6.14557 10.9971 9.45473L11 9.46141L11.0029 9.45473C12.2513 6.5416 14.9224 4.53022 18 4.09051V2L23 5L18 8V6.11684C15.7266 6.53763 13.7737 8.0667 12.8412 10.2426L12.088 12L12.8412 13.7574C13.7737 15.9333 15.7266 17.4624 18 17.8832Z\"/>","equalizer-2-line":"<path d=\"M5 7C5 6.17157 5.67157 5.5 6.5 5.5C7.32843 5.5 8 6.17157 8 7C8 7.82843 7.32843 8.5 6.5 8.5C5.67157 8.5 5 7.82843 5 7ZM6.5 3.5C4.567 3.5 3 5.067 3 7C3 8.933 4.567 10.5 6.5 10.5C8.433 10.5 10 8.933 10 7C10 5.067 8.433 3.5 6.5 3.5ZM12 8H20V6H12V8ZM16 17C16 16.1716 16.6716 15.5 17.5 15.5C18.3284 15.5 19 16.1716 19 17C19 17.8284 18.3284 18.5 17.5 18.5C16.6716 18.5 16 17.8284 16 17ZM17.5 13.5C15.567 13.5 14 15.067 14 17C14 18.933 15.567 20.5 17.5 20.5C19.433 20.5 21 18.933 21 17C21 15.067 19.433 13.5 17.5 13.5ZM4 16V18H12V16H4Z\"/>"};
+const RI = {"mic-line":"<path d=\"M11.9998 3C10.3429 3 8.99976 4.34315 8.99976 6V10C8.99976 11.6569 10.3429 13 11.9998 13C13.6566 13 14.9998 11.6569 14.9998 10V6C14.9998 4.34315 13.6566 3 11.9998 3ZM11.9998 1C14.7612 1 16.9998 3.23858 16.9998 6V10C16.9998 12.7614 14.7612 15 11.9998 15C9.23833 15 6.99976 12.7614 6.99976 10V6C6.99976 3.23858 9.23833 1 11.9998 1ZM3.05469 11H5.07065C5.55588 14.3923 8.47329 17 11.9998 17C15.5262 17 18.4436 14.3923 18.9289 11H20.9448C20.4837 15.1716 17.1714 18.4839 12.9998 18.9451V23H10.9998V18.9451C6.82814 18.4839 3.51584 15.1716 3.05469 11Z\"/>","mic-off-line":"<path d=\"M16.4249 17.839L21.1925 22.6066L22.6068 21.1924L2.80777 1.3934L1.39355 2.80761L7.00016 8.41421V10C7.00016 12.7614 9.23873 15 12.0002 15C12.4825 15 12.9489 14.9317 13.3902 14.8042L14.9404 16.3544C14.0464 16.7688 13.0503 17 12.0002 17C8.47368 17 5.55627 14.3923 5.07105 11H3.05509C3.51623 15.1716 6.82854 18.4839 11.0002 18.9451V23H13.0002V18.9451C14.2341 18.8087 15.3929 18.4228 16.4249 17.839ZM11.5528 12.9669C10.2541 12.7727 9.22745 11.7461 9.03328 10.4473L11.5528 12.9669ZM19.3747 15.1604L17.9323 13.7179C18.4407 12.9084 18.788 11.9874 18.9293 11H20.9452C20.7754 12.5366 20.2187 13.9565 19.3747 15.1604ZM16.4658 12.2514L14.9173 10.703C14.9715 10.4775 15.0002 10.2421 15.0002 10V6C15.0002 4.34315 13.657 3 12.0002 3C10.7059 3 9.6031 3.81956 9.18237 4.96802L7.68575 3.47139C8.55427 1.99268 10.1613 1 12.0002 1C14.7616 1 17.0002 3.23858 17.0002 6V10C17.0002 10.8099 16.8076 11.5748 16.4658 12.2514Z\"/>","play-fill":"<path d=\"M19.376 12.4161L8.77735 19.4818C8.54759 19.635 8.23715 19.5729 8.08397 19.3432C8.02922 19.261 8 19.1645 8 19.0658V4.93433C8 4.65818 8.22386 4.43433 8.5 4.43433C8.59871 4.43433 8.69522 4.46355 8.77735 4.5183L19.376 11.584C19.6057 11.7372 19.6678 12.0477 19.5146 12.2774C19.478 12.3323 19.4309 12.3795 19.376 12.4161Z\"/>","pause-fill":"<path d=\"M6 5H8V19H6V5ZM16 5H18V19H16V5Z\"/>","restart-line":"<path d=\"M18.5374 19.5674C16.7844 21.0831 14.4993 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 14.1361 21.3302 16.1158 20.1892 17.7406L17 12H20C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C14.1502 20 16.1022 19.1517 17.5398 17.7716L18.5374 19.5674Z\"/>","volume-up-line":"<path d=\"M6.60282 10.0001L10 7.22056V16.7796L6.60282 14.0001H3V10.0001H6.60282ZM2 16.0001H5.88889L11.1834 20.3319C11.2727 20.405 11.3846 20.4449 11.5 20.4449C11.7761 20.4449 12 20.2211 12 19.9449V4.05519C12 3.93977 11.9601 3.8279 11.887 3.73857C11.7121 3.52485 11.3971 3.49335 11.1834 3.66821L5.88889 8.00007H2C1.44772 8.00007 1 8.44778 1 9.00007V15.0001C1 15.5524 1.44772 16.0001 2 16.0001ZM23 12C23 15.292 21.5539 18.2463 19.2622 20.2622L17.8445 18.8444C19.7758 17.1937 21 14.7398 21 12C21 9.26016 19.7758 6.80629 17.8445 5.15557L19.2622 3.73779C21.5539 5.75368 23 8.70795 23 12ZM18 12C18 10.0883 17.106 8.38548 15.7133 7.28673L14.2842 8.71584C15.3213 9.43855 16 10.64 16 12C16 13.36 15.3213 14.5614 14.2842 15.2841L15.7133 16.7132C17.106 15.6145 18 13.9116 18 12Z\"/>","check-line":"<path d=\"M9.9997 15.1709L19.1921 5.97852L20.6063 7.39273L9.9997 17.9993L3.63574 11.6354L5.04996 10.2212L9.9997 15.1709Z\"/>","close-line":"<path d=\"M11.9997 10.5865L16.9495 5.63672L18.3637 7.05093L13.4139 12.0007L18.3637 16.9504L16.9495 18.3646L11.9997 13.4149L7.04996 18.3646L5.63574 16.9504L10.5855 12.0007L5.63574 7.05093L7.04996 5.63672L11.9997 10.5865Z\"/>","arrow-up-line":"<path d=\"M13.0001 7.82843V20H11.0001V7.82843L5.63614 13.1924L4.22192 11.7782L12.0001 4L19.7783 11.7782L18.3641 13.1924L13.0001 7.82843Z\"/>","arrow-down-line":"<path d=\"M13.0001 16.1716L18.3641 10.8076L19.7783 12.2218L12.0001 20L4.22192 12.2218L5.63614 10.8076L11.0001 16.1716V4H13.0001V16.1716Z\"/>","timer-line":"<path d=\"M17.6177 5.9681L19.0711 4.51472L20.4853 5.92893L19.0319 7.38231C20.2635 8.92199 21 10.875 21 13C21 17.9706 16.9706 22 12 22C7.02944 22 3 17.9706 3 13C3 8.02944 7.02944 4 12 4C14.125 4 16.078 4.73647 17.6177 5.9681ZM12 20C15.866 20 19 16.866 19 13C19 9.13401 15.866 6 12 6C8.13401 6 5 9.13401 5 13C5 16.866 8.13401 20 12 20ZM11 8H13V14H11V8ZM8 1H16V3H8V1Z\"/>","star-fill":"<path d=\"M12.0006 18.26L4.94715 22.2082L6.52248 14.2799L0.587891 8.7918L8.61493 7.84006L12.0006 0.5L15.3862 7.84006L23.4132 8.7918L17.4787 14.2799L19.054 22.2082L12.0006 18.26Z\"/>","music-2-line":"<path d=\"M20 3V17C20 19.2091 18.2091 21 16 21C13.7909 21 12 19.2091 12 17C12 14.7909 13.7909 13 16 13C16.7286 13 17.4117 13.1948 18 13.5351V5H9V17C9 19.2091 7.20914 21 5 21C2.79086 21 1 19.2091 1 17C1 14.7909 2.79086 13 5 13C5.72857 13 6.41165 13.1948 7 13.5351V3H20ZM5 19C6.10457 19 7 18.1046 7 17C7 15.8954 6.10457 15 5 15C3.89543 15 3 15.8954 3 17C3 18.1046 3.89543 19 5 19ZM16 19C17.1046 19 18 18.1046 18 17C18 15.8954 17.1046 15 16 15C14.8954 15 14 15.8954 14 17C14 18.1046 14.8954 19 16 19Z\"/>","arrow-left-line":"<path d=\"M7.82843 10.9999H20V12.9999H7.82843L13.1924 18.3638L11.7782 19.778L4 11.9999L11.7782 4.22168L13.1924 5.63589L7.82843 10.9999Z\"/>","arrow-right-line":"<path d=\"M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z\"/>","arrow-down-s-line":"<path d=\"M11.9999 13.1714L16.9497 8.22168L18.3639 9.63589L11.9999 15.9999L5.63599 9.63589L7.0502 8.22168L11.9999 13.1714Z\"/>","lightbulb-line":"<path d=\"M9.97308 18H11V13H13V18H14.0269C14.1589 16.7984 14.7721 15.8065 15.7676 14.7226C15.8797 14.6006 16.5988 13.8564 16.6841 13.7501C17.5318 12.6931 18 11.385 18 10C18 6.68629 15.3137 4 12 4C8.68629 4 6 6.68629 6 10C6 11.3843 6.46774 12.6917 7.31462 13.7484C7.40004 13.855 8.12081 14.6012 8.23154 14.7218C9.22766 15.8064 9.84103 16.7984 9.97308 18ZM10 20V21H14V20H10ZM5.75395 14.9992C4.65645 13.6297 4 11.8915 4 10C4 5.58172 7.58172 2 12 2C16.4183 2 20 5.58172 20 10C20 11.8925 19.3428 13.6315 18.2443 15.0014C17.624 15.7748 16 17 16 18.5V21C16 22.1046 15.1046 23 14 23H10C8.89543 23 8 22.1046 8 21V18.5C8 17 6.37458 15.7736 5.75395 14.9992Z\"/>","dashboard-3-line":"<path d=\"M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM15.8329 7.33748C16.0697 7.17128 16.3916 7.19926 16.5962 7.40381C16.8002 7.60784 16.8267 7.92955 16.6587 8.16418C14.479 11.2095 13.2796 12.8417 13.0607 13.0607C12.4749 13.6464 11.5251 13.6464 10.9393 13.0607C10.3536 12.4749 10.3536 11.5251 10.9393 10.9393C11.3126 10.5661 12.9438 9.36549 15.8329 7.33748ZM17.5 11C18.0523 11 18.5 11.4477 18.5 12C18.5 12.5523 18.0523 13 17.5 13C16.9477 13 16.5 12.5523 16.5 12C16.5 11.4477 16.9477 11 17.5 11ZM6.5 11C7.05228 11 7.5 11.4477 7.5 12C7.5 12.5523 7.05228 13 6.5 13C5.94772 13 5.5 12.5523 5.5 12C5.5 11.4477 5.94772 11 6.5 11ZM8.81802 7.40381C9.20854 7.79433 9.20854 8.4275 8.81802 8.81802C8.4275 9.20854 7.79433 9.20854 7.40381 8.81802C7.01328 8.4275 7.01328 7.79433 7.40381 7.40381C7.79433 7.01328 8.4275 7.01328 8.81802 7.40381ZM12 5.5C12.5523 5.5 13 5.94772 13 6.5C13 7.05228 12.5523 7.5 12 7.5C11.4477 7.5 11 7.05228 11 6.5C11 5.94772 11.4477 5.5 12 5.5Z\"/>","hand":"<path d=\"M12.5002 2C12.2241 2 12.0002 2.22386 12.0002 2.5V12H10.0002V4.5C10.0002 4.22386 9.77634 4 9.5002 4C9.22405 4 9.0002 4.22386 9.0002 4.5V14C8.64653 14 7.00024 14 7.00024 14C6.61911 12.3792 5.64236 11.4407 4.5954 11.3216C4.87926 12.0664 5.36117 13.2592 6.16634 15.0995C7.02511 17.0622 7.89128 18.5218 9.00374 19.4986C10.0783 20.442 11.4586 21 13.5002 21C16.5378 21 19.0002 18.5377 19.0002 15.5002V7C19.0002 6.72386 18.7763 6.5 18.5002 6.5C18.2241 6.5 18.0002 6.72386 18.0002 7V12H16.0002V4C16.0002 3.72386 15.7763 3.5 15.5002 3.5C15.2241 3.5 15.0002 3.72386 15.0002 4V12H13.0002V2.5C13.0002 2.22386 12.7763 2 12.5002 2ZM21.0002 15.5002C21.0002 19.6424 17.6423 23 13.5002 23C11.0417 23 9.17214 22.308 7.68416 21.0015C6.23411 19.7283 5.22528 17.9381 4.33405 15.9012C3.40393 13.7753 2.89004 12.4804 2.60991 11.7235C2.25318 10.7597 2.74616 9.41212 4.08583 9.31846C5.24076 9.23771 6.22061 9.61249 7.0002 10.2587V4.5C7.0002 3.11929 8.11949 2 9.5002 2C9.68522 2 9.86554 2.0201 10.0391 2.05823C10.2477 0.888227 11.2702 0 12.5002 0C13.5602 0 14.4661 0.659694 14.8298 1.59091C15.0431 1.53167 15.268 1.5 15.5002 1.5C16.8809 1.5 18.0002 2.61929 18.0002 4V4.55001C18.1618 4.51722 18.329 4.5 18.5002 4.5C19.8809 4.5 21.0002 5.61929 21.0002 7V15.5002Z\"/>","headphone-line":"<path d=\"M12 4C7.58172 4 4 7.58172 4 12H7C8.10457 12 9 12.8954 9 14V19C9 20.1046 8.10457 21 7 21H4C2.89543 21 2 20.1046 2 19V12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12V19C22 20.1046 21.1046 21 20 21H17C15.8954 21 15 20.1046 15 19V14C15 12.8954 15.8954 12 17 12H20C20 7.58172 16.4183 4 12 4ZM4 14V19H7V14H4ZM17 14V19H20V14H17Z\"/>","error-warning-line":"<path d=\"M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM11 15H13V17H11V15ZM11 7H13V13H11V7Z\"/>","checkbox-circle-fill":"<path d=\"M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM11.0026 16L18.0737 8.92893L16.6595 7.51472L11.0026 13.1716L8.17421 10.3431L6.75999 11.7574L11.0026 16Z\"/>","information-line":"<path d=\"M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM11 7H13V9H11V7ZM11 11H13V17H11V11Z\"/>","book-open-line":"<path d=\"M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z\"/>","eye-line":"<path d=\"M12.0003 3C17.3924 3 21.8784 6.87976 22.8189 12C21.8784 17.1202 17.3924 21 12.0003 21C6.60812 21 2.12215 17.1202 1.18164 12C2.12215 6.87976 6.60812 3 12.0003 3ZM12.0003 19C16.2359 19 19.8603 16.052 20.7777 12C19.8603 7.94803 16.2359 5 12.0003 5C7.7646 5 4.14022 7.94803 3.22278 12C4.14022 16.052 7.7646 19 12.0003 19ZM12.0003 16.5C9.51498 16.5 7.50026 14.4853 7.50026 12C7.50026 9.51472 9.51498 7.5 12.0003 7.5C14.4855 7.5 16.5003 9.51472 16.5003 12C16.5003 14.4853 14.4855 16.5 12.0003 16.5ZM12.0003 14.5C13.381 14.5 14.5003 13.3807 14.5003 12C14.5003 10.6193 13.381 9.5 12.0003 9.5C10.6196 9.5 9.50026 10.6193 9.50026 12C9.50026 13.3807 10.6196 14.5 12.0003 14.5Z\"/>","search-line":"<path d=\"M18.031 16.6168L22.3137 20.8995L20.8995 22.3137L16.6168 18.031C15.0769 19.263 13.124 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2C15.968 2 20 6.032 20 11C20 13.124 19.263 15.0769 18.031 16.6168ZM16.0247 15.8748C17.2475 14.6146 18 12.8956 18 11C18 7.1325 14.8675 4 11 4C7.1325 4 4 7.1325 4 11C4 14.8675 7.1325 18 11 18C12.8956 18 14.6146 17.2475 15.8748 16.0247L16.0247 15.8748Z\"/>","shuffle-line":"<path d=\"M18 17.8832V16L23 19L18 22V19.9095C14.9224 19.4698 12.2513 17.4584 11.0029 14.5453L11 14.5386L10.9971 14.5453C9.57893 17.8544 6.32508 20 2.72483 20H2V18H2.72483C5.52503 18 8.05579 16.3312 9.15885 13.7574L9.91203 12L9.15885 10.2426C8.05579 7.66878 5.52503 6 2.72483 6H2V4H2.72483C6.32508 4 9.57893 6.14557 10.9971 9.45473L11 9.46141L11.0029 9.45473C12.2513 6.5416 14.9224 4.53022 18 4.09051V2L23 5L18 8V6.11684C15.7266 6.53763 13.7737 8.0667 12.8412 10.2426L12.088 12L12.8412 13.7574C13.7737 15.9333 15.7266 17.4624 18 17.8832Z\"/>","equalizer-2-line":"<path d=\"M5 7C5 6.17157 5.67157 5.5 6.5 5.5C7.32843 5.5 8 6.17157 8 7C8 7.82843 7.32843 8.5 6.5 8.5C5.67157 8.5 5 7.82843 5 7ZM6.5 3.5C4.567 3.5 3 5.067 3 7C3 8.933 4.567 10.5 6.5 10.5C8.433 10.5 10 8.933 10 7C10 5.067 8.433 3.5 6.5 3.5ZM12 8H20V6H12V8ZM16 17C16 16.1716 16.6716 15.5 17.5 15.5C18.3284 15.5 19 16.1716 19 17C19 17.8284 18.3284 18.5 17.5 18.5C16.6716 18.5 16 17.8284 16 17ZM17.5 13.5C15.567 13.5 14 15.067 14 17C14 18.933 15.567 20.5 17.5 20.5C19.433 20.5 21 18.933 21 17C21 15.067 19.433 13.5 17.5 13.5ZM4 16V18H12V16H4Z\"/>","settings-3-line":"<path d=\"M3.33946 17.0002C2.90721 16.2515 2.58277 15.4702 2.36133 14.6741C3.3338 14.1779 3.99972 13.1668 3.99972 12.0002C3.99972 10.8345 3.3348 9.824 2.36353 9.32741C2.81025 7.71651 3.65857 6.21627 4.86474 4.99001C5.7807 5.58416 6.98935 5.65534 7.99972 5.072C9.01009 4.48866 9.55277 3.40635 9.4962 2.31604C11.1613 1.8846 12.8847 1.90004 14.5031 2.31862C14.4475 3.40806 14.9901 4.48912 15.9997 5.072C17.0101 5.65532 18.2187 5.58416 19.1346 4.99007C19.7133 5.57986 20.2277 6.25151 20.66 7.00021C21.0922 7.7489 21.4167 8.53025 21.6381 9.32628C20.6656 9.82247 19.9997 10.8336 19.9997 12.0002C19.9997 13.166 20.6646 14.1764 21.6359 14.673C21.1892 16.2839 20.3409 17.7841 19.1347 19.0104C18.2187 18.4163 17.0101 18.3451 15.9997 18.9284C14.9893 19.5117 14.4467 20.5941 14.5032 21.6844C12.8382 22.1158 11.1148 22.1004 9.49633 21.6818C9.55191 20.5923 9.00929 19.5113 7.99972 18.9284C6.98938 18.3451 5.78079 18.4162 4.86484 19.0103C4.28617 18.4205 3.77172 17.7489 3.33946 17.0002ZM8.99972 17.1964C10.0911 17.8265 10.8749 18.8227 11.2503 19.9659C11.7486 20.0133 12.2502 20.014 12.7486 19.9675C13.1238 18.8237 13.9078 17.8268 14.9997 17.1964C16.0916 16.5659 17.347 16.3855 18.5252 16.6324C18.8146 16.224 19.0648 15.7892 19.2729 15.334C18.4706 14.4373 17.9997 13.2604 17.9997 12.0002C17.9997 10.74 18.4706 9.5632 19.2729 8.6665C19.1688 8.4405 19.0538 8.21822 18.9279 8.00021C18.802 7.78219 18.667 7.57148 18.5233 7.36842C17.3457 7.61476 16.0911 7.43414 14.9997 6.80405C13.9083 6.17395 13.1246 5.17768 12.7491 4.03455C12.2509 3.98714 11.7492 3.98646 11.2509 4.03292C10.8756 5.17671 10.0916 6.17364 8.99972 6.80405C7.9078 7.43447 6.65245 7.61494 5.47428 7.36803C5.18485 7.77641 4.93463 8.21117 4.72656 8.66637C5.52881 9.56311 5.99972 10.74 5.99972 12.0002C5.99972 13.2604 5.52883 14.4372 4.72656 15.3339C4.83067 15.5599 4.94564 15.7822 5.07152 16.0002C5.19739 16.2182 5.3324 16.4289 5.47612 16.632C6.65377 16.3857 7.90838 16.5663 8.99972 17.1964ZM11.9997 15.0002C10.3429 15.0002 8.99972 13.6571 8.99972 12.0002C8.99972 10.3434 10.3429 9.00021 11.9997 9.00021C13.6566 9.00021 14.9997 10.3434 14.9997 12.0002C14.9997 13.6571 13.6566 15.0002 11.9997 15.0002ZM11.9997 13.0002C12.552 13.0002 12.9997 12.5525 12.9997 12.0002C12.9997 11.4479 12.552 11.0002 11.9997 11.0002C11.4474 11.0002 10.9997 11.4479 10.9997 12.0002C10.9997 12.5525 11.4474 13.0002 11.9997 13.0002Z\"/>","graduation-cap-line":"<path d=\"M4 11.3333L0 9L12 2L24 9V17.5H22V10.1667L20 11.3333V18.0113L19.7774 18.2864C17.9457 20.5499 15.1418 22 12 22C8.85817 22 6.05429 20.5499 4.22263 18.2864L4 18.0113V11.3333ZM6 12.5V17.2917C7.46721 18.954 9.61112 20 12 20C14.3889 20 16.5328 18.954 18 17.2917V12.5L12 16L6 12.5ZM3.96927 9L12 13.6846L20.0307 9L12 4.31541L3.96927 9Z\"/>","timer-flash-line":"<path d=\"M6.38231 5.9681C7.92199 4.73647 9.87499 4 12 4C14.125 4 16.078 4.73647 17.6177 5.9681L19.0711 4.51472L20.4853 5.92893L19.0319 7.38231C20.2635 8.92199 21 10.875 21 13C21 17.9706 16.9706 22 12 22C7.02944 22 3 17.9706 3 13C3 10.875 3.73647 8.92199 4.9681 7.38231L3.51472 5.92893L4.92893 4.51472L6.38231 5.9681ZM12 20C15.866 20 19 16.866 19 13C19 9.13401 15.866 6 12 6C8.13401 6 5 9.13401 5 13C5 16.866 8.13401 20 12 20ZM13 12H16L11 18.5V14H8L13 7.4952V12ZM8 1H16V3H8V1Z\"/>","pulse-line":"<path d=\"M9 7.53861L15 21.5386L18.6594 13H23V11H17.3406L15 16.4614L9 2.46143L5.3406 11H1V13H6.6594L9 7.53861Z\"/>","calendar-check-line":"<path d=\"M9 1V3H15V1H17V3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H7V1H9ZM20 10H4V19H20V10ZM15.0355 11.136L16.4497 12.5503L11.5 17.5L7.96447 13.9645L9.37868 12.5503L11.5 14.6716L15.0355 11.136ZM7 5H4V8H20V5H17V6H15V5H9V6H7V5Z\"/>","arrow-right-s-line":"<path d=\"M13.1717 12.0007L8.22192 7.05093L9.63614 5.63672L16.0001 12.0007L9.63614 18.3646L8.22192 16.9504L13.1717 12.0007Z\"/>","trophy-line":"<path d=\"M13.0049 16.9409V19.0027H18.0049V21.0027H6.00488V19.0027H11.0049V16.9409C7.05857 16.4488 4.00488 13.0824 4.00488 9.00275V3.00275H20.0049V9.00275C20.0049 13.0824 16.9512 16.4488 13.0049 16.9409ZM6.00488 5.00275V9.00275C6.00488 12.3165 8.69117 15.0027 12.0049 15.0027C15.3186 15.0027 18.0049 12.3165 18.0049 9.00275V5.00275H6.00488ZM1.00488 5.00275H3.00488V9.00275H1.00488V5.00275ZM21.0049 5.00275H23.0049V9.00275H21.0049V5.00275Z\"/>","sun-line":"<path d=\"M12 18C8.68629 18 6 15.3137 6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12C18 15.3137 15.3137 18 12 18ZM12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM11 1H13V4H11V1ZM11 20H13V23H11V20ZM3.51472 4.92893L4.92893 3.51472L7.05025 5.63604L5.63604 7.05025L3.51472 4.92893ZM16.9497 18.364L18.364 16.9497L20.4853 19.0711L19.0711 20.4853L16.9497 18.364ZM19.0711 3.51472L20.4853 4.92893L18.364 7.05025L16.9497 5.63604L19.0711 3.51472ZM5.63604 16.9497L7.05025 18.364L4.92893 20.4853L3.51472 19.0711L5.63604 16.9497ZM23 11V13H20V11H23ZM4 11V13H1V11H4Z\"/>","moon-line":"<path d=\"M10 7C10 10.866 13.134 14 17 14C18.9584 14 20.729 13.1957 21.9995 11.8995C22 11.933 22 11.9665 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C12.0335 2 12.067 2 12.1005 2.00049C10.8043 3.27098 10 5.04157 10 7ZM4 12C4 16.4183 7.58172 20 12 20C15.0583 20 17.7158 18.2839 19.062 15.7621C18.3945 15.9187 17.7035 16 17 16C12.0294 16 8 11.9706 8 7C8 6.29648 8.08133 5.60547 8.2379 4.938C5.71611 6.28423 4 8.9417 4 12Z\"/>","contrast-2-line":"<path d=\"M12 21.9967C6.47715 21.9967 2 17.5196 2 11.9967C2 6.47386 6.47715 1.9967 12 1.9967C17.5228 1.9967 22 6.47386 22 11.9967C22 17.5196 17.5228 21.9967 12 21.9967ZM12 19.9967C16.4183 19.9967 20 16.415 20 11.9967C20 7.57843 16.4183 3.9967 12 3.9967C7.58172 3.9967 4 7.57843 4 11.9967C4 16.415 7.58172 19.9967 12 19.9967ZM7.00035 15.316C9.07995 15.1646 11.117 14.2939 12.7071 12.7038C14.2972 11.1137 15.1679 9.07666 15.3193 6.99706C15.6454 7.21408 15.955 7.46642 16.2426 7.75406C18.5858 10.0972 18.5858 13.8962 16.2426 16.2393C13.8995 18.5825 10.1005 18.5825 7.75736 16.2393C7.46971 15.9517 7.21738 15.6421 7.00035 15.316Z\"/>","delete-bin-line":"<path d=\"M17 6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6ZM18 8H6V20H18V8ZM9 11H11V17H9V11ZM13 11H15V17H13V11ZM9 4V6H15V4H9Z\"/>","focus-3-line":"<path d=\"M13 1L13.001 4.06201C16.6192 4.51365 19.4869 7.38163 19.9381 11L23 11V13L19.938 13.001C19.4864 16.6189 16.6189 19.4864 13.001 19.938L13 23H11L11 19.9381C7.38163 19.4869 4.51365 16.6192 4.06201 13.001L1 13V11L4.06189 11C4.51312 7.38129 7.38129 4.51312 11 4.06189L11 1H13ZM12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6ZM12 10C13.1046 10 14 10.8954 14 12C14 13.1046 13.1046 14 12 14C10.8954 14 10 13.1046 10 12C10 10.8954 10.8954 10 12 10Z\"/>","checkbox-circle-line":"<path d=\"M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM11.0026 16L6.75999 11.7574L8.17421 10.3431L11.0026 13.1716L16.6595 7.51472L18.0737 8.92893L11.0026 16Z\"/>","music-line":"<path d=\"M12 13.5351V3H20V5H14V17C14 19.2091 12.2091 21 10 21C7.79086 21 6 19.2091 6 17C6 14.7909 7.79086 13 10 13C10.7286 13 11.4117 13.1948 12 13.5351ZM10 19C11.1046 19 12 18.1046 12 17C12 15.8954 11.1046 15 10 15C8.89543 15 8 15.8954 8 17C8 18.1046 8.89543 19 10 19Z\"/>","play-line":"<path d=\"M16.3944 12.0001L10 7.7371V16.263L16.3944 12.0001ZM19.376 12.4161L8.77735 19.4818C8.54759 19.635 8.23715 19.5729 8.08397 19.3432C8.02922 19.261 8 19.1645 8 19.0658V4.93433C8 4.65818 8.22386 4.43433 8.5 4.43433C8.59871 4.43433 8.69522 4.46355 8.77735 4.5183L19.376 11.584C19.6057 11.7372 19.6678 12.0477 19.5146 12.2774C19.478 12.3323 19.4309 12.3795 19.376 12.4161Z\"/>","layout-row-line":"<path d=\"M19 11V5H5V11H19ZM19 13H5V19H19V13ZM4 3H20C20.5523 3 21 3.44772 21 4V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V4C3 3.44772 3.44772 3 4 3Z\"/>","layout-column-line":"<path d=\"M11 5H5V19H11V5ZM13 5V19H19V5H13ZM4 3H20C20.5523 3 21 3.44772 21 4V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V4C3 3.44772 3.44772 3 4 3Z\"/>","flip-horizontal-line":"<path d=\"M11 2V22H13V2H11ZM2 6C2 4.89543 2.89543 4 4 4H7C8.10457 4 9 4.89543 9 6V18C9 19.1046 8.10457 20 7 20H4C2.89543 20 2 19.1046 2 18V6ZM20 6V18H17V6H20ZM17 4C15.8954 4 15 4.89543 15 6V18C15 19.1046 15.8954 20 17 20H20C21.1046 20 22 19.1046 22 18V6C22 4.89543 21.1046 4 20 4H17Z\"/>"};
 function icon(n, cls=""){return `<svg class="ri ${cls}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${RI[n]||""}</svg>`;}
 
 /* ============================================================
@@ -1044,7 +1267,7 @@ if (typeof module !== 'undefined') module.exports = { CHORDS, CHORD_GROUPS, SONG
 
 'use strict';
 /* ============================================================
-   Traste — aplicación (afinador, acordes, canciones)
+   Traste — aplicación (afinador, aprender, canciones, ajustes)
    ============================================================ */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -1052,6 +1275,7 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const fmt = (v, d = 1) => v.toFixed(d).replace('.', ',');
 const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const norm = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 const store = {
   get(k, d) { try { const v = localStorage.getItem('traste:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
@@ -1064,6 +1288,10 @@ const state = {
   cals: store.get('cals', {}),          // comprobación del micrófono, por micrófono
   learned: store.get('learned', {}),
   best: store.get('best2', {}),          // canciones: { 'id:nivel': { stars, acc, pts } }
+  rec: store.get('rec', {}),             // ejercicios: { 'id:modo': { v, stars } }
+  diagram: store.get('diagram', 'v'),    // diagramas de acordes: 'v' vertical · 'h' horizontal (6ª abajo)
+  lefty: store.get('lefty', false),
+  theme: store.get('theme', 'auto'),
 };
 
 function hydrateIcons(root = document) {
@@ -1273,29 +1501,69 @@ async function micReady() {
   return true;
 }
 function onMicChange() {
-  const b = $('#micBtn'); b.dataset.on = String(Mic.on);
-  b.title = Mic.on ? `${Mic.label} · pulsa para apagarlo` : 'Activar el micrófono';
-  $('#micIcon').outerHTML = icon(Mic.on ? 'mic-line' : 'mic-off-line', '').replace('<svg', '<svg id="micIcon"');
-  if (!Mic.on) renderMeter(0);
+  $('#railMicDot').hidden = !Mic.on;
   $('#tunerCta').hidden = Mic.on;
-  $('#micBox').hidden = !Mic.on;
-  if (Mic.on) fillMicSelect();
-  Cal.sync();
+  if (Mic.on) fillMicSelect(); else MicCard.devs = [];
+  MicCard.render(); Cal.sync();
 }
 async function fillMicSelect() {
   try {
-    const devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'audioinput' && d.deviceId);
-    const sel = $('#micSelect');
-    sel.innerHTML = devs.map((d, i) => `<option value="${d.deviceId}">${d.label || 'Micrófono ' + (i + 1)}</option>`).join('');
-    const cur = devs.find((d) => d.deviceId === Mic.deviceId) || devs.find((d) => micKey(d.label, d.deviceId) === Mic.key);
-    if (cur) sel.value = cur.deviceId;
-    sel.hidden = devs.length < 2;
-  } catch { /* sin lista de dispositivos */ }
+    MicCard.devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'audioinput' && d.deviceId);
+  } catch { MicCard.devs = []; }
+  MicCard.render();
 }
-function renderMeter(level) {
-  const db = 20 * Math.log10(level + 1e-9), lit = clamp(Math.round((db + 62) / 10), 0, 5);
-  $$('#micMeter i').forEach((el, i) => { el.classList.toggle('lit', i < lit); el.classList.toggle('hot', i < lit && i >= 4); });
+const dbPct = (level) => clamp((20 * Math.log10(level + 1e-9) + 70) / 60, 0, 1) * 100;
+function timeAgo(at) {
+  const d = Math.floor((Date.now() - at) / 86400000);
+  return d <= 0 ? 'hoy' : d === 1 ? 'ayer' : `hace ${d} días`;
 }
+/* Tarjeta del micrófono (afinador y ajustes): qué micro se usa, su nivel en vivo con la marca a partir
+   de la cual Traste escucha, y si está ajustado a la sala, explicado con palabras normales */
+const MicCard = {
+  devs: [],
+  render() {
+    $$('[data-mic-card]').forEach((el) => {
+      const full = !el.classList.contains('compact');
+      if (!Mic.on) {
+        el.innerHTML = `<div class="mc-row"><span class="mc-ico off">${icon('mic-off-line')}</span>
+          <div class="mc-txt"><b>Micrófono apagado</b><span>${full ? 'Traste lo usa para oír tu guitarra. El sonido se analiza en tu navegador y no sale de tu equipo.' : 'Actívalo para que Traste te oiga.'}</span></div>
+          <button type="button" class="btn btn-primary btn-sm" data-action="mic-on">${icon('mic-line')}Activar</button></div>`;
+        return;
+      }
+      const cal = state.cals[Mic.key], devs = this.devs;
+      const cur = devs.find((d) => d.deviceId === Mic.deviceId) || devs.find((d) => micKey(d.label, d.deviceId) === Mic.key);
+      const name = devs.length > 1
+        ? `<select data-mic-select aria-label="Micrófono">${devs.map((d, i) => `<option value="${esc(d.deviceId)}" ${d === cur ? 'selected' : ''}>${esc(d.label || 'Micrófono ' + (i + 1))}</option>`).join('')}</select>`
+        : `<b class="mc-name">${esc(Mic.label)}</b>`;
+      const status = cal
+        ? `<span class="mc-st ok">${icon('checkbox-circle-fill')}Ajustado ${timeAgo(cal.at)} · ${cal.noise > 0.02 ? 'sala ruidosa' : 'sala tranquila'}${cal.toneOk ? '' : ' · no oyó el tono de prueba'}</span>`
+        : `<span class="mc-st warn">${icon('error-warning-line')}Sin ajustar: puede confundir ruido con notas</span>`;
+      const gate = cal ? dbPct(cal.gate) : dbPct(Mic.gate());
+      el.innerHTML = `
+        <div class="mc-row">
+          <span class="mc-ico">${icon('mic-line')}</span>
+          <div class="mc-txt">${name}</div>
+          <button type="button" class="btn ${cal ? 'btn-soft' : 'btn-primary'} btn-sm" data-mic-cal>${icon('equalizer-2-line')}${cal ? (full ? 'Volver a ajustar' : 'Ajustar') : 'Ajustar ahora'}</button>
+        </div>
+        <div class="mc-status">${status}</div>
+        <div class="mc-meter"><div class="lv"><i class="fill"></i><i class="gate" style="left:${gate.toFixed(1)}%"></i></div>
+          <span>${full ? 'Nivel de entrada. Lo que queda a la izquierda de la marca se ignora como ruido de la sala.' : 'El ajuste mide el ruido de la sala y comprueba que el micro oye bien las notas.'}</span></div>
+        ${full ? `<button type="button" class="link-btn mc-off" data-mic-off>Apagar el micrófono</button>` : ''}`;
+    });
+  },
+  frame(level) {
+    const w = dbPct(level).toFixed(1) + '%', hot = level > (state.cals[Mic.key]?.gate ?? Mic.gate());
+    $$('[data-mic-card] .fill').forEach((el) => { el.style.width = w; el.classList.toggle('hot', hot); });
+  },
+};
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-mic-cal]')) Cal.recheck();
+  if (e.target.closest('[data-mic-off]')) Mic.stop();
+});
+document.addEventListener('change', async (e) => {
+  if (!e.target.matches('[data-mic-select]')) return;
+  try { await Mic.start(e.target.value); } catch { toast('No he podido abrir ese micrófono.'); fillMicSelect(); }
+});
 
 /* ============================================================
    Comprobación del micrófono (silencio + tono de prueba), por micrófono
@@ -1303,12 +1571,11 @@ function renderMeter(level) {
 const Cal = {
   running: false, phase: 'intro', forced: false, steps: [{ s: '', res: '' }, { s: '', res: '' }], allOk: false, listener: null,
   needed() { return Mic.on && (this.forced || this.running || this.phase === 'done' || !state.cals[Mic.key]); },
+  // se muestra en la vista actual: dentro del reproductor si está abierto en ella, si no en su hueco propio
   sync() {
-    $$('[data-cal-host]').forEach((h) => {
-      const show = this.needed() && h.dataset.calHost === state.view;
-      h.hidden = !show;
-      if (show) this.render(h);
-    });
+    const sec = $(`section[data-view="${state.view}"]`), pl = $('#player');
+    const target = !this.needed() || !sec ? null : sec.contains(pl) && !pl.hidden ? pl.querySelector('.cal-card') : sec.querySelector('.cal-host');
+    $$('.cal-host, .cal-card').forEach((h) => { const show = h === target; h.hidden = !show; if (show) this.render(h); });
   },
   render(h) {
     const stIcon = (st, i) => (st === 'ok' ? icon('check-line') : st === 'warn' ? '!' : String(i + 1));
@@ -1321,8 +1588,8 @@ const Cal = {
     else if (this.phase === 'run') acts = `<button type="button" class="btn btn-soft btn-lg w-full" disabled>Comprobando…</button>`;
     else acts = `<div class="flex gap-2">${this.allOk ? '' : `<button type="button" class="btn btn-soft btn-lg flex-1" data-cal="start">${icon('restart-line')}Repetir</button>`}<button type="button" class="btn btn-primary btn-lg flex-1" data-cal="done">${this.allOk ? icon('check-line') + 'Listo' : 'Seguir así'}</button></div>`;
     h.innerHTML = `<div class="cal">
-      <h3>${this.phase === 'done' ? (this.allOk ? 'Micrófono listo' : 'Micrófono comprobado') : 'Primero, comprobemos tu micrófono'}</h3>
-      ${this.phase === 'done' ? '' : `<p class="muted">Son unos 8 segundos y solo se hace una vez con cada micrófono${Mic.label ? ` (${Mic.label})` : ''}.</p>`}
+      <h3>${this.phase === 'done' ? (this.allOk ? 'Micrófono ajustado' : 'Micrófono comprobado') : 'Ajustemos tu micrófono'}</h3>
+      ${this.phase === 'done' ? '' : `<p class="muted">Así distingo el ruido de tu sala de lo que tocas. Son unos 8 segundos y se guarda para este micrófono${Mic.label ? ` (${esc(Mic.label)})` : ''}.</p>`}
       ${this.phase === 'intro' ? `<div class="vol-note">${icon('volume-up-line')}Sube el volumen y quítate los auriculares.</div>` : ''}
       <div class="cal-list">${items.map(([t, d], i) => `<div class="cal-item" data-s="${this.steps[i].s}"><div class="st">${stIcon(this.steps[i].s, i)}</div><div><b>${t}</b><p>${d}</p>${this.steps[i].res ? `<div class="res">${this.steps[i].res}</div>` : ''}</div></div>`).join('')}</div>
       ${this.phase === 'run' ? '<div class="bar"><div data-cal-level></div></div>' : ''}
@@ -1370,10 +1637,10 @@ const Cal = {
       this.phase = 'done';
       if (this.allOk) setTimeout(() => { if (this.phase === 'done' && this.allOk) this.finish(); }, 1600);
     } finally {
-      this.running = false; this.sync();
+      this.running = false; this.sync(); MicCard.render();
     }
   },
-  finish() { this.phase = 'intro'; this.forced = false; this.steps = [{ s: '', res: '' }, { s: '', res: '' }]; this.sync(); },
+  finish() { this.phase = 'intro'; this.forced = false; this.steps = [{ s: '', res: '' }, { s: '', res: '' }]; this.sync(); MicCard.render(); },
   recheck() { this.forced = true; this.phase = 'intro'; this.sync(); },
   frame(f, now) {
     if (!f) return;
@@ -1389,40 +1656,53 @@ document.addEventListener('click', (e) => {
 /* ============================================================
    Dibujos SVG: diagrama de acorde, mano, mástil
    ============================================================ */
-function chordDiagram(ch, res = {}) {
-  const sx = 32, sy = 42, L = 34, T = 46;
+/* Diagrama de acorde, vertical (como en los cancioneros: 6ª cuerda a la izquierda) u horizontal (como la
+   tablatura: 6ª cuerda abajo). Para zurdos se dibuja en espejo. Todo se coloca con P(u, v):
+   u = cuerda (0 = 6ª … 5 = 1ª) y v = traste (0 = cejuela). */
+function chordDiagram(ch, res = {}, o = {}) {
+  const horiz = (o.orient || state.diagram) === 'h', flip = o.lefty ?? state.lefty;
   const fretted = ch.frets.filter((f) => f > 0);
   const maxF = Math.max(0, ...fretted), minF = Math.min(99, ...fretted);
   const base = maxF <= 4 ? 1 : minF, nF = Math.max(4, maxF - base + 1);
-  const W = L + 5 * sx + 30, H = T + nF * sy + 34, xs = (i) => L + i * sx;
-  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="font-family:var(--font);max-width:100%;height:auto" role="img" aria-label="Diagrama del acorde">`;
-  for (let i = 0; i < 6; i++) if (res[6 - i] === 'now') s += `<rect x="${xs(i) - 15}" y="${T - 34}" width="30" height="${nF * sy + 60}" rx="15" fill="var(--accent-soft)"/>`;
-  s += `<rect x="${xs(0)}" y="${T}" width="${5 * sx}" height="${nF * sy}" rx="3" fill="var(--surface-2)"/>`;
-  for (let k = 0; k <= nF; k++) {
-    const y = T + k * sy;
-    s += k === 0 && base === 1 ? `<rect x="${xs(0) - 2}" y="${y - 6}" width="${5 * sx + 4}" height="7" rx="2" fill="var(--text)"/>` : `<line x1="${xs(0)}" x2="${xs(5)}" y1="${y}" y2="${y}" stroke="var(--line-2)" stroke-width="2"/>`;
+  let W, H, P;
+  if (horiz) {
+    const SU = 30, SV = 50, L = 42, T = 20;
+    W = L + nF * SV + 42; H = T + 5 * SU + 38;
+    P = (u, v) => { const x = L + v * SV; return [flip ? W - x : x, T + (5 - u) * SU]; };
+  } else {
+    const SU = 32, SV = 42, L = 42, T = 46;
+    W = L * 2 + 5 * SU; H = T + nF * SV + 34;
+    P = (u, v) => { const x = L + u * SU; return [flip ? W - x : x, T + v * SV]; };
   }
-  if (base > 1) s += `<text x="${xs(0) - 10}" y="${T + sy * 0.5 + 5}" text-anchor="end" font-size="13" font-weight="600" fill="var(--muted)">${base}ª</text>`;
-  for (let i = 0; i < 6; i++) s += `<line x1="${xs(i)}" x2="${xs(i)}" y1="${T}" y2="${T + nF * sy}" stroke="var(--muted)" stroke-opacity=".75" stroke-width="${2.6 - i * 0.32}"/>`;
-  for (let i = 0; i < 6; i++) {
-    const f = ch.frets[i], st = res[6 - i], col = st === 'bad' ? 'var(--bad)' : st === 'ok' ? 'var(--ok)' : st === 'now' ? 'var(--accent)' : null;
-    if (f < 0) s += `<g stroke="${col || 'var(--faint)'}" stroke-width="2.2" stroke-linecap="round"><line x1="${xs(i) - 6}" y1="${T - 24}" x2="${xs(i) + 6}" y2="${T - 12}"/><line x1="${xs(i) + 6}" y1="${T - 24}" x2="${xs(i) - 6}" y2="${T - 12}"/></g>`;
-    if (f === 0) s += `<circle cx="${xs(i)}" cy="${T - 18}" r="7" fill="none" stroke="${col || 'var(--open)'}" stroke-width="2.2"/>`;
-    s += `<text x="${xs(i)}" y="${H - 8}" text-anchor="middle" font-size="12.5" font-weight="650" fill="${col || (f >= 0 ? 'var(--muted)' : 'var(--faint)')}">${f >= 0 ? pcName(OPEN_MIDI[i] + f) : ''}</text>`;
+  const xy = (u, v) => { const [x, y] = P(u, v); return `x="${x.toFixed(1)}" y="${y.toFixed(1)}"`; };
+  const line = (u1, v1, u2, v2, attrs) => { const [a, b] = P(u1, v1), [c, d] = P(u2, v2); return `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" ${attrs}/>`; };
+  const txt = (u, v, t, attrs, dy = 4.5) => { const [x, y] = P(u, v); return `<text x="${x}" y="${y + dy}" text-anchor="middle" ${attrs}>${t}</text>`; };
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="font-family:var(--font);max-width:100%;height:auto" role="img" aria-label="Diagrama del acorde">`;
+  for (let u = 0; u < 6; u++) if (res[6 - u] === 'now') s += line(u, -0.85, u, nF + 0.75, 'stroke="var(--accent-soft)" stroke-width="30" stroke-linecap="round"');
+  { const [a, b] = P(0, 0), [c, d] = P(5, nF); s += `<rect x="${Math.min(a, c)}" y="${Math.min(b, d)}" width="${Math.abs(c - a)}" height="${Math.abs(d - b)}" rx="3" fill="var(--surface-2)"/>`; }
+  for (let k = 0; k <= nF; k++) s += k === 0 && base === 1 ? line(-0.08, 0, 5.08, 0, 'stroke="var(--text)" stroke-width="7" stroke-linecap="round"') : line(0, k, 5, k, 'stroke="var(--line-2)" stroke-width="2"');
+  if (base > 1) s += txt(-0.9, 0.5, `${base}ª`, 'font-size="13" font-weight="600" fill="var(--muted)"');
+  for (let u = 0; u < 6; u++) s += line(u, 0, u, nF, `stroke="var(--muted)" stroke-opacity=".75" stroke-width="${(2.6 - u * 0.32).toFixed(2)}"`);
+  for (let u = 0; u < 6; u++) {
+    const f = ch.frets[u], st = res[6 - u], col = st === 'bad' ? 'var(--bad)' : st === 'ok' ? 'var(--ok)' : st === 'now' ? 'var(--accent)' : null;
+    const [mx, my] = P(u, -0.5);
+    if (f < 0) s += `<g stroke="${col || 'var(--faint)'}" stroke-width="2.2" stroke-linecap="round"><line x1="${mx - 6}" y1="${my - 6}" x2="${mx + 6}" y2="${my + 6}"/><line x1="${mx + 6}" y1="${my - 6}" x2="${mx - 6}" y2="${my + 6}"/></g>`;
+    if (f === 0) s += `<circle cx="${mx}" cy="${my}" r="7" fill="none" stroke="${col || 'var(--open)'}" stroke-width="2.2"/>`;
+    if (f >= 0) s += txt(u, nF + (horiz ? 0.45 : 0.55), pcName(OPEN_MIDI[u] + f), `font-size="12.5" font-weight="650" fill="${col || 'var(--muted)'}"`);
   }
   const b = ch.barre;
-  let bi1 = -1, bi2 = -1;
+  let bu1 = -1, bu2 = -1;
   if (b) {
-    bi1 = 6 - b.from; bi2 = 6 - b.to; const y = T + (b.fret - base + 0.5) * sy;
-    s += `<rect x="${xs(bi1) - 14}" y="${y - 14}" width="${xs(bi2) - xs(bi1) + 28}" height="28" rx="14" fill="${fingerVar(b.finger)}"/>`;
-    s += `<text x="${xs(bi1)}" y="${y + 4.5}" text-anchor="middle" font-size="13" font-weight="750" fill="var(--dot-ink)">${b.finger}</text>`;
+    bu1 = 6 - b.from; bu2 = 6 - b.to; const v = b.fret - base + 0.5;
+    s += line(bu1, v, bu2, v, `stroke="${fingerVar(b.finger)}" stroke-width="28" stroke-linecap="round"`);
+    s += txt(bu1, v, b.finger, 'font-size="13" font-weight="750" fill="var(--dot-ink)"');
   }
-  for (let i = 0; i < 6; i++) {
-    const f = ch.frets[i]; if (f <= 0) continue;
-    if (b && f === b.fret && ch.fingers[i] === b.finger && i >= bi1 && i <= bi2) continue;
-    const y = T + (f - base + 0.5) * sy, st = res[6 - i];
-    s += `<circle cx="${xs(i)}" cy="${y}" r="14" fill="${fingerVar(ch.fingers[i])}" ${st === 'bad' ? 'stroke="var(--bad)" stroke-width="3"' : ''}/>`;
-    s += `<text x="${xs(i)}" y="${y + 4.5}" text-anchor="middle" font-size="13.5" font-weight="750" fill="var(--dot-ink)">${ch.fingers[i]}</text>`;
+  for (let u = 0; u < 6; u++) {
+    const f = ch.frets[u]; if (f <= 0) continue;
+    if (b && f === b.fret && ch.fingers[u] === b.finger && u >= bu1 && u <= bu2) continue;
+    const v = f - base + 0.5, st = res[6 - u], [x, y] = P(u, v);
+    s += `<circle cx="${x}" cy="${y}" r="14" fill="${fingerVar(ch.fingers[u])}" ${st === 'bad' ? 'stroke="var(--bad)" stroke-width="3"' : ''}/>`;
+    s += txt(u, v, ch.fingers[u], 'font-size="13.5" font-weight="750" fill="var(--dot-ink)"');
   }
   return s + '</svg>';
 }
@@ -1430,22 +1710,28 @@ function chordDiagram(ch, res = {}) {
 // Mano izquierda vista desde la palma: pulgar a la izquierda y dedos 1-4 de izquierda a derecha
 function handSVG(active, w = 150) {
   const F = [null, { x: 76, top: 40 }, { x: 103, top: 22 }, { x: 130, top: 30 }, { x: 155, top: 56 }];
-  let s = `<svg viewBox="0 0 200 214" width="${w}" style="font-family:var(--font);max-width:100%;height:auto;overflow:visible" role="img" aria-label="Número y color de cada dedo">`;
-  s += `<rect x="35" y="108" width="26" height="74" rx="13" transform="rotate(-36 48 145)" fill="var(--surface-3)"/>`;
-  s += `<text x="29" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="var(--faint)">P</text>`;
+  const X = (x) => (state.lefty ? 200 - x : x); // zurdos: la mano que pisa es la derecha
+  let g = '', t = '';
+  g += `<rect x="35" y="108" width="26" height="74" rx="13" transform="rotate(-36 48 145)" fill="var(--surface-3)"/>`;
+  t += `<text x="${X(29)}" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="var(--faint)">P</text>`;
   for (let f = 1; f <= 4; f++) {
     const d = F[f], on = active.has(f);
-    s += `<rect x="${d.x - 12.5}" y="${d.top}" width="25" height="${150 - d.top}" rx="12.5" fill="${on ? fingerVar(f) : 'var(--surface-3)'}" stroke="${fingerVar(f)}" stroke-opacity="${on ? 0 : 0.55}" stroke-width="1.6"/>`;
-    s += `<text x="${d.x}" y="${d.top + 19}" text-anchor="middle" font-size="13" font-weight="750" fill="${on ? 'var(--dot-ink)' : fingerVar(f)}">${f}</text>`;
+    g += `<rect x="${d.x - 12.5}" y="${d.top}" width="25" height="${150 - d.top}" rx="12.5" fill="${on ? fingerVar(f) : 'var(--surface-3)'}" stroke="${fingerVar(f)}" stroke-opacity="${on ? 0 : 0.55}" stroke-width="1.6"/>`;
+    t += `<text x="${X(d.x)}" y="${d.top + 19}" text-anchor="middle" font-size="13" font-weight="750" fill="${on ? 'var(--dot-ink)' : fingerVar(f)}">${f}</text>`;
   }
-  s += `<rect x="58" y="112" width="114" height="96" rx="38" fill="var(--surface-3)"/>`;
-  return s + '</svg>';
+  g += `<rect x="58" y="112" width="114" height="96" rx="38" fill="var(--surface-3)"/>`;
+  return `<svg viewBox="0 0 200 214" width="${w}" style="font-family:var(--font);max-width:100%;height:auto;overflow:visible" role="img" aria-label="Número y color de cada dedo"><g ${state.lefty ? 'transform="matrix(-1 0 0 1 200 0)"' : ''}>${g}</g>${t}</svg>`;
 }
 function fingerLegend(active) {
   return `<div class="legend">${[1, 2, 3, 4].map((f) => `<span style="${active && !active.has(f) ? 'opacity:.45' : ''}"><i style="background:${fingerVar(f)}"></i>${f} ${FINGERS[f].n}</span>`).join('')}</div>`;
 }
 
-// Mástil horizontal (cuerda 1 arriba, como en la tablatura) + columna de mano derecha
+// Lo que hay que tocar ahora: acorde → su diagrama (en la orientación elegida); nota → el mástil
+function fingersSVG(e) {
+  if (e && e.chord && state.diagram === 'v') return chordDiagram(CHORDS[e.chord]);
+  return fretboardSVG(e);
+}
+// Mástil horizontal (cuerda 1 arriba, como en la tablatura) + columna de mano derecha. Zurdos: en espejo.
 function fretboardSVG(e) {
   const shape = e ? (e.chord ? chordNotes(CHORDS[e.chord]) : e.notes) : [];
   const played = new Set(e ? e.notes.map((n) => n.string) : []);
@@ -1453,19 +1739,21 @@ function fretboardSVG(e) {
   const maxF = Math.max(0, ...shape.map((n) => n.fret)), nF = Math.max(5, maxF);
   const rowH = 28, top = 40, labelW = 44, markW = 30, fw = 64, nutX = labelW + markW + 8;
   const boardR = nutX + nF * fw, rhX = boardR + 46, W = rhX + 40, H = top + 5 * rowH + 34, y = (s) => top + (s - 1) * rowH;
-  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" style="font-family:var(--font)" role="img" aria-label="Dónde poner los dedos">`;
-  s += `<text x="${nutX}" y="16" font-size="12" font-weight="600" fill="var(--muted)">Mano izquierda</text>`;
-  s += `<text x="${rhX}" y="16" text-anchor="middle" font-size="12" font-weight="600" fill="var(--muted)">Derecha</text>`;
+  const X = (x) => (state.lefty ? W - x : x), A = (a) => (!state.lefty ? a : a === 'end' ? 'start' : a === 'start' ? 'end' : a);
+  const T = (x, yy, str, attrs, anchor = 'middle') => `<text x="${X(x)}" y="${yy}" text-anchor="${A(anchor)}" ${attrs}>${str}</text>`;
+  let s = '', t = '';
+  t += T(nutX, 16, 'Mano izquierda', 'font-size="12" font-weight="600" fill="var(--muted)"', 'start');
+  t += T(rhX, 16, 'Derecha', 'font-size="12" font-weight="600" fill="var(--muted)"');
   s += `<rect x="${nutX}" y="${y(1) - 13}" width="${nF * fw}" height="${5 * rowH + 26}" rx="6" fill="var(--surface-2)"/>`;
   for (const k of [3, 5, 7, 9]) if (k <= nF) s += `<circle cx="${nutX + (k - 0.5) * fw}" cy="${(y(3) + y(4)) / 2}" r="5" fill="var(--line-2)"/>`;
   for (let k = 1; k <= nF; k++) {
     s += `<line x1="${nutX + k * fw}" x2="${nutX + k * fw}" y1="${y(1) - 13}" y2="${y(6) + 13}" stroke="var(--line-2)" stroke-width="2"/>`;
-    s += `<text x="${nutX + (k - 0.5) * fw}" y="${H - 4}" text-anchor="middle" font-size="11" fill="var(--faint)">${k}</text>`;
+    t += T(nutX + (k - 0.5) * fw, H - 4, k, 'font-size="11" fill="var(--faint)"');
   }
   s += `<rect x="${nutX - 4}" y="${y(1) - 13}" width="6" height="${5 * rowH + 26}" rx="2" fill="var(--text)" fill-opacity=".85"/>`;
   for (let st = 1; st <= 6; st++) {
     s += `<line x1="${nutX}" x2="${boardR}" y1="${y(st)}" y2="${y(st)}" stroke="var(--muted)" stroke-opacity=".7" stroke-width="${1 + (st - 1) * 0.32}"/>`;
-    s += `<text x="${labelW - 6}" y="${y(st) + 4}" text-anchor="end" font-size="12" font-weight="600" fill="var(--muted)">${pcName(stringMidi(st))}</text>`;
+    t += T(labelW - 6, y(st) + 4, pcName(stringMidi(st)), 'font-size="12" font-weight="600" fill="var(--muted)"', 'end');
     const n = shape.find((x) => x.string === st), mx = labelW + markW / 2, on = played.has(st);
     if (n && n.fret === 0 && on) s += `<circle cx="${mx}" cy="${y(st)}" r="7.5" fill="none" stroke="var(--open)" stroke-width="2.2"/>`;
     else if (isChord && !n) s += `<g stroke="var(--faint)" stroke-width="2" stroke-linecap="round"><line x1="${mx - 5}" y1="${y(st) - 5}" x2="${mx + 5}" y2="${y(st) + 5}"/><line x1="${mx + 5}" y1="${y(st) - 5}" x2="${mx - 5}" y2="${y(st) + 5}"/></g>`;
@@ -1479,9 +1767,54 @@ function fretboardSVG(e) {
     if (b && n.fret === b.fret && n.finger === b.finger && n.string !== b.to) continue;
     const cx = nutX + (n.fret - 0.5) * fw, dim = !played.has(n.string);
     s += `<circle cx="${cx}" cy="${y(n.string)}" r="12" fill="${fingerVar(n.finger)}" fill-opacity="${dim ? 0.45 : 1}"/>`;
-    s += `<text x="${cx}" y="${y(n.string) + 4.5}" text-anchor="middle" font-size="12.5" font-weight="750" fill="var(--dot-ink)">${n.finger}</text>`;
+    t += T(cx, y(n.string) + 4.5, n.finger, 'font-size="12.5" font-weight="750" fill="var(--dot-ink)"');
   }
-  return s + '</svg>';
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" style="font-family:var(--font)" role="img" aria-label="Dónde poner los dedos"><g ${state.lefty ? `transform="matrix(-1 0 0 1 ${W} 0)"` : ''}>${s}</g>${t}</svg>`;
+}
+
+/* Mástil para los ejercicios: 1ª cuerda arriba y 6ª (la más grave) abajo, como en la tablatura.
+   marks: { string, fret, finger, st: now | next | done | idle | show | hint, label } */
+function neckSVG({ from = 0, to = 5, marks = [], hl = null }) {
+  const open = from === 0, f0 = Math.max(1, from), nF = to - f0 + 1;
+  const rowH = 30, top = 16, labelW = 30, openW = open ? 40 : 10, fw = nF > 8 ? 50 : 60;
+  const nutX = labelW + openW, W = nutX + nF * fw + 12, H = top + 5 * rowH + 32;
+  const y = (s) => top + (s - 1) * rowH, fx = (f) => (f === 0 ? labelW + openW / 2 - 2 : nutX + (f - f0 + 0.5) * fw);
+  const X = (x) => (state.lefty ? W - x : x);
+  const T = (x, yy, str, attrs) => `<text x="${X(x)}" y="${yy}" text-anchor="middle" ${attrs}>${str}</text>`;
+  let s = '', t = '';
+  if (hl) s += `<rect x="${labelW - 4}" y="${y(hl) - 13}" width="${W - labelW}" height="26" rx="13" fill="var(--accent-soft)"/>`;
+  s += `<rect x="${nutX}" y="${y(1) - 12}" width="${nF * fw}" height="${5 * rowH + 24}" rx="6" fill="var(--surface-2)"/>`;
+  for (let k = f0; k <= to; k++) {
+    const cx = nutX + (k - f0 + 0.5) * fw;
+    if ([3, 5, 7, 9, 15].includes(k)) s += `<circle cx="${cx}" cy="${(y(3) + y(4)) / 2}" r="5" fill="var(--line-2)"/>`;
+    if (k === 12) s += `<circle cx="${cx}" cy="${(y(2) + y(3)) / 2}" r="5" fill="var(--line-2)"/><circle cx="${cx}" cy="${(y(4) + y(5)) / 2}" r="5" fill="var(--line-2)"/>`;
+    s += `<line x1="${nutX + (k - f0 + 1) * fw}" x2="${nutX + (k - f0 + 1) * fw}" y1="${y(1) - 12}" y2="${y(6) + 12}" stroke="var(--line-2)" stroke-width="2"/>`;
+    t += T(cx, H - 6, k, `font-size="11.5" font-weight="600" fill="var(--faint)"`);
+  }
+  s += open ? `<rect x="${nutX - 4}" y="${y(1) - 12}" width="6" height="${5 * rowH + 24}" rx="2" fill="var(--text)" fill-opacity=".85"/>`
+    : `<line x1="${nutX}" x2="${nutX}" y1="${y(1) - 12}" y2="${y(6) + 12}" stroke="var(--line-2)" stroke-width="2"/>`;
+  for (let st = 1; st <= 6; st++) {
+    s += `<line x1="${open ? labelW + 6 : nutX}" x2="${W - 12}" y1="${y(st)}" y2="${y(st)}" stroke="var(--muted)" stroke-opacity="${hl && hl !== st ? 0.4 : 0.8}" stroke-width="${1 + (st - 1) * 0.32}"/>`;
+    t += T(labelW / 2 - 2, y(st) + 4, pcName(stringMidi(st)), `font-size="11.5" font-weight="650" fill="${hl === st ? 'var(--accent)' : 'var(--muted)'}"`);
+  }
+  for (const m of marks) {
+    if (m.fret > 0 && (m.fret < f0 || m.fret > to)) continue;
+    const cx = fx(m.fret), cy = y(m.string), fc = m.fret === 0 ? 'var(--open)' : fingerVar(m.finger);
+    const lab = m.label ?? (m.fret === 0 ? '0' : m.finger);
+    if (m.st === 'done') { s += `<circle cx="${cx}" cy="${cy}" r="8" fill="var(--ok)" fill-opacity=".45"/>`; continue; }
+    if (m.st === 'hint') { s += `<circle cx="${cx}" cy="${cy}" r="13" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-dasharray="4 4"/>`; continue; }
+    if (m.st === 'now') {
+      s += `<circle class="ring" cx="${cx}" cy="${cy}" r="19" fill="none" stroke="var(--accent)" stroke-width="3"/>`;
+      s += m.fret === 0 ? `<circle cx="${cx}" cy="${cy}" r="14" fill="var(--bg-2)" stroke="var(--open)" stroke-width="3"/>` : `<circle cx="${cx}" cy="${cy}" r="14" fill="${fc}"/>`;
+      t += T(cx, cy + 5, lab, `font-size="14" font-weight="800" fill="${m.fret === 0 ? 'var(--open)' : 'var(--dot-ink)'}"`);
+      continue;
+    }
+    if (m.st === 'show') { s += `<circle cx="${cx}" cy="${cy}" r="15" fill="var(--ok)"/>`; t += T(cx, cy + 4.5, lab, 'font-size="12" font-weight="800" fill="var(--dot-ink)"'); continue; }
+    const op = m.st === 'next' ? 1 : 0.4;
+    s += m.fret === 0 ? `<circle cx="${cx}" cy="${cy}" r="11" fill="var(--bg-2)" stroke="var(--open)" stroke-width="2" opacity="${op}"/>` : `<circle cx="${cx}" cy="${cy}" r="11" fill="${fc}" opacity="${op}"/>`;
+    t += T(cx, cy + 4.2, lab, `font-size="11.5" font-weight="750" fill="${m.fret === 0 ? 'var(--open)' : 'var(--dot-ink)'}" opacity="${op}"`);
+  }
+  return `<svg class="neck${nF > 8 ? ' wide' : ''}" viewBox="0 0 ${W} ${H}" width="${W}" style="font-family:var(--font)" role="img" aria-label="Mástil"><g ${state.lefty ? `transform="matrix(-1 0 0 1 ${W} 0)"` : ''}>${s}</g>${t}</svg>`;
 }
 
 /* ============================================================
@@ -1505,8 +1838,6 @@ const Tuner = {
     });
     $('#tnMode').addEventListener('click', () => { if (this.mode === 'manual') this.setMode('auto'); else toast('Para elegir una cuerda, tócala en el dibujo.', 3500, 'information-line'); });
     $('#tnReset').addEventListener('click', () => { this.done.clear(); this.hold = 0; this.renderStrings(); });
-    $('#micSelect').addEventListener('change', async (e) => { try { await Mic.start(e.target.value); } catch { toast('No he podido abrir ese micrófono.'); fillMicSelect(); } });
-    $('#recalBtn').addEventListener('click', () => Cal.recheck());
     this.renderStrings();
   },
   setMode(m) {
@@ -1517,13 +1848,16 @@ const Tuner = {
     this.renderStrings();
   },
   renderStrings() {
-    $('#tnStrings').innerHTML = [6, 5, 4, 3, 2, 1].map((s) => `
+    // como se ve la guitarra en la tablatura: la 1ª arriba y la 6ª, la más grave, abajo
+    $('#tnStrings').innerHTML = [1, 2, 3, 4, 5, 6].map((s) => `
       <button type="button" class="str ${this.done.has(s) ? 'done' : ''} ${this.mode === 'manual' && this.sel === s ? 'sel' : ''}" data-s="${s}" style="--th:${STRING_TH[s]}px" aria-label="Cuerda ${s}, ${stringName(s)}: tócala para afinar solo esta">
         <span class="peg">${this.done.has(s) ? icon('check-line') : pcName(stringMidi(s))}</span>
         <span class="wire"><svg viewBox="0 0 400 26" preserveAspectRatio="none"><path d="M0 13 L400 13" fill="none" stroke-width="${STRING_TH[s]}" stroke-linecap="round"/></svg></span>
         <span class="info">${this.done.has(s) ? 'Afinada' : `${s}ª`}</span>
       </button>`).join('');
-    $('#tnProgress').textContent = this.done.size;
+    const n = this.done.size;
+    $('#tnProg').innerHTML = `<span class="pips">${[1, 2, 3, 4, 5, 6].map((s) => `<i class="${this.done.has(s) ? 'on' : ''}"></i>`).join('')}</span><b>${n === 6 ? '¡Afinada!' : `${n} de 6`}</b><span class="muted">${n === 6 ? '' : 'afinadas'}</span>`;
+    $('#tnReset').hidden = n === 0;
   },
   set(id, html) { if (this.last[id] !== html) { this.last[id] = html; $(id).innerHTML = html; } },
   frame(f, dt, now) {
@@ -1590,220 +1924,6 @@ const Tuner = {
 };
 
 /* ============================================================
-   Acordes: aprender uno cada vez y comprobarlo cuerda a cuerda
-   (con audio real, una cuerda suelta se reconoce mucho mejor que un rasgueo completo)
-   ============================================================ */
-const CHORD_ORDER = CHORD_GROUPS.flatMap((g) => g.ids);
-const GUIDE = [
-  { t: 'Sujeta la guitarra', d: 'Siéntate con la espalda recta y apoya la guitarra en la pierna derecha, con el mástil un poco hacia arriba. El <b>pulgar izquierdo va detrás del mástil</b>, más o menos detrás del dedo medio.' },
-  { t: 'Tus dedos tienen número', d: 'Los diagramas usan números: 1 índice, 2 medio, 3 anular y 4 meñique. En Traste cada dedo tiene <b>siempre el mismo color</b>.', art: 'hand' },
-  { t: 'Cómo pisar una cuerda', d: 'Con la <b>punta del dedo</b>, justo <b>detrás del traste</b> (no encima). Arquea el dedo como si sujetaras una pelota pequeña para no rozar las cuerdas de al lado. Mejor con las uñas cortas.' },
-  { t: 'Cómo leer un diagrama', d: 'Las líneas verticales son las cuerdas: la <b>6ª, la más gruesa, a la izquierda</b>. Las horizontales son los trastes. El número es el dedo. <b>O</b>: cuerda al aire. <b>✕</b>: no la toques.', art: 'diagram' },
-  { t: 'Comprueba cuerda a cuerda', d: 'Con el acorde puesto, toca <b>cada cuerda por separado</b>. Si una suena apagada, algún dedo la roza o no aprieta bien. Es lo que hacen los profesores, y Traste te lo dice nota a nota.' },
-  { t: 'Cómo practicar', d: 'Mejor <b>10 minutos cada día</b> que una hora a la semana. Es normal que las yemas duelan la primera semana. Coloca los dedos, rasguea, quita la mano y repite: así la mano aprende la forma.' },
-];
-const Lessons = {
-  cur: null, check: null, drill: null, drillOpen: false, reviewId: null, reveal: false, res: {},
-  init() {
-    const saved = store.get('lesson', null);
-    this.cur = saved && (saved === 'guia' || CHORDS[saved]) ? saved : (Object.keys(state.learned).length ? (CHORD_ORDER.find((x) => !state.learned[x]) || 'Em') : 'guia');
-    $('#lessonPath').addEventListener('click', (e) => { const b = e.target.closest('[data-lesson]'); if (b) this.go(b.dataset.lesson); });
-    $('#lessonBody').addEventListener('click', (e) => {
-      const b = e.target.closest('[data-act]'); if (!b) return;
-      const a = b.dataset.act, id = this.chordId();
-      if (a === 'go') this.go(b.dataset.id);
-      if (a === 'hear') AudioEngine.strum(chordNotes(CHORDS[id]), 'D');
-      if (a === 'arp') [...chordNotes(CHORDS[id])].sort((x, y) => y.string - x.string).forEach((n, i) => AudioEngine.pluck(midiToFreq(n.midi), i * 0.34, 0.45));
-      if (a === 'check') { this.drillOpen = false; this.stopDrill(false); this.startCheck(); }
-      if (a === 'stopcheck') { this.check = null; this.res = {}; this.renderBody(); }
-      if (a === 'got') { state.learned[id] = true; store.set('learned', state.learned); this.renderPath(); this.check = null; this.res = {}; this.renderBody(); }
-      if (a === 'reveal') { this.reveal = true; this.renderBody(); }
-      if (a === 'another') { this.pickReview(); this.renderBody(); }
-      if (a === 'drillopen') { this.check = null; this.res = {}; this.drillOpen = true; this.renderBody(); }
-      if (a === 'drillclose') { this.stopDrill(false); this.drillOpen = false; this.renderBody(); }
-      if (a === 'drill') this.startDrill();
-      if (a === 'stopdrill') { this.stopDrill(false); this.renderBody(); }
-    });
-    $('#lessonBody').addEventListener('change', (e) => { if (e.target.id === 'drillWith') { store.set('drillWith', e.target.value); this.renderBody(); } });
-    this.render();
-  },
-  learnedList() { return CHORD_ORDER.filter((x) => state.learned[x]); },
-  chordId() { return this.cur === 'repaso' ? this.reviewId : this.cur; },
-  nextId() { const i = CHORD_ORDER.indexOf(this.cur); return CHORD_ORDER.find((x, k) => k > i && !state.learned[x]) || CHORD_ORDER[Math.min(i + 1, CHORD_ORDER.length - 1)]; },
-  pickReview() { const l = this.learnedList().filter((x) => x !== this.reviewId); this.reviewId = l[Math.floor(Math.random() * l.length)] || this.learnedList()[0]; this.reveal = false; this.check = null; this.res = {}; },
-  go(id) {
-    this.stopDrill(false); this.drillOpen = false; this.check = null; this.res = {};
-    this.cur = id; if (id !== 'repaso') store.set('lesson', id); else this.pickReview();
-    this.render();
-    $('#lessonPath [aria-current="true"]')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
-    $('#lessonBody').scrollTop = 0;
-  },
-  render() { this.renderPath(); this.renderBody(); },
-  renderPath() {
-    const n = this.learnedList().length;
-    $('#lessonPath').innerHTML = `<button type="button" data-lesson="guia" aria-current="${this.cur === 'guia'}">${icon('book-open-line')}Primeros pasos</button>` +
-      (n >= 2 ? `<button type="button" data-lesson="repaso" aria-current="${this.cur === 'repaso'}">${icon('shuffle-line')}Repaso</button>` : '') + '<span class="sep"></span>' +
-      CHORD_ORDER.map((id) => `<button type="button" data-lesson="${id}" class="${state.learned[id] ? 'learned' : ''}" aria-current="${this.cur === id}" title="${chordLongName(id)}${CHORDS[id].variant ? ' · ' + CHORDS[id].variant : ''}">${chordLabel(id)}${CHORDS[id].variant ? '<small class="font-medium opacity-60">fácil</small>' : ''}</button>`).join('');
-  },
-  renderBody() {
-    if (this.cur === 'guia') {
-      $('#lessonBody').innerHTML = `<div class="guide-grid">${GUIDE.map((g, i) => `
-        <div class="guide-card">
-          <h3><span class="n">${i + 1}</span>${g.t}</h3>
-          ${g.art === 'hand' ? `<div class="flex justify-center py-1">${handSVG(new Set([1, 2, 3, 4]), 120)}</div>${fingerLegend()}` : ''}
-          ${g.art === 'diagram' ? `<div class="diagram">${chordDiagram(CHORDS.Am)}</div>` : ''}
-          <p>${g.d}</p>
-        </div>`).join('')}</div>
-        <div class="flex justify-center mt-5 mb-2"><button type="button" class="btn btn-primary btn-lg" data-act="go" data-id="${CHORD_ORDER[0]}">Empezar con ${chordLabel(CHORD_ORDER[0])}${icon('arrow-right-line')}</button></div>`;
-      return;
-    }
-    const review = this.cur === 'repaso', id = this.chordId(), c = CHORDS[id], notes = chordNotes(c);
-    const idx = CHORD_ORDER.indexOf(id);
-    const used = new Set(c.fingers.filter(Boolean));
-    const steps = [...used].sort().map((f) => {
-      const where = c.barre && c.barre.finger === f
-        ? `estirado sobre el traste ${c.barre.fret}, de la ${c.barre.from}ª a la ${c.barre.to}ª cuerda (cejilla)`
-        : notes.filter((n) => n.finger === f).map((n) => `en la <b>${n.string}ª cuerda</b>, traste ${n.fret}`).join(' y ');
-      return `<li><span class="fdot" style="background:${fingerVar(f)}">${f}</span><span><b>${FINGERS[f].n}</b> ${where}</span></li>`;
-    });
-    const first = Math.max(...notes.map((n) => n.string));
-    const muted = [6, 5, 4, 3, 2, 1].filter((s) => !notes.some((n) => n.string === s));
-    steps.push(`<li><span class="fdot strum">${icon('arrow-down-line')}</span><span><b>Rasguea</b> hacia abajo desde la ${first === 6 ? '6ª cuerda (suenan todas)' : `${first}ª cuerda`}</span></li>`);
-    if (muted.length) steps.push(`<li><span class="fdot mute">${icon('close-line')}</span><span><b>No toques</b> la ${ordinalList(muted.sort((a, b) => a - b))} cuerda</span></li>`);
-    const hidden = review && !this.reveal && !this.check;
-    const learned = !!state.learned[id], nx = this.nextId();
-    let actions;
-    if (this.check) actions = this.checkHTML();
-    else if (this.drillOpen) actions = this.drillHTML(id);
-    else actions = `<div class="lesson-actions">
-        <button type="button" class="btn btn-primary" data-act="check">${icon('mic-line')}Comprobar cuerda a cuerda</button>
-        ${review ? `<button type="button" class="btn btn-soft" data-act="another">${icon('shuffle-line')}Otro</button>`
-          : learned ? (nx !== id ? `<button type="button" class="btn btn-soft" data-act="go" data-id="${nx}">Siguiente: ${chordLabel(nx)}${icon('arrow-right-line')}</button>` : '')
-          : `<button type="button" class="btn btn-soft" data-act="got">${icon('check-line')}Lo tengo</button>`}
-        ${review ? '' : `<button type="button" class="btn btn-ghost" data-act="drillopen" title="Cambios en un minuto">${icon('timer-line')}1 min</button>`}
-      </div>`;
-    $('#lessonBody').innerHTML = `
-      <div class="lesson">
-        <div class="lesson-head">
-          <div class="min-w-0">
-            <div class="chord-name">${chordLabel(id)}<small>${chordLabel(id, state.notation === 'latin' ? 'letter' : 'latin')} · ${chordLongName(id)}${c.variant ? ' · ' + c.variant : ''} · ${review ? 'repaso de memoria' : `${idx + 1} de ${CHORD_ORDER.length}`}${learned && !review ? ` · <span style="color:var(--ok)">aprendido</span>` : ''}</small></div>
-          </div>
-          <div class="flex gap-1.5">
-            <button type="button" class="btn btn-soft btn-icon" data-act="hear" title="Escuchar el acorde" aria-label="Escuchar el acorde">${icon('volume-up-line')}</button>
-            <button type="button" class="btn btn-soft btn-icon" data-act="arp" title="Escuchar nota a nota" aria-label="Escuchar nota a nota">${icon('music-2-line')}</button>
-          </div>
-        </div>
-        ${hidden ? `<div class="diagram" style="min-height:220px"><button type="button" class="btn btn-soft" data-act="reveal">${icon('eye-line')}Ver el diagrama</button></div>` : `<div class="diagram" id="chordDiagram">${chordDiagram(c, this.res)}</div>`}
-        <div class="lesson-info">
-          ${hidden ? '<p class="muted">Coloca los dedos sin mirar y compruébalo.</p>' : `<ol class="steps-list">${steps.join('')}</ol><div class="tip">${icon('lightbulb-line')}<span>${c.tip}</span></div>`}
-          <div class="lesson-foot">${actions}</div>
-        </div>
-      </div>`;
-  },
-  // ---------- comprobación cuerda a cuerda ----------
-  async startCheck() {
-    if (!(await micReady())) return;
-    const notes = chordNotes(CHORDS[this.chordId()]).sort((a, b) => b.string - a.string);
-    this.check = { notes, i: 0, fails: 0, msg: '', sub: '', kind: '', done: false };
-    this.res = {}; this.updateCheck();
-  },
-  checkHTML() {
-    const ck = this.check, played = new Set(ck.notes.map((n) => n.string));
-    const cur = ck.notes[ck.i];
-    const pills = [6, 5, 4, 3, 2, 1].map((s) => {
-      const st = !played.has(s) ? 'skip' : this.res[s] === 'ok' ? 'ok' : cur && cur.string === s ? (this.res[s] === 'bad' ? 'bad' : 'now') : this.res[s] === 'bad' ? 'bad' : '';
-      return `<div class="cs ${st}"><b>${!played.has(s) ? '✕' : st === 'ok' ? icon('check-line') : pcName(OPEN_MIDI[6 - s] + ck.notes.find((n) => n.string === s).fret)}</b>${s}ª</div>`;
-    }).join('');
-    const msg = ck.done ? (ck.fails ? 'Corregido: ya suenan todas.' : '¡Todas las cuerdas suenan limpias!') : ck.msg || `Toca solo la ${cur.string}ª cuerda`;
-    const sub = ck.done ? 'Ahora rasguéalo entero, quita la mano y vuelve a colocarla unas cuantas veces.' : ck.sub || 'Con el acorde puesto. Déjala sonar.';
-    return `<div class="panel" id="checkPanel">
-      <div class="check-strings">${pills}</div>
-      <div class="check-msg" style="color:${ck.kind === 'bad' ? 'var(--bad)' : ck.done ? 'var(--ok)' : ''}">${msg}<p>${sub}</p></div>
-      <div class="flex gap-2 mt-3">${ck.done ? `<button type="button" class="btn btn-soft btn-sm" data-act="check">${icon('restart-line')}Otra vez</button>${!state.learned[this.chordId()] && this.cur !== 'repaso' ? `<button type="button" class="btn btn-primary btn-sm" data-act="got">${icon('check-line')}Lo tengo</button>` : ''}` : ''}<button type="button" class="btn btn-ghost btn-sm" data-act="stopcheck">Terminar</button></div>
-    </div>`;
-  },
-  updateCheck() {
-    const cur = this.check.notes[this.check.i];
-    if (cur && !this.check.done && this.res[cur.string] !== 'bad') this.res = { ...this.res, [cur.string]: 'now' };
-    this.renderBody();
-  },
-  frameCheck(f) {
-    const ck = this.check, a = f.attack;
-    if (!ck || ck.done || !a || a.used) return;
-    const cur = ck.notes[ck.i], got = attackNotes(a);
-    if (got.some((m) => sameNote(m, cur.midi))) {
-      a.used = true; this.res = { ...this.res, [cur.string]: 'ok' }; ck.i++; ck.kind = ''; ck.msg = ''; ck.sub = '';
-      if (ck.i >= ck.notes.length) ck.done = true;
-      this.updateCheck(); return;
-    }
-    if (!a.settled) return;
-    a.used = true;
-    // las cuerdas ya comprobadas siguen sonando: si lo que se oye es una de ellas, no es un error
-    const ringing = ck.notes.slice(0, ck.i).map((n) => n.midi);
-    if (got.every((m) => ringing.some((r) => sameNote(m, r)))) return;
-    // solo se dice "suena X" si lo confirman los dos detectores (primera lectura y lo que aparece)
-    if (a.flux == null || a.yin == null || !sameNote(a.yin, a.flux) || ringing.some((r) => sameNote(a.flux, r))) { ck.kind = ''; ck.msg = `No la he oído clara: toca otra vez la ${cur.string}ª`; ck.sub = 'Una sola cuerda, y deja que suene.'; this.updateCheck(); return; }
-    const heard = a.flux; ck.fails++; ck.kind = 'bad'; this.res = { ...this.res, [cur.string]: 'bad' };
-    ck.msg = `Suena ${pcName(heard)} y debería sonar ${pcName(cur.midi)}`;
-    ck.sub = cur.fret === 0 ? 'Algún dedo pisa o roza esta cuerda: arquéalos más.'
-      : heard > cur.midi ? `Suena más agudo: el dedo ${cur.finger} va en el traste ${cur.fret}.` : `Suena más grave: aprieta con la punta del dedo ${cur.finger}, justo detrás del traste ${cur.fret}.`;
-    this.updateCheck();
-  },
-  // ---------- cambios en un minuto (cuenta rasgueos) ----------
-  drillPartner(id) {
-    const saved = store.get('drillWith', null);
-    if (saved && saved !== id && CHORDS[saved]) return saved;
-    const l = this.learnedList().filter((x) => x !== id);
-    if (l.length) return l[l.length - 1];
-    const i = CHORD_ORDER.indexOf(id); return CHORD_ORDER[i > 0 ? i - 1 : 1];
-  },
-  drillHTML(id) {
-    const d = this.drill, w = d ? d.b : this.drillPartner(id);
-    const best = store.get(`1min:${[id, w].sort().join('-')}`, 0);
-    if (d) {
-      return `<div class="panel flex flex-wrap items-center gap-x-6 gap-y-3">
-        <div><div class="drill-count num" id="drillCount">${d.count}</div><div class="muted text-sm">cambios</div></div>
-        <div class="flex-1 min-w-[160px]"><div class="text-lg font-semibold">Ahora: <span id="drillNow">${chordLabel(d.count % 2 === 0 ? d.a : d.b)}</span></div><div class="muted text-sm">Un rasgueo en cada acorde · <span class="num" id="drillTime">1:00</span></div></div>
-        <button type="button" class="btn btn-soft btn-sm" data-act="stopdrill">Parar</button></div>`;
-    }
-    const opts = CHORD_ORDER.filter((x) => x !== id).map((x) => `<option value="${x}" ${x === w ? 'selected' : ''}>${chordLabel(x)}</option>`).join('');
-    return `<div class="panel flex flex-col gap-3">
-      <div><b class="font-semibold">Cambios en un minuto</b><p class="muted text-sm">Alterna dos acordes con un rasgueo en cada uno. Cuento los rasgueos.${best ? ` Tu récord: ${best}.` : ''}</p></div>
-      <div class="flex flex-wrap items-center gap-2"><label class="flex items-center gap-2 text-sm muted">${chordLabel(id)} y <select id="drillWith">${opts}</select></label>
-        <button type="button" class="btn btn-primary btn-sm" data-act="drill">${icon('timer-line')}Empezar</button>
-        <button type="button" class="btn btn-ghost btn-sm" data-act="drillclose">Cerrar</button></div>
-    </div>`;
-  },
-  async startDrill() {
-    if (!(await micReady())) return;
-    const id = this.chordId(), w = $('#drillWith')?.value || this.drillPartner(id);
-    store.set('drillWith', w);
-    this.drill = { a: id, b: w, count: 0, end: performance.now() + 60000 };
-    this.renderBody();
-  },
-  stopDrill(finished) {
-    const d = this.drill; if (!d) return;
-    this.drill = null;
-    if (finished) {
-      const key = `1min:${[d.a, d.b].sort().join('-')}`, best = store.get(key, 0);
-      if (d.count > best) store.set(key, d.count);
-      toast(d.count > best ? `¡Nuevo récord: ${d.count} cambios!` : `${d.count} cambios. Tu récord es ${best}.`, 5000, 'timer-line');
-      if (state.view === 'acordes') this.renderBody();
-    }
-  },
-  frame(f, now) {
-    const d = this.drill;
-    if (d) {
-      const left = Math.max(0, d.end - now), t = $('#drillTime');
-      if (t) t.textContent = `0:${String(Math.ceil(left / 1000)).padStart(2, '0')}`;
-      if (left <= 0) { this.stopDrill(true); return; }
-      if (f && f.onset && !f.ignoring) { d.count++; $('#drillCount').textContent = d.count; $('#drillNow').textContent = chordLabel(d.count % 2 === 0 ? d.a : d.b); }
-    }
-    if (f && this.check && !Cal.needed()) this.frameCheck(f);
-  },
-};
-
-/* ============================================================
    Canciones: catálogo y reproductor
    ============================================================ */
 const LEVELS = { easy: 'Fácil', hard: 'Difícil' };
@@ -1817,6 +1937,25 @@ const STAR_AT = [0.4, 0.65, 0.85];
 const songChords = (s) => [...new Set(parseChordBars(s.chords, s.bpb, 0).map((c) => c.chord))];
 const starsFor = (acc) => STAR_AT.filter((t) => acc >= t).length;
 const miniStars = (n) => `<span class="mini-stars">${[1, 2, 3].map((k) => icon('star-fill', k <= n ? 'on' : '')).join('')}</span>`;
+
+/* Ventana de resultado (canciones y ejercicios) */
+function showResult({ stars = null, title, text = '', big = [], grid = [], actions = [] }) {
+  $('#resStars').innerHTML = stars == null ? '' : [1, 2, 3].map((k) => icon('star-fill', k <= stars ? 'on' : '')).join('');
+  $('#resTitle').textContent = title; $('#resText').textContent = text;
+  $('#resBig').innerHTML = big.map(([v, l]) => `<div><b class="num">${v}</b><span>${l}</span></div>`).join('');
+  $('#resGrid').innerHTML = grid.map(([n, v, c]) => `<div><b class="num" style="color:${c}">${v}</b><span>${n}</span></div>`).join('');
+  $('#resGrid').hidden = !grid.length;
+  const acts = [{ label: 'Cerrar', kind: 'ghost' }, ...actions];
+  $('#resActions').innerHTML = acts.map((a, i) => `<button type="button" class="btn btn-${a.kind || 'soft'}" data-res="${i}">${a.icon ? icon(a.icon) : ''}${a.label}</button>`).join('');
+  showResult.acts = acts;
+  openModal('#resModal');
+  $('#resActions .btn-primary')?.focus();
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-res]'); if (!b) return;
+  closeModal('#resModal'); showResult.acts?.[+b.dataset.res]?.fn?.();
+});
+const starsLine = (n) => (n === 3 ? '¡Perfecto!' : n === 2 ? '¡Muy bien!' : n === 1 ? 'Vas por buen camino' : 'Sigue practicando');
 
 const Songs = {
   q: '', cat: 'all', known: false,
@@ -1876,15 +2015,13 @@ const Player = {
       if ($('#plOpts').classList.contains('open') && !e.target.closest('#plOpts,#plOptsBtn')) this.showOpts(false);
       if (!$('#plDetails').hidden && !e.target.closest('#plDetails,#plFingersBtn')) this.showFingers(false);
     });
-    $('#resAgain').addEventListener('click', () => { closeModal('#resModal'); this.start(false); });
-    $('#resNext').addEventListener('click', () => { closeModal('#resModal'); this.setLevel('hard'); });
     const c = this.canvas;
     c.addEventListener('pointerdown', (e) => this.onDown(e));
     c.addEventListener('pointermove', (e) => this.onMove(e));
     c.addEventListener('pointerup', (e) => this.onUp(e));
     c.addEventListener('pointercancel', (e) => this.onUp(e, true));
     document.addEventListener('keydown', (e) => {
-      if ($('#player').hidden || state.view !== 'canciones' || e.target.closest('input,textarea,select,button')) return;
+      if ($('#player').hidden || state.view !== this.host || e.target.closest('input,textarea,select,button')) return;
       if (e.code === 'Space') { e.preventDefault(); this.togglePlay(); }
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); this.seekTo(this.beat + (e.key === 'ArrowLeft' ? -1 : 1) * this.song.bpb); }
     });
@@ -1894,16 +2031,38 @@ const Player = {
     this.curIdx = -1; if (this.song) this.renderNow();
   },
   showOpts(on) { $('#plOpts').classList.toggle('open', on); $('#plOptsBtn').setAttribute('aria-expanded', String(on)); },
-  open(song) {
-    this.song = song; this.built = buildSong(song, CHORDS);
+  /* El reproductor sirve para canciones y para los ejercicios "con metrónomo" de Aprender: se coloca en
+     la vista que lo usa (host). Un ejercicio trae sus eventos ya construidos (song.built). */
+  host: 'canciones',
+  mount(host) {
+    const pl = $('#player'), sec = $(`section[data-view="${host}"]`);
+    if (pl.parentElement !== sec) sec.appendChild(pl);
+    this.host = host;
+  },
+  open(song, host = 'canciones') {
+    this.mount(host);
+    this.song = song; this.built = song.built || buildSong(song, CHORDS);
+    const ex = !!song.exercise;
+    $('#plLevel').hidden = ex;
     $('#plLevel').innerHTML = Object.keys(LEVELS).map((l) => `<button type="button" data-l="${l}">${LEVELS[l]}<span class="hidden sm:inline font-medium opacity-60"> · ${LEVEL_HINT[l]}</span></button>`).join('');
-    $('#plTitle').textContent = song.title; $('#plOrigin').textContent = `${song.origin} · ${song.bpm} ppm · ${song.bpb}/4`;
-    $('#songList').hidden = true; $('#player').hidden = false; this.showFingers(false); this.showOpts(false);
+    $('#plTitle').textContent = song.title; $('#plOrigin').textContent = ex ? `${song.origin} · ${song.bpm} ppm` : `${song.origin} · ${song.bpm} ppm · ${song.bpb}/4`;
+    if (ex) { this.metro = true; $('#plMetro').checked = true; }
+    $('#songList').hidden = host === 'canciones';
+    $('#player').hidden = false; this.showFingers(false); this.showOpts(false);
     this.setSpeed(store.get('speed', 1));
-    this.setLevel(store.get('lvl:' + song.id, 'easy'));
+    this.setLevel(ex ? 'easy' : store.get('lvl:' + song.id, 'easy'));
     this.resize(); Cal.sync();
   },
-  close() { this.pause(); $('#player').hidden = true; $('#songList').hidden = false; Songs.render(); },
+  close() {
+    this.pause(); $('#player').hidden = true; closeModal('#resModal');
+    if (this.song?.exercise) { const id = this.song.exercise.id; this.song = null; Cal.sync(); if (location.hash !== '#aprender/ej/' + id) location.hash = '#aprender/ej/' + id; return; }
+    this.song = null; $('#songList').hidden = false; Songs.render(); Cal.sync();
+  },
+  // al salir de la vista que lo tiene, vuelve a su sitio en Canciones
+  release() {
+    if (this.host === 'canciones') return;
+    this.pause(); $('#player').hidden = true; this.song = null; this.mount('canciones'); $('#songList').hidden = false;
+  },
   setLevel(l) {
     if (!this.built.levels[l]) l = 'easy';
     this.level = l; store.set('lvl:' + this.song.id, l);
@@ -1968,7 +2127,7 @@ const Player = {
     $('#plNowText').innerHTML = e ? this.describe(e) : '';
     $('#plNext').innerHTML = nx ? `Después: ${this.describe(nx, true)}` : 'Es la última';
     if (!$('#plDetails').hidden) {
-      $('#plFret').innerHTML = fretboardSVG(e);
+      $('#plFret').innerHTML = fingersSVG(e);
       const fingers = new Set((e ? (e.chord ? chordNotes(CHORDS[e.chord]) : e.notes) : []).map((n) => n.finger).filter(Boolean));
       $('#plHand').innerHTML = handSVG(fingers, 140) + fingerLegend(fingers);
     }
@@ -2143,14 +2302,16 @@ const Player = {
     const wasDemo = this.demo;
     this.status = 'done'; this.renderButtons();
     if (wasDemo) { this.reset(); return; }
-    const judged = this.events.filter((e) => e.st !== 2), st = this.stats;
-    $('#resNext').hidden = this.level !== 'easy';
+    const judged = this.events.filter((e) => e.st !== 2), st = this.stats, ex = this.song.exercise;
+    const doneKey = ex ? 'ex:' + ex.id : `song:${this.song.id}:${this.level}`;
+    Learn.markDone(doneKey);
+    const acts = [{ label: 'Repetir', icon: 'restart-line', fn: () => this.start(false) }];
+    if (!ex && this.level === 'easy' && this.built.levels.hard) acts.push({ label: 'Pasar a Difícil', fn: () => this.setLevel('hard') });
+    const nxt = Learn.nextAction(doneKey); if (nxt) acts.push(nxt);
+    if (acts.length > 1) acts[acts.length - 1].kind = 'primary'; else acts[0].kind = 'primary';
     if (this.wait) {
-      $('#resStars').innerHTML = '';
-      $('#resTitle').textContent = 'Práctica completada';
-      $('#resText').textContent = `Has tocado las ${judged.length} notas. Quita «Esperarme» para tocar a tempo y puntuar.`;
-      $('#resBig').innerHTML = ''; $('#resGrid').innerHTML = '';
-      openModal('#resModal'); return;
+      showResult({ title: 'Práctica completada', text: `Has tocado las ${judged.length} notas. Quita «Esperarme» para tocar a tempo y puntuar.`, actions: acts });
+      return;
     }
     const acc = judged.length ? (st.perfect + 0.5 * (st.early + st.late)) / judged.length : 0;
     const stars = starsFor(acc), key = `${this.song.id}:${this.level}`, prev = state.best[key];
@@ -2158,13 +2319,13 @@ const Player = {
     state.best[key] = { stars: Math.max(stars, prev?.stars || 0), acc: Math.max(acc, prev?.acc || 0), pts: Math.max(this.points, prev?.pts || 0) };
     store.set('best2', state.best);
     const avg = this.deltas.length >= 4 ? this.deltas.reduce((a, b) => a + b, 0) / this.deltas.length : 0;
-    $('#resStars').innerHTML = [1, 2, 3].map((k) => icon('star-fill', k <= stars ? 'on' : '')).join('');
-    $('#resTitle').textContent = stars === 3 ? '¡Perfecto!' : stars === 2 ? '¡Muy bien!' : stars === 1 ? 'Vas por buen camino' : 'Sigue practicando';
-    $('#resText').textContent = Math.abs(avg) >= 0.06 ? `Sueles ir ${avg < 0 ? 'adelantado: espera a que la bola caiga en la nota' : 'retrasado: anticípate un poco'}.` : stars < 2 ? 'Prueba más lento o activa «Esperarme».' : '';
-    $('#resBig').innerHTML = `<div><b class="num">${Math.round(acc * 100)}%</b><span>precisión</span></div><div><b class="num">${this.points.toLocaleString('es-ES')}</b><span>${record ? 'puntos · récord' : 'puntos'}</span></div><div><b class="num">${this.maxCombo}</b><span>mejor racha</span></div>`;
-    $('#resGrid').innerHTML = [['Perfecto', st.perfect, 'var(--ok)'], ['Pronto', st.early, 'var(--warn)'], ['Tarde', st.late, 'var(--warn)'], ['Fallo', st.miss, 'var(--bad)']]
-      .map(([n, v, c]) => `<div><b class="num" style="color:${c}">${v}</b><span>${n}</span></div>`).join('');
-    openModal('#resModal');
+    showResult({
+      stars, title: starsLine(stars),
+      text: Math.abs(avg) >= 0.06 ? `Sueles ir ${avg < 0 ? 'adelantado: espera a que la bola caiga en la nota' : 'retrasado: anticípate un poco'}.` : stars < 2 ? 'Prueba más lento o activa «Esperarme».' : '',
+      big: [[`${Math.round(acc * 100)}%`, 'precisión'], [this.points.toLocaleString('es-ES'), record ? 'puntos · récord' : 'puntos'], [this.maxCombo, 'mejor racha']],
+      grid: [['Perfecto', st.perfect, 'var(--ok)'], ['Pronto', st.early, 'var(--warn)'], ['Tarde', st.late, 'var(--warn)'], ['Fallo', st.miss, 'var(--bad)']],
+      actions: acts,
+    });
   },
   // ---------- dibujo ----------
   resize() {
@@ -2202,7 +2363,7 @@ const Player = {
       c.strokeStyle = PAL['line-2']; c.lineWidth = 1 + (s - 1) * 0.35;
       c.beginPath(); c.moveTo(gutter, ly(s)); c.lineTo(W, ly(s)); c.stroke();
     }
-    if (this.level !== 'hard') {
+    if (this.level !== 'hard' && this.built.chordTrack.length) {
       c.font = `650 13px ${FONT}`; c.textAlign = 'left';
       for (const seg of this.built.chordTrack) {
         const x = X(seg.t); if (x > W || x + seg.dur * ppb < gutter) continue;
@@ -2337,52 +2498,832 @@ document.addEventListener('click', (e) => {
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $$('.modal').forEach((m) => { m.hidden = true; }); });
 
+const VIEWS = ['afinador', 'aprender', 'canciones', 'ajustes'];
 function route() {
-  const v = (location.hash || '').slice(1);
-  const view = ['afinador', 'acordes', 'canciones'].includes(v) ? v : 'afinador';
+  const [v, ...rest] = (location.hash || '').slice(1).split('/');
+  const view = v === 'acordes' ? 'aprender' : VIEWS.includes(v) ? v : 'afinador';
+  const prev = state.view;
   state.view = view;
   $$('section[data-view]').forEach((s) => { s.hidden = s.dataset.view !== view; });
   $$('[data-tab]').forEach((a) => (a.dataset.tab === view ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
-  if (view !== 'canciones') Player.pause();
-  if (view !== 'acordes') { Lessons.stopDrill(false); if (Lessons.check || Lessons.drillOpen) { Lessons.check = null; Lessons.drillOpen = false; Lessons.res = {}; Lessons.renderBody(); } }
+  if (view !== Player.host) Player.pause();
+  if (view === 'canciones') Player.release();
+  if (view !== 'aprender' || prev !== 'aprender') Learn.leave();
+  if (view === 'aprender') Learn.show(rest.map(decodeURIComponent));
+  if (view === 'ajustes') Settings.render();
   Cal.sync();
-  if (view === 'canciones') requestAnimationFrame(() => Player.resize());
+  if (view === Player.host) requestAnimationFrame(() => Player.resize());
 }
 
 function setNotation(n) {
   state.notation = n; store.set('notation', n);
-  $('#notationKey').textContent = n === 'latin' ? 'Do' : 'C';
-  Tuner.setMode(Tuner.mode); Tuner.last = {}; Lessons.render(); Songs.render();
-  Player.curIdx = -1; if (Player.song) Player.renderNow();
+  refreshAll();
 }
+// tras cambiar notación, orientación de diagramas, mano o tema
+function refreshAll() {
+  readPalette();
+  Tuner.setMode(Tuner.mode); Tuner.last = {}; Learn.render(); Songs.render();
+  Player.curIdx = -1; if (Player.song) Player.renderNow();
+  if (state.view === 'ajustes') Settings.render();
+}
+function applyTheme(t) {
+  state.theme = t; store.set('theme', t);
+  if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.dataset.theme = t;
+  const meta = $('meta[name="theme-color"]'); if (meta) meta.content = getComputedStyle(document.body).backgroundColor;
+}
+
+/* ============================================================
+   Ajustes
+   ============================================================ */
+const Settings = {
+  render() {
+    const seg = (key, opts, cur) => `<div class="seg" data-set="${key}" role="group">${opts.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${String(v) === String(cur)}">${l}</button>`).join('')}</div>`;
+    $('#settings').innerHTML = `<div class="set-wrap">
+      <h1 class="set-title">Ajustes</h1>
+      <section class="set-card">
+        <div class="set-head"><h2>${icon('mic-line')}Micrófono</h2>
+          <p>Traste escucha tu guitarra con el micrófono. El <b>ajuste</b> tarda unos 8 segundos: mide el ruido de tu sala (para no confundirlo con notas) y hace sonar tres notas por el altavoz para comprobar que el micro las oye afinadas. Se guarda para cada micrófono; repítelo si cambias de sitio o notas que falla más de la cuenta.</p></div>
+        <div class="mic-card" data-mic-card></div>
+        <div class="cal-host" hidden></div>
+      </section>
+      <section class="set-card">
+        <div class="set-row"><div><h3>Nombres de las notas</h3><p>En toda la app: afinador, acordes y canciones.</p></div>${seg('notation', [['latin', 'Do Re Mi'], ['letter', 'C D E']], state.notation)}</div>
+        <div class="set-row"><div><h3>Diagramas de acordes</h3><p>${state.diagram === 'h' ? 'Horizontal, como una tablatura: la 6ª cuerda, la más grave, abajo.' : 'Vertical, como en los cancioneros: la 6ª cuerda, la más grave, a la ' + (state.lefty ? 'derecha.' : 'izquierda.')}</p></div>${seg('diagram', [['v', icon('layout-column-line') + 'Vertical'], ['h', icon('layout-row-line') + 'Horizontal']], state.diagram)}</div>
+        <div class="set-row"><div><h3>Mano</h3><p>${state.lefty ? 'Zurdo: los diagramas, el mástil y la mano se dibujan en espejo.' : 'Si tocas con la guitarra al revés, elige zurdo y los dibujos se ven en espejo.'}</p></div>${seg('lefty', [['0', 'Diestro'], ['1', 'Zurdo']], state.lefty ? 1 : 0)}</div>
+        <div class="set-preview"><div class="diagram">${chordDiagram(CHORDS.C)}</div><p>Así se ven ahora los acordes (Do mayor).</p></div>
+        <div class="set-row"><div><h3>Tema</h3><p>Automático sigue el de tu dispositivo.</p></div>${seg('theme', [['auto', 'Auto'], ['dark', icon('moon-line') + 'Oscuro'], ['light', icon('sun-line') + 'Claro']], state.theme)}</div>
+      </section>
+      <section class="set-card">
+        <div class="set-row"><div><h3>Tu progreso</h3><p>Acordes aprendidos, récords y la práctica de hoy. Todo se guarda solo en este navegador.</p></div><button type="button" class="btn btn-soft btn-sm" data-reset>${icon('delete-bin-line')}Borrar</button></div>
+      </section>
+      <p class="set-foot">Traste es gratis y no tiene cuentas. El sonido se analiza en tu navegador y no sale de tu equipo.</p>
+    </div>`;
+    MicCard.render(); Cal.sync();
+  },
+  init() {
+    $('#settings').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-set] button');
+      if (b) {
+        const key = b.closest('[data-set]').dataset.set, v = b.dataset.v;
+        if (key === 'notation') return setNotation(v);
+        if (key === 'diagram') { state.diagram = v; store.set('diagram', v); }
+        if (key === 'lefty') { state.lefty = v === '1'; store.set('lefty', state.lefty); }
+        if (key === 'theme') applyTheme(v);
+        refreshAll(); return;
+      }
+      if (e.target.closest('[data-reset]') && confirm('¿Borrar tus acordes aprendidos, récords y la práctica de hoy? Los ajustes y el micrófono se mantienen.')) {
+        state.learned = {}; state.best = {}; state.rec = {};
+        for (const k of ['learned', 'best2', 'rec', 'today', 'lesson']) store.set(k, k === 'lesson' ? null : {});
+        refreshAll(); toast('Progreso borrado.', 3000, 'check-line');
+      }
+    });
+  },
+};
 
 let lastT = performance.now();
 function loop(t) {
   const dt = Math.min(0.1, (t - lastT) / 1000); lastT = t;
   let f = null;
-  if (Mic.on) { f = Mic.analyze(t); renderMeter(f.level); }
+  if (Mic.on) { f = Mic.analyze(t); MicCard.frame(f.level); }
   try {
     Cal.frame(f, t);
     if (state.view === 'afinador') Tuner.frame(f, dt, t);
-    else if (state.view === 'acordes') Lessons.frame(f, t);
-    else Player.frame(f, dt, t);
+    else if (state.view === Player.host && !$('#player').hidden) Player.frame(f, dt, t);
+    else if (state.view === 'aprender') Learn.frame(f, dt, t);
   } catch (err) { console.error(err); }
   requestAnimationFrame(loop);
 }
 
 function boot() {
   hydrateIcons();
-  readPalette();
-  matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', () => { readPalette(); Tuner.renderStrings(); });
-  Tuner.init(); Lessons.init(); Songs.init(); Player.init();
-  $('#notationBtn').addEventListener('click', () => setNotation(state.notation === 'latin' ? 'letter' : 'latin'));
-  $('#micBtn').addEventListener('click', () => (Mic.on ? Mic.stop() : ensureMic()));
+  applyTheme(state.theme);
+  matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', () => { readPalette(); Tuner.renderStrings(); Learn.render(); });
+  Tuner.init(); Learn.init(); Songs.init(); Player.init(); Settings.init();
   navigator.mediaDevices?.addEventListener?.('devicechange', () => { if (Mic.on) fillMicSelect(); });
   window.addEventListener('hashchange', route);
-  setNotation(state.notation);
+  readPalette(); Tuner.renderStrings();
   onMicChange(); route();
   requestAnimationFrame(loop);
 }
+
+/* ============================================================
+   Aprender. Se elige nivel y se sigue la práctica de hoy, o se entra en Acordes o en Punteo.
+   Sigue las rutinas que recomiendan los profesores para empezar: calentar los dedos (la «araña»,
+   un dedo por traste), aprender un acorde comprobándolo cuerda a cuerda, cambios de un minuto,
+   rasgueo con metrónomo (negras → corcheas → el patrón ↓ ↓↑ ↑↓↑), notas del mástil empezando por la
+   6ª y la 5ª cuerda, y escalas sencillas. Despacio y limpio antes que rápido; mejor poco cada día.
+   ============================================================ */
+const CHORD_ORDER = CHORD_GROUPS.flatMap((g) => g.ids);
+const enc = encodeURIComponent;
+const pairKey = (p) => [...p].sort().join('-');
+
+const LVL = [null,
+  { n: 'Empiezo', d: 'Primeras semanas: fuerza en los dedos, tus primeros acordes y un ritmo sencillo.' },
+  { n: 'Básico', d: 'Ya cambias entre acordes abiertos: más soltura, notas del mástil y escalas.' },
+  { n: 'Intermedio', d: 'Cejilla, rasgueos con ritmo y todo el mástil.' },
+];
+
+/* ---------- Secuencias de notas ---------- */
+const nt = (string, fret, finger) => ({ string, fret, finger: fret === 0 ? 0 : finger, midi: stringMidi(string) + fret });
+// Araña: un dedo por traste en cada cuerda, de la 6ª a la 1ª (y vuelta, si back)
+function spider(pos, order, back) {
+  const up = [];
+  for (let s = 6; s >= 1; s--) for (const k of order) up.push(nt(s, pos + k, k + 1));
+  if (!back) return up;
+  const down = [];
+  for (let s = 1; s <= 6; s++) for (const k of [...order].reverse()) down.push(nt(s, pos + k, k + 1));
+  return up.concat(down);
+}
+const upDown = (pts, finger) => { const up = pts.map(([s, f]) => nt(s, f, finger(f))); return up.concat(up.slice(0, -1).reverse()); };
+const STRUM8 = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5].map((t, i) => [t, i % 2 ? 'U' : 'D']);
+
+const EXERCISES = [
+  // ---- Punteo: dedos ----
+  { id: 'spider5', track: 'punteo', group: 'Fuerza y agilidad', lvl: 1, kind: 'seq', icon: 'hand', title: 'Araña 1-2-3-4', sub: 'Un dedo por traste, desde el traste 5',
+    why: 'El calentamiento clásico. Índice en el traste 5, medio en el 6, anular en el 7 y meñique en el 8, cuerda a cuerda de la 6ª a la 1ª. Aquí los trastes están más juntos y cuesta menos. Deja apoyado cada dedo hasta que necesites el siguiente.',
+    notes: spider(5, [0, 1, 2, 3], false), bpm: 60, view: [4, 9] },
+  { id: 'spider1', track: 'punteo', group: 'Fuerza y agilidad', lvl: 2, kind: 'seq', icon: 'hand', title: 'Araña completa', sub: 'Trastes 1 a 4, subiendo y bajando',
+    why: 'La misma idea en los primeros trastes, donde hay que abrir más la mano, y de vuelta de la 1ª a la 6ª con 4-3-2-1. Si un dedo se levanta de más, ve más despacio.',
+    notes: spider(1, [0, 1, 2, 3], true), bpm: 70, view: [0, 5] },
+  { id: 'spider1324', track: 'punteo', group: 'Fuerza y agilidad', lvl: 2, kind: 'seq', icon: 'hand', title: 'Araña cruzada 1-3-2-4', sub: 'Independencia de los dedos',
+    why: 'Cambiar el orden obliga a cada dedo a moverse por su cuenta. Despacio y limpio vale más que rápido: la velocidad llega sola.',
+    notes: spider(5, [0, 2, 1, 3], true), bpm: 70, view: [4, 9] },
+  { id: 'spider1423', track: 'punteo', group: 'Fuerza y agilidad', lvl: 3, kind: 'seq', icon: 'hand', title: 'Araña 1-4-2-3', sub: 'Estiramiento y control del meñique',
+    why: 'Del índice saltas al meñique (estira la mano) y vuelven el medio y el anular. Trastes 3 a 6.',
+    notes: spider(3, [0, 3, 1, 2], true), bpm: 80, view: [2, 7] },
+  // ---- Punteo: notas del mástil ----
+  { id: 'open', track: 'punteo', group: 'Notas del mástil', lvl: 1, kind: 'seq', icon: 'music-line', title: 'Las cuerdas al aire', sub: 'Mi La Re Sol Si Mi, ida y vuelta',
+    why: 'Antes de pisar nada, aprende cómo se llama y cómo suena cada cuerda. Toca solo la que te pido, sin pisar: de la 6ª (la más gruesa) a la 1ª y vuelta.',
+    notes: upDown([[6, 0], [5, 0], [4, 0], [3, 0], [2, 0], [1, 0]], () => 0), bpm: 60, view: [0, 3] },
+  { id: 'find6', track: 'punteo', group: 'Notas del mástil', lvl: 1, kind: 'find', icon: 'focus-3-line', title: 'Encuentra la nota: 6ª cuerda', sub: 'Notas naturales, trastes 0 a 12',
+    why: 'Saber dónde está cada nota de la 6ª cuerda te orienta en todo el mástil y es la base de los acordes con cejilla. Pistas: Sol en el traste 3, La en el 5, Do en el 8 y Mi otra vez en el 12.', strings: [6], naturals: true },
+  { id: 'find5', track: 'punteo', group: 'Notas del mástil', lvl: 2, kind: 'find', icon: 'focus-3-line', title: 'Encuentra la nota: 5ª cuerda', sub: 'Notas naturales, trastes 0 a 12',
+    why: 'La 5ª cuerda empieza en La. Pistas: Do en el traste 3, Re en el 5, Mi en el 7 y La otra vez en el 12.', strings: [5], naturals: true },
+  { id: 'find65', track: 'punteo', group: 'Notas del mástil', lvl: 2, kind: 'find', icon: 'focus-3-line', title: 'Encuentra la nota: 6ª y 5ª', sub: 'Las dos cuerdas graves mezcladas',
+    why: 'El traste 5 de una cuerda suena igual que la siguiente al aire: el 5 de la 6ª es La. Úsalo para pasar de una cuerda a otra.', strings: [6, 5], naturals: true },
+  { id: 'findall', track: 'punteo', group: 'Notas del mástil', lvl: 3, kind: 'find', icon: 'focus-3-line', title: 'Encuentra la nota: todo el mástil', sub: 'Seis cuerdas, con sostenidos',
+    why: 'Todas las cuerdas y todas las notas hasta el traste 12. Recuerda: entre Mi y Fa y entre Si y Do no hay traste de por medio.', strings: [1, 2, 3, 4, 5, 6], naturals: false },
+  // ---- Punteo: escalas ----
+  { id: 'cmaj', track: 'punteo', group: 'Escalas', lvl: 2, kind: 'seq', icon: 'music-line', title: 'Escala de Do mayor', sub: 'Do Re Mi Fa Sol La Si Do, posición abierta',
+    why: 'La escala de toda la vida, subiendo y bajando. Un dedo por traste: el índice en el traste 1, el medio en el 2 y el anular en el 3.',
+    notes: upDown([[5, 3], [4, 0], [4, 2], [4, 3], [3, 0], [3, 2], [2, 0], [2, 1]], (f) => f), bpm: 70, view: [0, 4] },
+  { id: 'penta', track: 'punteo', group: 'Escalas', lvl: 2, kind: 'seq', icon: 'music-line', title: 'Pentatónica menor de La', sub: 'Traste 5: la escala del rock y el blues',
+    why: 'Dos notas por cuerda con el índice en el traste 5. Es la base de casi todos los solos. Ve subiendo y bajando sin prisa.',
+    notes: upDown([[6, 5], [6, 8], [5, 5], [5, 7], [4, 5], [4, 7], [3, 5], [3, 7], [2, 5], [2, 8], [1, 5], [1, 8]], (f) => f - 4), bpm: 70, view: [4, 9] },
+  { id: 'gmaj', track: 'punteo', group: 'Escalas', lvl: 3, kind: 'seq', icon: 'music-line', title: 'Escala de Sol mayor', sub: 'Dos octavas en posición abierta',
+    why: 'De la 6ª a la 1ª cuerda y vuelta, un dedo por traste. El Fa# de la 4ª cuerda va con el meñique.',
+    notes: upDown([[6, 3], [5, 0], [5, 2], [5, 3], [4, 0], [4, 2], [4, 4], [3, 0], [3, 2], [2, 0], [2, 1], [2, 3], [1, 0], [1, 2], [1, 3]], (f) => f), bpm: 80, view: [0, 4] },
+  // ---- Acordes: cambios y ritmo ----
+  { id: 'changes', track: 'acordes', group: 'Practica', lvl: 1, kind: 'changes', icon: 'timer-line', title: 'Cambios de un minuto', sub: 'Cuenta cuántas veces cambias entre dos acordes',
+    why: 'Elige dos acordes y alterna entre ellos con un rasgueo en cada uno durante un minuto. Es el ejercicio que más rápido mejora los cambios: apunta tu récord y supéralo cada día.' },
+  { id: 'strum4', track: 'acordes', group: 'Ritmo', lvl: 1, kind: 'rhythm', icon: 'pulse-line', title: 'Rasgueo en negras', sub: '↓ ↓ ↓ ↓ · un golpe por tiempo con Mim y Lam',
+    why: 'Mueve el brazo desde el codo, relajado, y rasguea hacia abajo justo con cada clic. Cuenta en voz alta: 1, 2, 3, 4.',
+    pattern: [[0, 'D'], [1, 'D'], [2, 'D'], [3, 'D']], chords: ['Em', 'Em', 'Am', 'Am', 'Em', 'Em', 'Am', 'Am'], bpm: 70 },
+  { id: 'strum8', track: 'acordes', group: 'Ritmo', lvl: 2, kind: 'rhythm', icon: 'pulse-line', title: 'Rasgueo en corcheas', sub: '↓↑↓↑↓↑↓↑ con Sol, Do y Re',
+    why: 'La mano no para: baja en cada tiempo y sube entre medias («1 y 2 y 3 y 4 y»). Las subidas, más suaves y solo por las cuerdas agudas.',
+    pattern: STRUM8, chords: ['G', 'G', 'C', 'C', 'G', 'G', 'D', 'D'], bpm: 70 },
+  { id: 'strumPop', track: 'acordes', group: 'Ritmo', lvl: 3, kind: 'rhythm', icon: 'pulse-line', title: 'El rasgueo más usado', sub: '↓ ↓↑ ↑↓↑ con Sol, Mim, Do y Re',
+    why: 'Abajo, abajo-arriba, arriba-abajo-arriba («1, 2 y, y 4 y»). En el tiempo 3 el brazo sigue bajando pero sin tocar las cuerdas: así no pierdes el pulso.',
+    pattern: STRUM_PATTERNS[4], chords: ['G', 'G', 'Em', 'Em', 'C', 'C', 'D', 'D'], bpm: 75 },
+];
+const EXI = Object.fromEntries(EXERCISES.map((e) => [e.id, e]));
+
+// Parejas de acordes para los cambios, de más fácil a más difícil
+const PAIRS = [null,
+  [['Em', 'Am'], ['Am', 'E'], ['E', 'A'], ['A', 'D'], ['Em', 'D']],
+  [['G', 'C'], ['C', 'D'], ['G', 'D'], ['Am', 'Dm'], ['C', 'Am'], ['G', 'Em'], ['E7', 'A7'], ['G7', 'C']],
+  [['C', 'F_easy'], ['Am', 'F_easy'], ['F', 'C'], ['G', 'Bm'], ['D', 'Bm'], ['F#m', 'D'], ['Em', 'B7']],
+];
+
+/* Ejercicio "con metrónomo": se toca en el reproductor de canciones */
+function exerciseSong(ex) {
+  const ev = [];
+  let total;
+  if (ex.kind === 'rhythm') {
+    ex.chords.forEach((c, bar) => ex.pattern.forEach(([off, dir]) => ev.push({ t: bar * 4 + off, dur: 0.5, chord: c, dir, notes: chordNotes(CHORDS[c], dir), first: off === 0 && (bar === 0 || ex.chords[bar - 1] !== c) })));
+    total = ex.chords.length * 4;
+    ev.forEach((e, i) => { e.dur = Math.min(1, (ev[i + 1]?.t ?? total) - e.t); });
+  } else {
+    ex.notes.forEach((n, i) => ev.push({ t: i, dur: 1, notes: [{ ...n }] }));
+    total = ex.notes.length;
+  }
+  return { id: 'ex:' + ex.id, title: ex.title, origin: ex.sub, bpm: ex.bpm, bpb: 4, exercise: ex, built: { total, pickup: 0, chordTrack: [], levels: { easy: ev } } };
+}
+
+/* ---------- Práctica de hoy ---------- */
+const dayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+const dayNum = () => Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
+function todayDone() { const t = store.get('today', {}); return t && t.d === dayKey() ? t.done || [] : []; }
+
+function routine(level) {
+  const d = dayNum(), pick = (arr) => arr[d % arr.length];
+  const groups = [null, [0, 1], [0, 1, 2, 3], [0, 1, 2, 3, 4]][level];
+  const newChord = groups.flatMap((g) => CHORD_GROUPS[g].ids).find((x) => !state.learned[x]);
+  const learned = CHORD_ORDER.filter((x) => state.learned[x]);
+  const steps = [];
+  const ex = (kicker, id, min) => { const e = EXI[id]; steps.push({ key: 'ex:' + id, kicker, icon: e.icon, title: e.title, sub: e.sub, min, hash: '#aprender/ej/' + id }); };
+  ex('Calienta', ['', 'spider5', pick(['spider1', 'spider1324']), pick(['spider1423', 'spider1324'])][level], 3);
+  if (newChord) steps.push({ key: 'lesson:' + newChord, kicker: 'Acorde nuevo', icon: 'hand', title: `${chordLabel(newChord)} · ${chordLongName(newChord)}`, sub: 'Colócalo, compruébalo cuerda a cuerda y practica el cambio', min: 5, hash: '#aprender/acorde/' + enc(newChord) });
+  else if (learned.length >= 2) steps.push({ key: 'review', kicker: 'Repaso', icon: 'shuffle-line', title: 'Repaso de memoria', sub: 'Un acorde que ya sabes, sin mirar el diagrama', min: 3, hash: '#aprender/repaso' });
+  const known = PAIRS[level].filter(([a, b]) => state.learned[a] && state.learned[b]);
+  const pr = known.length ? pick(known) : PAIRS[level][0];
+  steps.push({ key: 'chg:' + pairKey(pr), kicker: 'Cambios', icon: 'timer-line', title: `${chordLabel(pr[0])} ↔ ${chordLabel(pr[1])} en un minuto`, sub: 'Un rasgueo en cada acorde: cuenta los cambios', min: 2, hash: `#aprender/cambios/${enc(pr[0])}~${enc(pr[1])}` });
+  ex('Ritmo', ['', 'strum4', 'strum8', 'strumPop'][level], 3);
+  ex('Notas', ['', pick(['open', 'find6']), pick(['find5', 'find65', 'find6']), 'findall'][level], 3);
+  if (level > 1) ex('Escala', level === 2 ? pick(['cmaj', 'penta']) : pick(['gmaj', 'penta']), 3);
+  // una canción para terminar
+  const fits = (s) => songChords(s).every((c) => state.learned[c]);
+  let lvl = level === 1 ? 'easy' : 'hard', cand = SONGS.filter((s) => (level === 1 ? s.stars === 1 : lvl === 'hard' ? fits(s) : true));
+  if (!cand.length) { lvl = 'easy'; cand = SONGS.filter((s) => s.stars <= level); }
+  const song = pick(cand);
+  steps.push({ key: `song:${song.id}:${lvl}`, kicker: 'Canción', icon: 'music-2-line', title: song.title, sub: lvl === 'easy' ? 'Nivel Fácil: la melodía nota a nota' : 'Nivel Difícil: con acordes y rasgueo', min: 4, song, lvl });
+  return steps;
+}
+
+/* ---------- Primeros pasos ---------- */
+function guideItems() {
+  const h = state.diagram === 'h';
+  return [
+    { t: 'Sujeta la guitarra', d: `Siéntate con la espalda recta y apoya la guitarra en la pierna ${state.lefty ? 'izquierda' : 'derecha'}, con el mástil un poco hacia arriba. El <b>pulgar de la mano que pisa va detrás del mástil</b>, más o menos detrás del dedo medio.` },
+    { t: 'Tus dedos tienen número', d: 'Los diagramas usan números: 1 índice, 2 medio, 3 anular y 4 meñique. En Traste cada dedo tiene <b>siempre el mismo color</b>.', art: 'hand' },
+    { t: 'Cómo pisar una cuerda', d: 'Con la <b>punta del dedo</b>, justo <b>detrás del traste</b> (no encima). Arquea el dedo como si sujetaras una pelota pequeña para no rozar las cuerdas de al lado. Mejor con las uñas cortas.' },
+    { t: 'Cómo leer un diagrama', d: h ? 'Las líneas horizontales son las cuerdas: la <b>6ª, la más gruesa, abajo</b>, como en la tablatura. Las verticales son los trastes y la barra gruesa es la cejuela. El número es el dedo. <b>O</b>: cuerda al aire. <b>✕</b>: no la toques.'
+      : `Las líneas verticales son las cuerdas: la <b>6ª, la más gruesa, a la ${state.lefty ? 'derecha' : 'izquierda'}</b>. Las horizontales son los trastes. El número es el dedo. <b>O</b>: cuerda al aire. <b>✕</b>: no la toques.`, art: 'diagram' },
+    { t: 'Comprueba cuerda a cuerda', d: 'Con el acorde puesto, toca <b>cada cuerda por separado</b>. Si una suena apagada, algún dedo la roza o no aprieta bien. Es lo que hacen los profesores, y Traste te lo dice nota a nota.' },
+    { t: 'Cómo practicar', d: 'Mejor <b>10-20 minutos cada día</b> que una hora a la semana. Es normal que las yemas duelan la primera semana. Sigue la <b>práctica de hoy</b>: calentar, un acorde, cambios, ritmo y una canción.' },
+  ];
+}
+
+/* ============================================================
+   Lección de un acorde en tres pasos: colócalo → compruébalo → cámbialo
+   ============================================================ */
+const Lesson = {
+  id: null, review: false, step: 1, check: null, res: {}, reveal: false, partner: null,
+  open(id, review) {
+    this.review = review; this.id = review ? this.pickReview() : id;
+    this.step = 1; this.check = null; this.res = {}; this.reveal = false; this.partner = null;
+    if (!review) store.set('lesson', id);
+  },
+  pickReview() {
+    const l = CHORD_ORDER.filter((x) => state.learned[x] && x !== this.id);
+    return l[Math.floor(Math.random() * l.length)] || CHORD_ORDER.find((x) => state.learned[x]) || 'Em';
+  },
+  nextId() { const i = CHORD_ORDER.indexOf(this.id); return CHORD_ORDER.find((x, k) => k > i && !state.learned[x]) || CHORD_ORDER[(i + 1) % CHORD_ORDER.length]; },
+  partners() {
+    const own = CHORD_ORDER.filter((x) => x !== this.id && state.learned[x]);
+    const i = CHORD_ORDER.indexOf(this.id), near = CHORD_ORDER.filter((x, k) => x !== this.id && Math.abs(k - i) <= 3);
+    return [...new Set([...own.slice(-5).reverse(), ...near])].slice(0, 6);
+  },
+  learn() {
+    const id = this.id;
+    if (!state.learned[id]) { state.learned[id] = true; store.set('learned', state.learned); toast(`${chordLabel(id)} aprendido.`, 3000, 'check-line'); }
+    Learn.markDone(this.review ? 'review' : 'lesson:' + id);
+  },
+  html() {
+    const id = this.id, c = CHORDS[id], notes = chordNotes(c), review = this.review, learned = !!state.learned[id];
+    const hidden = review && !this.reveal && !(this.check && this.check.done);
+    const steps = review ? [['Colócalo sin mirar'], ['Compruébalo']] : [['Colócalo'], ['Compruébalo'], ['Cámbialo']];
+    const stepper = `<div class="stepper" role="tablist">${steps.map(([n], i) => `${i ? '<span class="sl"></span>' : ''}<button type="button" role="tab" data-act="step" data-n="${i + 1}" aria-selected="${this.step === i + 1}" class="${this.step > i + 1 || (i === 1 && this.check?.done) ? 'done' : ''}"><i>${this.step > i + 1 || (i === 1 && this.check?.done) ? icon('check-line') : i + 1}</i>${n}</button>`).join('')}</div>`;
+    let panel = '';
+    if (this.step === 1) {
+      const used = new Set(c.fingers.filter(Boolean));
+      const items = [...used].sort().map((f) => {
+        const where = c.barre && c.barre.finger === f ? `estirado sobre el traste ${c.barre.fret}, de la ${c.barre.from}ª a la ${c.barre.to}ª cuerda (cejilla)`
+          : notes.filter((n) => n.finger === f).map((n) => `en la <b>${n.string}ª cuerda</b>, traste ${n.fret}`).join(' y ');
+        return `<li><span class="fdot" style="background:${fingerVar(f)}">${f}</span><span><b>${FINGERS[f].n}</b> ${where}</span></li>`;
+      });
+      const first = Math.max(...notes.map((n) => n.string));
+      const muted = [6, 5, 4, 3, 2, 1].filter((s) => !notes.some((n) => n.string === s));
+      items.push(`<li><span class="fdot strum">${icon('arrow-down-line')}</span><span><b>Rasguea</b> hacia abajo desde la ${first === 6 ? '6ª cuerda (suenan todas)' : `${first}ª cuerda`}</span></li>`);
+      if (muted.length) items.push(`<li><span class="fdot mute">${icon('close-line')}</span><span><b>No toques</b> la ${ordinalList(muted.sort((a, b) => a - b))} cuerda</span></li>`);
+      panel = hidden
+        ? `<p class="ls-lead">Coloca los dedos de memoria y compruébalo. Si no te acuerdas, mira el diagrama.</p>
+           <div class="ls-actions"><button type="button" class="btn btn-primary" data-act="check">${icon('mic-line')}Compruébalo</button><button type="button" class="btn btn-soft" data-act="reveal">${icon('eye-line')}Ver el diagrama</button><button type="button" class="btn btn-ghost" data-act="another">${icon('shuffle-line')}Otro</button></div>`
+        : `<p class="ls-lead">Coloca los dedos así${review ? '' : ' y rasguea para oír cómo suena'}:</p>
+           <ol class="steps-list">${items.join('')}</ol>
+           <div class="tip">${icon('lightbulb-line')}<span>${c.tip}</span></div>
+           <div class="ls-actions"><button type="button" class="btn btn-primary" data-act="check">${icon('mic-line')}Ya lo tengo puesto: compruébalo</button>
+           ${review ? `<button type="button" class="btn btn-ghost" data-act="another">${icon('shuffle-line')}Otro</button>` : learned ? '' : `<button type="button" class="btn btn-ghost" data-act="known">Ya me lo sé</button>`}</div>`;
+    } else if (this.step === 2) {
+      const ck = this.check;
+      if (!ck) {
+        panel = `<p class="ls-lead">Con el acorde puesto, toca las cuerdas <b>una a una</b>, de la gruesa a la fina. Te digo si alguna suena mal y por qué.</p>
+          <div class="ls-actions"><button type="button" class="btn btn-primary" data-act="check">${icon('mic-line')}Empezar a escuchar</button></div>`;
+      } else {
+        const played = new Set(ck.notes.map((n) => n.string)), cur = ck.notes[ck.i];
+        const pills = [6, 5, 4, 3, 2, 1].map((s) => {
+          const st = !played.has(s) ? 'skip' : this.res[s] === 'ok' ? 'ok' : cur && cur.string === s ? (this.res[s] === 'bad' ? 'bad' : 'now') : this.res[s] === 'bad' ? 'bad' : '';
+          return `<div class="cs ${st}"><b>${!played.has(s) ? '✕' : st === 'ok' ? icon('check-line') : pcName(OPEN_MIDI[6 - s] + ck.notes.find((n) => n.string === s).fret)}</b>${s}ª</div>`;
+        }).join('');
+        const msg = ck.done ? (ck.fails ? 'Corregido: ya suenan todas.' : '¡Todas las cuerdas suenan limpias!') : ck.msg || `Toca solo la ${cur.string}ª cuerda`;
+        const sub = ck.done ? (review ? 'Lo recordabas bien.' : 'Ahora rasguéalo entero un par de veces y pasa a los cambios.') : ck.sub || 'Con el acorde puesto. Déjala sonar.';
+        panel = `<div class="check-strings">${pills}</div>
+          <div class="check-msg" style="color:${ck.kind === 'bad' ? 'var(--bad)' : ck.done ? 'var(--ok)' : ''}">${msg}<p>${sub}</p></div>
+          <div class="ls-actions">${ck.done
+            ? (review ? `<button type="button" class="btn btn-primary" data-act="another">${icon('shuffle-line')}Otro acorde</button>` : `<button type="button" class="btn btn-primary" data-act="step" data-n="3">Siguiente: cámbialo${icon('arrow-right-line')}</button>`) + `<button type="button" class="btn btn-soft" data-act="check">${icon('restart-line')}Otra vez</button>`
+            : `<button type="button" class="btn btn-ghost" data-act="check">${icon('restart-line')}Empezar de nuevo</button>`}</div>`;
+      }
+    } else {
+      const ps = this.partners(), p = this.partner && ps.includes(this.partner) ? this.partner : ps[0];
+      this.partner = p;
+      const best = state.rec['changes:' + pairKey([id, p])], nx = this.nextId();
+      panel = `<p class="ls-lead">Ahora practica el cambio: coloca ${chordLabel(id)}, rasguea, quita la mano y pasa a otro acorde. Así la mano aprende la forma de memoria.</p>
+        <div class="pair-pick"><span class="muted">Cambiar entre <b>${chordLabel(id)}</b> y</span><div class="chips">${ps.map((x) => `<button type="button" class="chip" data-act="partner" data-id="${esc(x)}" aria-pressed="${x === p}">${chordLabel(x)}${state.learned[x] ? '' : '<small>nuevo</small>'}</button>`).join('')}</div></div>
+        <div class="mini-pair"><div class="diagram sm">${chordDiagram(CHORDS[p])}</div><p>${chordLongName(p)}${best ? `<br><span class="rec-line">${icon('trophy-line')}Tu récord: <b>${best.v} cambios</b></span>` : ''}</p></div>
+        <div class="ls-actions"><a class="btn btn-primary" href="#aprender/cambios/${enc(id)}~${enc(p)}">${icon('timer-line')}Cambios de un minuto</a>
+        ${nx !== id ? `<a class="btn btn-soft" href="#aprender/acorde/${enc(nx)}">Siguiente: ${chordLabel(nx)}${icon('arrow-right-line')}</a>` : ''}</div>`;
+    }
+    const idx = CHORD_ORDER.indexOf(id);
+    return `<div class="screen lesson2">
+      <div class="scr-top">
+        <a class="btn btn-soft btn-icon" href="${Learn.inRoutine ? '#aprender' : '#aprender/acordes'}" aria-label="Volver">${icon('arrow-left-line')}</a>
+        <div class="scr-title"><h1 class="chord-h">${chordLabel(id)}</h1><p>${chordLabel(id, state.notation === 'latin' ? 'letter' : 'latin')} · ${chordLongName(id)}${c.variant ? ' · ' + c.variant : ''} · ${review ? 'repaso' : `${idx + 1} de ${CHORD_ORDER.length}`}${learned && !review ? ' · <span style="color:var(--ok)">aprendido</span>' : ''}</p></div>
+        <button type="button" class="btn btn-soft btn-icon" data-act="hear" title="Escuchar el acorde" aria-label="Escuchar el acorde">${icon('volume-up-line')}</button>
+        <button type="button" class="btn btn-soft btn-icon" data-act="arp" title="Escuchar nota a nota" aria-label="Escuchar nota a nota">${icon('music-2-line')}</button>
+      </div>
+      ${stepper}
+      <div class="scr-body scroll"><div class="ls-grid">
+        ${hidden ? `<div class="diagram ghost"><div>${icon('eye-line')}<span>Diagrama oculto</span></div></div>` : `<div class="diagram">${chordDiagram(c, this.res)}</div>`}
+        <div class="ls-panel">${panel}</div>
+      </div></div>
+    </div>`;
+  },
+  onClick(b) {
+    const a = b.dataset.act, id = this.id;
+    if (a === 'hear') AudioEngine.strum(chordNotes(CHORDS[id]), 'D');
+    if (a === 'arp') [...chordNotes(CHORDS[id])].sort((x, y) => y.string - x.string).forEach((n, i) => AudioEngine.pluck(midiToFreq(n.midi), i * 0.34, 0.45));
+    if (a === 'check') { this.step = 2; this.startCheck(); }
+    if (a === 'step') {
+      const n = +b.dataset.n; if (n === this.step) return;
+      this.step = n; this.check = null; this.res = {};
+      if (n === 2) this.startCheck(); else Learn.render();
+    }
+    if (a === 'known') { this.learn(); this.step = 3; Learn.render(); }
+    if (a === 'reveal') { this.reveal = true; Learn.render(); }
+    if (a === 'another') { this.open(null, true); Learn.render(); }
+    if (a === 'partner') { this.partner = b.dataset.id; Learn.render(); }
+  },
+  async startCheck() {
+    this.check = null; this.res = {}; Learn.render();
+    if (!(await micReady())) return;
+    const notes = chordNotes(CHORDS[this.id]).sort((a, b) => b.string - a.string);
+    this.check = { notes, i: 0, fails: 0, msg: '', sub: '', kind: '', done: false };
+    this.update();
+  },
+  update() {
+    const ck = this.check, cur = ck?.notes[ck.i];
+    if (cur && !ck.done && this.res[cur.string] !== 'bad') this.res = { ...this.res, [cur.string]: 'now' };
+    Learn.render();
+  },
+  frameCheck(f) {
+    const ck = this.check, a = f.attack;
+    if (!ck || ck.done || !a || a.used) return;
+    const cur = ck.notes[ck.i], got = attackNotes(a);
+    if (got.some((m) => sameNote(m, cur.midi))) {
+      a.used = true; this.res = { ...this.res, [cur.string]: 'ok' }; ck.i++; ck.kind = ''; ck.msg = ''; ck.sub = '';
+      if (ck.i >= ck.notes.length) { ck.done = true; this.learn(); }
+      this.update(); return;
+    }
+    if (!a.settled) return;
+    a.used = true;
+    // las cuerdas ya comprobadas siguen sonando: si lo que se oye es una de ellas, no es un error
+    const ringing = ck.notes.slice(0, ck.i).map((n) => n.midi);
+    if (got.every((m) => ringing.some((r) => sameNote(m, r)))) return;
+    // solo se dice "suena X" si lo confirman los dos detectores (primera lectura y lo que aparece)
+    if (a.flux == null || a.yin == null || !sameNote(a.yin, a.flux) || ringing.some((r) => sameNote(a.flux, r))) { ck.kind = ''; ck.msg = `No la he oído clara: toca otra vez la ${cur.string}ª`; ck.sub = 'Una sola cuerda, y deja que suene.'; this.update(); return; }
+    const heard = a.flux; ck.fails++; ck.kind = 'bad'; this.res = { ...this.res, [cur.string]: 'bad' };
+    ck.msg = `Suena ${pcName(heard)} y debería sonar ${pcName(cur.midi)}`;
+    ck.sub = cur.fret === 0 ? 'Algún dedo pisa o roza esta cuerda: arquéalos más.'
+      : heard > cur.midi ? `Suena más agudo: el dedo ${cur.finger} va en el traste ${cur.fret}.` : `Suena más grave: aprieta con la punta del dedo ${cur.finger}, justo detrás del traste ${cur.fret}.`;
+    this.update();
+  },
+};
+
+/* ============================================================
+   Ejercicios con micrófono: contrarreloj, 60 segundos, 10 notas y cambios de un minuto
+   ============================================================ */
+const MODES = {
+  seq: [['crono', 'timer-flash-line', 'Contrarreloj'], ['tempo', 'pulse-line', 'Con metrónomo']],
+  find: [['m60', 'timer-line', '60 segundos'], ['n10', 'timer-flash-line', '10 notas']],
+  changes: [['m60', 'timer-line', '1 minuto']],
+  rhythm: [['tempo', 'pulse-line', 'Con metrónomo']],
+};
+const modeHelp = (kind, mode) => ({
+  crono: 'Toca la secuencia lo más rápido que puedas. El tiempo empieza con la primera nota y cada nota equivocada suma 1 segundo.',
+  tempo: kind === 'rhythm' ? 'Rasguea con el clic. Cada golpe se puntúa: Perfecto, Pronto o Tarde. Puedes bajar la velocidad en las opciones.' : 'Las notas avanzan solas con el clic y cada una se puntúa como en las canciones. Puedes bajar la velocidad en las opciones.',
+  m60: kind === 'changes' ? 'Un rasgueo en cada acorde durante un minuto. Cuento los cambios y te digo cuáles suenan limpios.' : 'Acierta todas las notas que puedas en un minuto.',
+  n10: 'Encuentra 10 notas lo más rápido posible.',
+}[mode]);
+const lowerIsBetter = (kind, mode) => kind === 'seq' || mode === 'n10';
+const fmtRec = (kind, mode, v) => (lowerIsBetter(kind, mode) ? `${fmt(v, 1)} s` : String(v));
+function drillStars(ex, mode, v) {
+  if (ex.kind === 'seq') { const per = v / ex.notes.length; return per <= 0.9 ? 3 : per <= 1.5 ? 2 : per <= 3 ? 1 : 0; }
+  if (ex.kind === 'changes') return v >= 45 ? 3 : v >= 30 ? 2 : v >= 15 ? 1 : 0;
+  if (mode === 'n10') return v <= 30 ? 3 : v <= 55 ? 2 : v <= 100 ? 1 : 0;
+  return v >= 20 ? 3 : v >= 12 ? 2 : v >= 5 ? 1 : 0;
+}
+function recordOf(ex, mode) {
+  if (mode === 'tempo') { const b = state.best[`ex:${ex.id}:easy`]; return b ? { stars: b.stars, text: `${Math.round(b.acc * 100)}% de precisión` } : null; }
+  if (ex.kind === 'changes') return null;
+  const r = state.rec[`${ex.id}:${mode}`]; return r ? { stars: r.stars, text: fmtRec(ex.kind, mode, r.v) } : null;
+}
+function bestStars(ex) {
+  return Math.max(0, ...MODES[ex.kind].map(([m]) => recordOf(ex, m)?.stars || 0));
+}
+
+const Drill = {
+  ex: null, mode: '', st: 'idle', pair: ['Em', 'Am'], back: '#aprender',
+  open(ex, o = {}) {
+    this.stop();
+    this.ex = ex; this.back = o.back || (Learn.inRoutine ? '#aprender' : '#aprender/' + ex.track);
+    const modes = MODES[ex.kind], saved = store.get('mode:' + ex.id, modes[0][0]);
+    this.mode = modes.some((m) => m[0] === saved) ? saved : modes[0][0];
+    if (ex.kind === 'changes') this.pair = o.pair || store.get('pair', null) || this.defaultPair();
+  },
+  defaultPair() { const l = CHORD_ORDER.filter((x) => state.learned[x]); return l.length >= 2 ? l.slice(-2) : ['Em', 'Am']; },
+  stop() { this.st = 'idle'; this.check = null; },
+  seq() { return this.ex.notes; },
+  rkey() { return this.ex.kind === 'changes' ? 'changes:' + pairKey(this.pair) : `${this.ex.id}:${this.mode}`; },
+  async start() {
+    if (this.mode === 'tempo') { Learn.autoStart = true; location.hash = `#aprender/ej/${this.ex.id}/tempo`; return; }
+    if (!(await micReady())) return;
+    Object.assign(this, { st: this.mode === 'crono' ? 'run' : 'count', cdEnd: performance.now() + 3000, t0: null, end: 0, i: 0, errs: 0, score: 0, clean: 0, misses: 0, msg: '', mk: '', flash: null, target: null, check: null, last: 0 });
+    if (this.ex.kind === 'seq') { this.msg = 'El tiempo empieza con la primera nota.'; Mic.attack && (Mic.attack.used = true); }
+    if (this.ex.kind === 'find') this.nextTarget();
+    Learn.render();
+  },
+  say(msg, mk = '') { this.msg = msg; this.mk = mk; const el = $('#drMsg'); if (el) { el.textContent = msg; el.dataset.k = mk; } },
+  findPool() {
+    const out = [];
+    for (const s of this.ex.strings) for (let f = 0; f <= 12; f++) { const m = stringMidi(s) + f; if (this.ex.naturals && LETTERS[m % 12].includes('#')) continue; out.push({ string: s, fret: f, midi: m }); }
+    return out;
+  },
+  nextTarget() {
+    const pool = this.findPool().filter((p) => !this.target || p.midi % 12 !== this.target.midi % 12);
+    this.target = pool[Math.floor(Math.random() * pool.length)]; this.misses = 0;
+  },
+  frame(f, now) {
+    if (this.st === 'count') {
+      if (f?.attack) f.attack.used = true;
+      const n = Math.ceil((this.cdEnd - now) / 1000), el = $('#drCount');
+      if (el && el.textContent !== String(n)) el.textContent = n > 0 ? n : '';
+      if (now >= this.cdEnd) { this.st = 'run'; this.t0 = now; if (this.mode === 'm60') this.end = now + 60000; Learn.render(); }
+      return;
+    }
+    if (this.st !== 'run') return;
+    this.tick(now);
+    if (this.mode === 'm60' && now >= this.end) { this.finish(now); return; }
+    if (this.flash && now > this.flash.until) { this.flash = null; this.renderStage(); }
+    if (!f || Cal.needed()) return;
+    if (this.ex.kind === 'seq') this.frameSeq(f, now);
+    else if (this.ex.kind === 'find') this.frameFind(f, now);
+    else if (this.ex.kind === 'changes') this.frameChanges(f, now);
+  },
+  tick(now) {
+    const el = $('#drTime'); if (!el) return;
+    const s = this.mode === 'm60' ? `0:${String(Math.ceil(Math.max(0, this.end - now) / 1000)).padStart(2, '0')}` : `${fmt(this.t0 == null ? 0 : (now - this.t0) / 1000, 1)} s`;
+    if (el.textContent !== s) el.textContent = s;
+  },
+  frameSeq(f, now) {
+    const a = f.attack; if (!a || a.used) return;
+    const want = this.seq()[this.i], got = attackNotes(a);
+    if (got.some((m) => sameNote(m, want.midi))) {
+      a.used = true; if (this.t0 == null) this.t0 = now;
+      this.i++; this.say(this.i === 1 ? '¡En marcha!' : '', 'ok');
+      if (this.i >= this.seq().length) { this.finish(now); return; }
+      this.renderStage(); return;
+    }
+    if (!a.settled) return;
+    a.used = true;
+    const prev = this.seq()[this.i - 1];
+    if (prev && got.every((m) => sameNote(m, prev.midi))) return; // la anterior aún suena
+    if (a.yin != null && a.flux != null && sameNote(a.yin, a.flux)) {
+      if (this.t0 != null) this.errs++;
+      this.say(`Eso es ${pcName(a.flux)}: toca ${pcName(want.midi)}`, 'bad'); this.renderStats();
+    }
+  },
+  frameFind(f, now) {
+    const a = f.attack; if (!a || a.used) return;
+    const T = this.target, got = attackNotes(a);
+    if (got.some((m) => sameNote(m, T.midi))) {
+      a.used = true; this.score++; this.flash = { ...T, until: now + 900 };
+      if (this.mode === 'n10' && this.score >= 10) { this.finish(now); return; }
+      this.nextTarget(); this.say('¡Bien!', 'ok'); this.renderStage(); return;
+    }
+    if (!a.settled) return;
+    a.used = true;
+    if (this.flash && got.every((m) => sameNote(m, this.flash.midi))) return; // la anterior aún suena
+    if (a.yin != null && a.flux != null && sameNote(a.yin, a.flux)) {
+      this.errs++; this.misses++;
+      this.say(`Eso es ${pcName(a.flux)}. Busca ${pcName(T.midi)}${this.misses >= 2 ? ': te marco dónde está' : ''}`, 'bad'); this.renderStage();
+    }
+  },
+  frameChanges(f, now) {
+    const [A, B] = this.pair, want = this.score % 2 === 0 ? A : B, other = want === A ? B : A;
+    if (f.onset && f.attack && !this.check && now - this.last > 250) this.check = { a: f.attack, t0: now, other: null };
+    const c = this.check; if (!c || now - c.t0 < 110) return;
+    const N = (id) => chordNotes(CHORDS[id]);
+    const broad = !c.a.fluxVec || singleNoteLikeness(c.a.fluxVec) < 0.62; // no es una sola cuerda
+    const semis = Mic.semis();
+    if (c.other == null) c.other = strumOk(semis, hypothesesFor(N(other), other), fewFor(N(other)), N(other));
+    if (broad && strumOk(semis, hypothesesFor(N(want), want), fewFor(N(want)), N(want))) {
+      this.check = null; c.a.used = true; this.score++; this.clean++; this.last = now; this.say('¡Limpio!', 'ok'); this.renderStage(); return;
+    }
+    if (now - c.t0 < 450) return;
+    this.check = null; c.a.used = true;
+    if (!broad) { this.say('Rasguea todas las cuerdas del acorde.', 'warn'); return; }
+    if (c.other) { this.say(`Sigue sonando ${chordLabel(other)}: cambia a ${chordLabel(want)}.`, 'warn'); return; }
+    this.score++; this.last = now; this.say('Cuenta, pero alguna cuerda no ha sonado limpia.', 'warn'); this.renderStage();
+  },
+  finish(now) {
+    const ex = this.ex, kind = ex.kind, mode = this.mode;
+    let v, big;
+    let text = '';
+    if (kind === 'seq') {
+      v = (now - this.t0) / 1000 + this.errs;
+      big = [[`${fmt(v, 1)} s`, 'tiempo'], [this.errs, this.errs === 1 ? 'nota equivocada' : 'notas equivocadas']];
+      text = this.errs ? `Incluye ${this.errs} s de penalización por notas equivocadas.` : 'Sin una sola nota equivocada.';
+    } else if (kind === 'find' && mode === 'n10') { v = (now - this.t0) / 1000; big = [[`${fmt(v, 1)} s`, '10 notas'], [this.errs, this.errs === 1 ? 'fallo' : 'fallos']]; }
+    else if (kind === 'find') { v = this.score; big = [[v, v === 1 ? 'nota' : 'notas'], [this.errs, this.errs === 1 ? 'fallo' : 'fallos']]; }
+    else { v = this.score; big = [[v, 'cambios'], [this.clean, 'limpios']]; text = v && this.clean < v ? 'Los cambios no limpios cuentan, pero intenta que suenen todas las cuerdas.' : v ? '' : 'No he oído ningún cambio. Rasguea fuerte, con todas las cuerdas del acorde.'; }
+    const stars = drillStars(ex, mode, v), key = this.rkey(), prev = state.rec[key];
+    const better = !prev || (lowerIsBetter(kind, mode) ? v < prev.v : v > prev.v);
+    state.rec[key] = { v: better ? (kind === 'seq' || mode === 'n10' ? Math.round(v * 10) / 10 : v) : prev.v, stars: Math.max(stars, prev?.stars || 0) };
+    store.set('rec', state.rec);
+    if (prev) big.push([fmtRec(kind, mode, prev.v), better ? 'récord anterior' : 'tu récord']);
+    this.st = 'idle';
+    const doneKey = kind === 'changes' ? 'chg:' + pairKey(this.pair) : 'ex:' + ex.id;
+    Learn.markDone(doneKey); Learn.render();
+    const acts = [{ label: 'Repetir', icon: 'restart-line', fn: () => this.start() }];
+    const nxt = Learn.nextAction(doneKey); if (nxt) acts.push(nxt);
+    acts[acts.length - 1].kind = 'primary';
+    showResult({ stars, title: better && prev ? '¡Nuevo récord!' : starsLine(stars), text, big, actions: acts });
+  },
+  // ---------- dibujo ----------
+  html() {
+    const ex = this.ex, run = this.st !== 'idle';
+    const modes = MODES[ex.kind];
+    const title = ex.kind === 'changes' ? `${chordLabel(this.pair[0])} ↔ ${chordLabel(this.pair[1])}` : ex.title;
+    return `<div class="screen drill" data-kind="${ex.kind}">
+      <div class="scr-top">
+        <a class="btn btn-soft btn-icon" href="${this.back}" aria-label="Volver">${icon('arrow-left-line')}</a>
+        <div class="scr-title"><h1>${title}</h1><p>${ex.kind === 'changes' ? ex.title : ex.sub}</p></div>
+        <div class="dr-stats" id="drStats">${this.statsHTML()}</div>
+      </div>
+      ${run ? '' : `<div class="dr-intro">
+        <p class="dr-why">${ex.why}</p>
+        ${modes.length > 1 ? `<div class="seg dr-modes" role="group" aria-label="Modo">${modes.map(([m, ic, n]) => `<button type="button" data-mode="${m}" aria-pressed="${m === this.mode}">${icon(ic)}${n}</button>`).join('')}</div>` : ''}
+      </div>`}
+      <div class="dr-stage" id="drStage">${this.stageHTML()}</div>
+      <div class="dr-foot">
+        <div class="dr-msg" id="drMsg" data-k="${this.mk || ''}">${run ? esc(this.msg) : modeHelp(ex.kind, this.mode)}</div>
+        ${run ? `<button type="button" class="btn btn-soft" data-dr="stop">Parar</button>` : `<button type="button" class="btn btn-primary btn-lg" data-dr="start">${icon('play-fill')}Empezar</button>`}
+      </div>
+    </div>`;
+  },
+  statsHTML() {
+    const ex = this.ex, kind = ex.kind;
+    if (this.st === 'idle') {
+      if (kind === 'changes') { const r = state.rec[this.rkey()]; return r ? `<div class="dr-stat rec">${miniStars(r.stars)}<b>${r.v}</b><span>tu récord</span></div>` : ''; }
+      const r = recordOf(ex, this.mode); return r ? `<div class="dr-stat rec">${miniStars(r.stars)}<b>${r.text}</b><span>tu récord</span></div>` : '';
+    }
+    const time = `<div class="dr-stat"><b class="num" id="drTime">${this.mode === 'm60' ? '1:00' : '0,0 s'}</b><span>${this.mode === 'm60' ? 'quedan' : 'tiempo'}</span></div>`;
+    if (kind === 'seq') return `${time}<div class="dr-stat"><b class="num">${this.i}/${this.seq().length}</b><span>notas</span></div>`;
+    if (kind === 'find') return `${time}<div class="dr-stat"><b class="num">${this.mode === 'n10' ? `${this.score}/10` : this.score}</b><span>aciertos</span></div>`;
+    return `${time}<div class="dr-stat"><b class="num">${this.score}</b><span>cambios · ${this.clean} limpios</span></div>`;
+  },
+  renderStats() { const el = $('#drStats'); if (el) el.innerHTML = this.statsHTML(); },
+  renderStage() { const el = $('#drStage'); if (el) el.innerHTML = this.stageHTML(); this.renderStats(); },
+  stageHTML() {
+    const ex = this.ex, run = this.st !== 'idle';
+    const count = this.st === 'count' ? `<div class="dr-count" id="drCount">3</div>` : '';
+    if (ex.kind === 'seq') {
+      const seq = this.seq(), i = run ? this.i : -1, cur = seq[i];
+      const byPos = new Map();
+      seq.forEach((n, j) => { const k = n.string + ':' + n.fret; if (!byPos.has(k)) byPos.set(k, { ...n, js: [] }); byPos.get(k).js.push(j); });
+      const marks = [...byPos.values()].map((m) => ({ ...m, st: !run ? 'next' : cur && m.string === cur.string && m.fret === cur.fret ? 'now' : m.js.some((j) => j > i && j <= i + 3) ? 'next' : m.js.some((j) => j < i) ? 'done' : 'idle' }));
+      const prompt = run && cur ? `<div class="dr-prompt">
+          <span class="fdot" style="background:${cur.fret ? fingerVar(cur.finger) : 'var(--surface-3)'};color:${cur.fret ? 'var(--dot-ink)' : 'var(--text)'}">${cur.fret ? cur.finger : 'O'}</span>
+          <div><b>${cur.fret ? `Traste ${cur.fret} · ${cur.string}ª cuerda` : `${cur.string}ª cuerda al aire`}</b><span>${pcName(cur.midi)} · ${cur.fret ? `dedo ${cur.finger}, ${FINGERS[cur.finger].n.toLowerCase()}` : 'sin pisar'}</span></div>
+          <div class="dr-bar"><i style="width:${(this.i / seq.length) * 100}%"></i></div>
+        </div>` : '';
+      return `${prompt}<div class="neck-wrap">${neckSVG({ from: ex.view[0], to: ex.view[1], marks })}</div>${count}`;
+    }
+    if (ex.kind === 'find') {
+      const T = this.target, marks = [];
+      if (this.flash) marks.push({ ...this.flash, st: 'show', label: pcName(this.flash.midi) });
+      if (run && T && this.misses >= 2) marks.push({ ...T, st: 'hint' });
+      const strs = ex.strings.length === 6 ? 'cualquier cuerda' : ex.strings.map((s) => `la ${s}ª`).join(' o ');
+      const prompt = run && T && this.st === 'run'
+        ? `<div class="find-target"><b>${pcName(T.midi)}</b><span>en la ${T.string}ª cuerda</span></div>`
+        : `<div class="find-target idle"><b>?</b><span>Te diré una nota: búscala en ${strs} y tócala</span></div>`;
+      return `${prompt}<div class="neck-wrap">${neckSVG({ from: 0, to: 12, marks, hl: run && T ? T.string : ex.strings.length === 1 ? ex.strings[0] : null })}</div>${count}`;
+    }
+    if (ex.kind === 'changes') {
+      const [A, B] = this.pair, want = this.score % 2 === 0 ? A : B;
+      const card = (id, k) => `<div class="chg-card ${run && id === want ? 'on' : ''}">
+          ${run ? `<span class="chg-now">${id === want ? 'Ahora' : 'Después'}</span>` : `<select data-pair="${k}" aria-label="Acorde ${k + 1}">${CHORD_ORDER.map((x) => `<option value="${esc(x)}" ${x === id ? 'selected' : ''}>${chordLabel(x)}${CHORDS[x].variant ? ' (fácil)' : ''}</option>`).join('')}</select>`}
+          <div class="diagram sm">${chordDiagram(CHORDS[id])}</div><b>${chordLabel(id)}</b></div>`;
+      return `<div class="chg-pair">${card(A, 0)}<span class="chg-arrow">${icon('shuffle-line')}</span>${card(B, 1)}</div>${count}`;
+    }
+    // ritmo: el patrón de un compás (se repite), los acordes por compás y sus formas
+    const cells = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5].map((t, k) => {
+      const p = ex.pattern.find(([o]) => o === t);
+      return `<span class="${p ? p[1] : 'rest'}"><i>${p ? icon(p[1] === 'D' ? 'arrow-down-line' : 'arrow-up-line') : '·'}</i><em>${k % 2 ? 'y' : k / 2 + 1}</em></span>`;
+    }).join('');
+    const ids = [...new Set(ex.chords)];
+    return `<div class="rh-pattern" aria-label="Patrón de rasgueo de un compás">${cells}</div>
+      <div class="rh-seq">${ex.chords.map((c, i) => `<span class="${i && ex.chords[i - 1] === c ? 'rep' : ''}">${chordLabel(c)}</span>`).join('')}</div>
+      <div class="rhythm-chords">${ids.map((id) => `<div class="diagram sm">${chordDiagram(CHORDS[id])}<b>${chordLabel(id)}</b></div>`).join('')}</div>`;
+  },
+  onClick(b) {
+    if (b.dataset.dr === 'start') this.start();
+    if (b.dataset.dr === 'stop') { this.stop(); this.say(''); Learn.render(); }
+    if (b.dataset.mode) { this.mode = b.dataset.mode; store.set('mode:' + this.ex.id, this.mode); Learn.render(); }
+  },
+  onChange(el) {
+    if (el.dataset.pair != null) {
+      const p = [...this.pair]; p[+el.dataset.pair] = el.value;
+      if (p[0] === p[1]) p[1 - +el.dataset.pair] = this.pair[+el.dataset.pair];
+      this.pair = p; store.set('pair', p); Learn.render();
+    }
+  },
+};
+
+/* ============================================================
+   Navegación de Aprender: inicio, pistas, lección, ejercicio
+   ============================================================ */
+const Learn = {
+  scr: 'home', track: 'acordes', inRoutine: false, autoStart: false, prevHash: '',
+  init() {
+    const root = $('#learn');
+    root.addEventListener('click', (e) => {
+      const lv = e.target.closest('[data-level]');
+      if (lv) { store.set('learnLevel', +lv.dataset.level); this.render(); return; }
+      const st = e.target.closest('[data-today]');
+      if (st) { const s = this.steps().find((x) => x.key === st.dataset.today); if (s) this.goStep(s); return; }
+      if (e.target.closest('[data-today-go]')) { const s = this.steps().find((x) => !todayDone().includes(x.key)) || this.steps()[0]; this.goStep(s); return; }
+      const b = e.target.closest('[data-act]');
+      if (b && this.scr === 'lesson') { Lesson.onClick(b); return; }
+      if (this.scr === 'drill') { const d = e.target.closest('[data-dr],[data-mode]'); if (d) Drill.onClick(d); }
+    });
+    root.addEventListener('change', (e) => { if (this.scr === 'drill') Drill.onChange(e.target); });
+  },
+  level() { return clamp(store.get('learnLevel', 1), 1, 3); },
+  steps() { return routine(this.level()); },
+  goStep(s) {
+    this.inRoutine = true;
+    if (s.song) { store.set('lvl:' + s.song.id, s.lvl); Player.open(s.song); location.hash = '#canciones'; return; }
+    location.hash = s.hash;
+  },
+  markDone(key) {
+    const done = todayDone();
+    if (!done.includes(key)) { done.push(key); store.set('today', { d: dayKey(), done }); }
+    // un acorde aprendido también cuenta como el "acorde nuevo" de hoy
+  },
+  // tras terminar algo: si vienes de la práctica de hoy, el botón para seguir
+  nextAction(doneKey) {
+    if (!this.inRoutine) return null;
+    const steps = this.steps(), done = todayDone();
+    if (!steps.some((s) => s.key === doneKey) && !doneKey.startsWith('song:')) return null;
+    const nx = steps.find((s) => !done.includes(s.key));
+    if (!nx) return { label: '¡Práctica de hoy hecha!', icon: 'check-line', fn: () => { this.inRoutine = false; location.hash = '#aprender'; } };
+    return { label: `Siguiente: ${nx.kicker.toLowerCase()}`, icon: 'arrow-right-line', fn: () => this.goStep(nx) };
+  },
+  leave() { Drill.stop(); Lesson.check = null; if (Player.host === 'aprender') Player.release(); },
+  show(parts) {
+    const [a, b, c] = parts;
+    const was = this.scr;
+    Drill.stop();
+    if (!(a === 'ej' && c === 'tempo') && Player.host === 'aprender') Player.release();
+    if (!a) { this.scr = 'home'; }
+    else if (a === 'acordes' || a === 'punteo') { this.scr = 'track'; this.track = a; this.inRoutine = false; }
+    else if (a === 'guia') this.scr = 'guide';
+    else if (a === 'acorde' && CHORDS[b]) { if (was !== 'lesson' || Lesson.id !== b || Lesson.review) Lesson.open(b, false); else Lesson.check = null; this.scr = 'lesson'; }
+    else if (a === 'repaso') { Lesson.open(null, true); this.scr = 'lesson'; }
+    else if (a === 'ej' && EXI[b]) {
+      if (c === 'tempo') {
+        this.scr = 'player';
+        Player.open(exerciseSong(EXI[b]), 'aprender');
+        if (this.autoStart) Player.start(false);
+      } else { if (was !== 'drill' || Drill.ex !== EXI[b]) Drill.open(EXI[b]); this.scr = 'drill'; }
+      this.autoStart = false;
+    } else if (a === 'cambios') {
+      const [x, y] = (b || '').split('~');
+      const pair = CHORDS[x] && CHORDS[y] && x !== y ? [x, y] : null;
+      Drill.open(EXI.changes, { pair, back: was === 'lesson' && !Lesson.review ? '#aprender/acorde/' + enc(Lesson.id) : undefined });
+      this.scr = 'drill';
+    } else this.scr = 'home';
+    this.render();
+    $('#learn .scroll')?.scrollTo?.(0, 0);
+  },
+  render() {
+    const root = $('#learn'); if (!root) return;
+    root.hidden = this.scr === 'player';
+    if (this.scr === 'player') return;
+    root.innerHTML = this.scr === 'home' ? this.homeHTML() : this.scr === 'track' ? this.trackHTML() : this.scr === 'guide' ? this.guideHTML()
+      : this.scr === 'lesson' ? Lesson.html() : Drill.html();
+  },
+  frame(f, dt, now) {
+    if (this.scr === 'drill') Drill.frame(f, now);
+    else if (this.scr === 'lesson' && f && Lesson.check && !Cal.needed()) Lesson.frameCheck(f);
+  },
+  // ---------- inicio ----------
+  homeHTML() {
+    const lvl = this.level(), steps = this.steps(), done = todayDone();
+    const nDone = steps.filter((s) => done.includes(s.key)).length, mins = steps.reduce((a, s) => a + s.min, 0);
+    const nLearned = CHORD_ORDER.filter((x) => state.learned[x]).length;
+    const nPunteo = EXERCISES.filter((e) => e.track === 'punteo' && bestStars(e) > 0).length, totPunteo = EXERCISES.filter((e) => e.track === 'punteo').length;
+    const allDone = nDone === steps.length;
+    return `<div class="screen"><div class="scr-body scroll"><div class="lh">
+      <div class="lh-head">
+        <h1>Aprender</h1>
+        <div class="seg lh-lvl" role="group" aria-label="Tu nivel">${[1, 2, 3].map((l) => `<button type="button" data-level="${l}" aria-pressed="${l === lvl}">${LVL[l].n}</button>`).join('')}</div>
+      </div>
+      <p class="lh-desc">${LVL[lvl].d}</p>
+      <div class="lh-grid">
+        <div class="tracks">
+          <a class="track" href="#aprender/acordes">
+            <span class="tr-ico">${icon('hand')}</span>
+            <span class="tr-txt"><b>Acordes</b><span>Formas, cambios entre acordes y rasgueo</span><span class="tr-meta"><span class="tr-bar"><i style="width:${(nLearned / CHORD_ORDER.length) * 100}%"></i></span>${nLearned} de ${CHORD_ORDER.length} aprendidos</span></span>
+            ${icon('arrow-right-s-line', 'chev')}
+          </a>
+          <a class="track" href="#aprender/punteo">
+            <span class="tr-ico alt">${icon('music-line')}</span>
+            <span class="tr-txt"><b>Punteo</b><span>Dedos ágiles, notas del mástil y escalas</span><span class="tr-meta"><span class="tr-bar"><i style="width:${(nPunteo / totPunteo) * 100}%"></i></span>${nPunteo} de ${totPunteo} ejercicios superados</span></span>
+            ${icon('arrow-right-s-line', 'chev')}
+          </a>
+          ${lvl === 1 && nLearned === 0 ? `<a class="guide-link" href="#aprender/guia">${icon('book-open-line')}<span><b>¿Primera vez con una guitarra?</b> Cómo sujetarla, pisar y leer un diagrama</span>${icon('arrow-right-s-line', 'chev')}</a>` : ''}
+        </div>
+        <section class="today">
+          <div class="today-head">
+            <div><h2>${icon('calendar-check-line')}Práctica de hoy</h2><p>Unos ${mins} minutos · ${allDone ? '¡hecha!' : `${nDone} de ${steps.length} hechos`}</p></div>
+            <button type="button" class="btn ${allDone ? 'btn-soft' : 'btn-primary'}" data-today-go>${allDone ? icon('restart-line') + 'Repetir' : icon('play-fill') + (nDone ? 'Seguir' : 'Empezar')}</button>
+          </div>
+          <ol class="today-list">${steps.map((s, i) => { const ok = done.includes(s.key); return `<li><button type="button" class="tstep ${ok ? 'done' : ''}" data-today="${esc(s.key)}">
+              <span class="ts-n">${ok ? icon('check-line') : i + 1}</span>
+              <span class="ts-txt"><em>${s.kicker}</em><b>${s.title}</b><span>${s.sub}</span></span>
+              <span class="ts-min">${s.min} min</span></button></li>`; }).join('')}</ol>
+        </section>
+      </div>
+    </div></div></div>`;
+  },
+  exRow(e) {
+    const lvl = this.level(), st = bestStars(e);
+    return `<a class="ex-row ${e.lvl > lvl ? 'above' : ''}" href="#aprender/ej/${e.id}">
+      <span class="ex-ico">${icon(e.icon)}</span>
+      <span class="ex-txt"><b>${e.title}</b><span>${e.sub}</span></span>
+      <span class="ex-meta"><span class="lvl-pips" title="Nivel ${LVL[e.lvl].n}">${[1, 2, 3].map((k) => `<i class="${k <= e.lvl ? 'on' : ''}"></i>`).join('')}</span>${st ? miniStars(st) : ''}</span>
+      ${icon('arrow-right-s-line', 'chev')}</a>`;
+  },
+  trackHTML() {
+    const chords = this.track === 'acordes';
+    let body = '';
+    if (chords) {
+      const next = CHORD_ORDER.find((x) => !state.learned[x]);
+      const nL = CHORD_ORDER.filter((x) => state.learned[x]).length;
+      body += `<a class="guide-link" href="#aprender/guia">${icon('book-open-line')}<span><b>Primeros pasos</b> Cómo sujetar la guitarra, pisar y leer un diagrama</span>${icon('arrow-right-s-line', 'chev')}</a>`;
+      body += CHORD_GROUPS.map((g) => `<section class="trk-sec"><h2 class="trk-h">${g.name}<span>${g.ids.filter((x) => state.learned[x]).length}/${g.ids.length}</span></h2>
+        <div class="ctiles">${g.ids.map((id) => `<a class="ctile ${state.learned[id] ? 'learned' : ''} ${id === next ? 'next' : ''}" href="#aprender/acorde/${enc(id)}" title="${chordLongName(id)}">
+          <b>${chordLabel(id)}</b><span>${id === next ? 'siguiente' : CHORDS[id].variant ? 'fácil' : SUFFIX_NAME[chordParts(id).suffix] ?? chordParts(id).suffix}</span>${state.learned[id] ? icon('check-line', 'ck') : ''}</a>`).join('')}</div></section>`).join('');
+      body += `<section class="trk-sec"><h2 class="trk-h">Practica</h2><div class="ex-list">
+        ${this.exRow(EXI.changes)}
+        <a class="ex-row ${nL < 2 ? 'off' : ''}" href="${nL < 2 ? '#aprender/acordes' : '#aprender/repaso'}" ${nL < 2 ? 'aria-disabled="true"' : ''}><span class="ex-ico">${icon('shuffle-line')}</span><span class="ex-txt"><b>Repaso de memoria</b><span>${nL < 2 ? 'Aprende dos acordes para desbloquearlo' : 'Un acorde que ya sabes, sin mirar el diagrama'}</span></span><span class="ex-meta"></span>${icon('arrow-right-s-line', 'chev')}</a>
+      </div></section>`;
+      body += `<section class="trk-sec"><h2 class="trk-h">Ritmo</h2><div class="ex-list">${EXERCISES.filter((e) => e.group === 'Ritmo').map((e) => this.exRow(e)).join('')}</div></section>`;
+    } else {
+      const groups = [...new Set(EXERCISES.filter((e) => e.track === 'punteo').map((e) => e.group))];
+      body += groups.map((g) => `<section class="trk-sec"><h2 class="trk-h">${g}</h2><div class="ex-list">${EXERCISES.filter((e) => e.group === g).map((e) => this.exRow(e)).join('')}</div></section>`).join('');
+      body += `<section class="trk-sec"><h2 class="trk-h">Melodías</h2><div class="ex-list"><a class="ex-row" href="#canciones"><span class="ex-ico">${icon('music-2-line')}</span><span class="ex-txt"><b>Canciones en nivel Fácil</b><span>La melodía nota a nota, con la bola que marca el ritmo</span></span><span class="ex-meta"></span>${icon('arrow-right-s-line', 'chev')}</a></div></section>`;
+    }
+    return `<div class="screen">
+      <div class="scr-top">
+        <a class="btn btn-soft btn-icon" href="#aprender" aria-label="Volver">${icon('arrow-left-line')}</a>
+        <div class="scr-title"><h1>${chords ? 'Acordes' : 'Punteo'}</h1><p>${chords ? 'Aprende cada acorde en tres pasos y practica los cambios y el ritmo' : 'Notas sueltas: dedos, mástil y escalas'}</p></div>
+      </div>
+      <div class="scr-body scroll"><div class="trk">${body}</div></div>
+    </div>`;
+  },
+  guideHTML() {
+    return `<div class="screen">
+      <div class="scr-top">
+        <a class="btn btn-soft btn-icon" href="#aprender/acordes" aria-label="Volver">${icon('arrow-left-line')}</a>
+        <div class="scr-title"><h1>Primeros pasos</h1><p>Lo básico antes de tu primer acorde</p></div>
+      </div>
+      <div class="scr-body scroll">
+        <div class="guide-grid">${guideItems().map((g, i) => `
+          <div class="guide-card">
+            <h3><span class="n">${i + 1}</span>${g.t}</h3>
+            ${g.art === 'hand' ? `<div class="flex justify-center py-1">${handSVG(new Set([1, 2, 3, 4]), 120)}</div>${fingerLegend()}` : ''}
+            ${g.art === 'diagram' ? `<div class="diagram">${chordDiagram(CHORDS.Am)}</div>` : ''}
+            <p>${g.d}</p>
+          </div>`).join('')}</div>
+        <div class="flex justify-center mt-5 mb-2"><a class="btn btn-primary btn-lg" href="#aprender/acorde/${CHORD_ORDER[0]}">Empezar con ${chordLabel(CHORD_ORDER[0])}${icon('arrow-right-line')}</a></div>
+      </div>
+    </div>`;
+  },
+};
+
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 
 </script>

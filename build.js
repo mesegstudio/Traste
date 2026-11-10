@@ -26,6 +26,7 @@ ${src('icons.js')}
 ${src('dsp.js')}
 ${src('data.js')}
 ${src('app.js')}
+${src('learn.js')}
 </script>`;
 const body = src('body.html');
 fs.mkdirSync(path.join(__dirname, 'dist'), { recursive: true });

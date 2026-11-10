@@ -1,6 +1,6 @@
 'use strict';
 /* ============================================================
-   Traste — aplicación (afinador, acordes, canciones)
+   Traste — aplicación (afinador, aprender, canciones, ajustes)
    ============================================================ */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -8,6 +8,7 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const fmt = (v, d = 1) => v.toFixed(d).replace('.', ',');
 const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const norm = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 const store = {
   get(k, d) { try { const v = localStorage.getItem('traste:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
@@ -20,6 +21,10 @@ const state = {
   cals: store.get('cals', {}),          // comprobación del micrófono, por micrófono
   learned: store.get('learned', {}),
   best: store.get('best2', {}),          // canciones: { 'id:nivel': { stars, acc, pts } }
+  rec: store.get('rec', {}),             // ejercicios: { 'id:modo': { v, stars } }
+  diagram: store.get('diagram', 'v'),    // diagramas de acordes: 'v' vertical · 'h' horizontal (6ª abajo)
+  lefty: store.get('lefty', false),
+  theme: store.get('theme', 'auto'),
 };
 
 function hydrateIcons(root = document) {
@@ -229,29 +234,69 @@ async function micReady() {
   return true;
 }
 function onMicChange() {
-  const b = $('#micBtn'); b.dataset.on = String(Mic.on);
-  b.title = Mic.on ? `${Mic.label} · pulsa para apagarlo` : 'Activar el micrófono';
-  $('#micIcon').outerHTML = icon(Mic.on ? 'mic-line' : 'mic-off-line', '').replace('<svg', '<svg id="micIcon"');
-  if (!Mic.on) renderMeter(0);
+  $('#railMicDot').hidden = !Mic.on;
   $('#tunerCta').hidden = Mic.on;
-  $('#micBox').hidden = !Mic.on;
-  if (Mic.on) fillMicSelect();
-  Cal.sync();
+  if (Mic.on) fillMicSelect(); else MicCard.devs = [];
+  MicCard.render(); Cal.sync();
 }
 async function fillMicSelect() {
   try {
-    const devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'audioinput' && d.deviceId);
-    const sel = $('#micSelect');
-    sel.innerHTML = devs.map((d, i) => `<option value="${d.deviceId}">${d.label || 'Micrófono ' + (i + 1)}</option>`).join('');
-    const cur = devs.find((d) => d.deviceId === Mic.deviceId) || devs.find((d) => micKey(d.label, d.deviceId) === Mic.key);
-    if (cur) sel.value = cur.deviceId;
-    sel.hidden = devs.length < 2;
-  } catch { /* sin lista de dispositivos */ }
+    MicCard.devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'audioinput' && d.deviceId);
+  } catch { MicCard.devs = []; }
+  MicCard.render();
 }
-function renderMeter(level) {
-  const db = 20 * Math.log10(level + 1e-9), lit = clamp(Math.round((db + 62) / 10), 0, 5);
-  $$('#micMeter i').forEach((el, i) => { el.classList.toggle('lit', i < lit); el.classList.toggle('hot', i < lit && i >= 4); });
+const dbPct = (level) => clamp((20 * Math.log10(level + 1e-9) + 70) / 60, 0, 1) * 100;
+function timeAgo(at) {
+  const d = Math.floor((Date.now() - at) / 86400000);
+  return d <= 0 ? 'hoy' : d === 1 ? 'ayer' : `hace ${d} días`;
 }
+/* Tarjeta del micrófono (afinador y ajustes): qué micro se usa, su nivel en vivo con la marca a partir
+   de la cual Traste escucha, y si está ajustado a la sala, explicado con palabras normales */
+const MicCard = {
+  devs: [],
+  render() {
+    $$('[data-mic-card]').forEach((el) => {
+      const full = !el.classList.contains('compact');
+      if (!Mic.on) {
+        el.innerHTML = `<div class="mc-row"><span class="mc-ico off">${icon('mic-off-line')}</span>
+          <div class="mc-txt"><b>Micrófono apagado</b><span>${full ? 'Traste lo usa para oír tu guitarra. El sonido se analiza en tu navegador y no sale de tu equipo.' : 'Actívalo para que Traste te oiga.'}</span></div>
+          <button type="button" class="btn btn-primary btn-sm" data-action="mic-on">${icon('mic-line')}Activar</button></div>`;
+        return;
+      }
+      const cal = state.cals[Mic.key], devs = this.devs;
+      const cur = devs.find((d) => d.deviceId === Mic.deviceId) || devs.find((d) => micKey(d.label, d.deviceId) === Mic.key);
+      const name = devs.length > 1
+        ? `<select data-mic-select aria-label="Micrófono">${devs.map((d, i) => `<option value="${esc(d.deviceId)}" ${d === cur ? 'selected' : ''}>${esc(d.label || 'Micrófono ' + (i + 1))}</option>`).join('')}</select>`
+        : `<b class="mc-name">${esc(Mic.label)}</b>`;
+      const status = cal
+        ? `<span class="mc-st ok">${icon('checkbox-circle-fill')}Ajustado ${timeAgo(cal.at)} · ${cal.noise > 0.02 ? 'sala ruidosa' : 'sala tranquila'}${cal.toneOk ? '' : ' · no oyó el tono de prueba'}</span>`
+        : `<span class="mc-st warn">${icon('error-warning-line')}Sin ajustar: puede confundir ruido con notas</span>`;
+      const gate = cal ? dbPct(cal.gate) : dbPct(Mic.gate());
+      el.innerHTML = `
+        <div class="mc-row">
+          <span class="mc-ico">${icon('mic-line')}</span>
+          <div class="mc-txt">${name}</div>
+          <button type="button" class="btn ${cal ? 'btn-soft' : 'btn-primary'} btn-sm" data-mic-cal>${icon('equalizer-2-line')}${cal ? (full ? 'Volver a ajustar' : 'Ajustar') : 'Ajustar ahora'}</button>
+        </div>
+        <div class="mc-status">${status}</div>
+        <div class="mc-meter"><div class="lv"><i class="fill"></i><i class="gate" style="left:${gate.toFixed(1)}%"></i></div>
+          <span>${full ? 'Nivel de entrada. Lo que queda a la izquierda de la marca se ignora como ruido de la sala.' : 'El ajuste mide el ruido de la sala y comprueba que el micro oye bien las notas.'}</span></div>
+        ${full ? `<button type="button" class="link-btn mc-off" data-mic-off>Apagar el micrófono</button>` : ''}`;
+    });
+  },
+  frame(level) {
+    const w = dbPct(level).toFixed(1) + '%', hot = level > (state.cals[Mic.key]?.gate ?? Mic.gate());
+    $$('[data-mic-card] .fill').forEach((el) => { el.style.width = w; el.classList.toggle('hot', hot); });
+  },
+};
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-mic-cal]')) Cal.recheck();
+  if (e.target.closest('[data-mic-off]')) Mic.stop();
+});
+document.addEventListener('change', async (e) => {
+  if (!e.target.matches('[data-mic-select]')) return;
+  try { await Mic.start(e.target.value); } catch { toast('No he podido abrir ese micrófono.'); fillMicSelect(); }
+});
 
 /* ============================================================
    Comprobación del micrófono (silencio + tono de prueba), por micrófono
@@ -259,12 +304,11 @@ function renderMeter(level) {
 const Cal = {
   running: false, phase: 'intro', forced: false, steps: [{ s: '', res: '' }, { s: '', res: '' }], allOk: false, listener: null,
   needed() { return Mic.on && (this.forced || this.running || this.phase === 'done' || !state.cals[Mic.key]); },
+  // se muestra en la vista actual: dentro del reproductor si está abierto en ella, si no en su hueco propio
   sync() {
-    $$('[data-cal-host]').forEach((h) => {
-      const show = this.needed() && h.dataset.calHost === state.view;
-      h.hidden = !show;
-      if (show) this.render(h);
-    });
+    const sec = $(`section[data-view="${state.view}"]`), pl = $('#player');
+    const target = !this.needed() || !sec ? null : sec.contains(pl) && !pl.hidden ? pl.querySelector('.cal-card') : sec.querySelector('.cal-host');
+    $$('.cal-host, .cal-card').forEach((h) => { const show = h === target; h.hidden = !show; if (show) this.render(h); });
   },
   render(h) {
     const stIcon = (st, i) => (st === 'ok' ? icon('check-line') : st === 'warn' ? '!' : String(i + 1));
@@ -277,8 +321,8 @@ const Cal = {
     else if (this.phase === 'run') acts = `<button type="button" class="btn btn-soft btn-lg w-full" disabled>Comprobando…</button>`;
     else acts = `<div class="flex gap-2">${this.allOk ? '' : `<button type="button" class="btn btn-soft btn-lg flex-1" data-cal="start">${icon('restart-line')}Repetir</button>`}<button type="button" class="btn btn-primary btn-lg flex-1" data-cal="done">${this.allOk ? icon('check-line') + 'Listo' : 'Seguir así'}</button></div>`;
     h.innerHTML = `<div class="cal">
-      <h3>${this.phase === 'done' ? (this.allOk ? 'Micrófono listo' : 'Micrófono comprobado') : 'Primero, comprobemos tu micrófono'}</h3>
-      ${this.phase === 'done' ? '' : `<p class="muted">Son unos 8 segundos y solo se hace una vez con cada micrófono${Mic.label ? ` (${Mic.label})` : ''}.</p>`}
+      <h3>${this.phase === 'done' ? (this.allOk ? 'Micrófono ajustado' : 'Micrófono comprobado') : 'Ajustemos tu micrófono'}</h3>
+      ${this.phase === 'done' ? '' : `<p class="muted">Así distingo el ruido de tu sala de lo que tocas. Son unos 8 segundos y se guarda para este micrófono${Mic.label ? ` (${esc(Mic.label)})` : ''}.</p>`}
       ${this.phase === 'intro' ? `<div class="vol-note">${icon('volume-up-line')}Sube el volumen y quítate los auriculares.</div>` : ''}
       <div class="cal-list">${items.map(([t, d], i) => `<div class="cal-item" data-s="${this.steps[i].s}"><div class="st">${stIcon(this.steps[i].s, i)}</div><div><b>${t}</b><p>${d}</p>${this.steps[i].res ? `<div class="res">${this.steps[i].res}</div>` : ''}</div></div>`).join('')}</div>
       ${this.phase === 'run' ? '<div class="bar"><div data-cal-level></div></div>' : ''}
@@ -326,10 +370,10 @@ const Cal = {
       this.phase = 'done';
       if (this.allOk) setTimeout(() => { if (this.phase === 'done' && this.allOk) this.finish(); }, 1600);
     } finally {
-      this.running = false; this.sync();
+      this.running = false; this.sync(); MicCard.render();
     }
   },
-  finish() { this.phase = 'intro'; this.forced = false; this.steps = [{ s: '', res: '' }, { s: '', res: '' }]; this.sync(); },
+  finish() { this.phase = 'intro'; this.forced = false; this.steps = [{ s: '', res: '' }, { s: '', res: '' }]; this.sync(); MicCard.render(); },
   recheck() { this.forced = true; this.phase = 'intro'; this.sync(); },
   frame(f, now) {
     if (!f) return;
@@ -345,40 +389,53 @@ document.addEventListener('click', (e) => {
 /* ============================================================
    Dibujos SVG: diagrama de acorde, mano, mástil
    ============================================================ */
-function chordDiagram(ch, res = {}) {
-  const sx = 32, sy = 42, L = 34, T = 46;
+/* Diagrama de acorde, vertical (como en los cancioneros: 6ª cuerda a la izquierda) u horizontal (como la
+   tablatura: 6ª cuerda abajo). Para zurdos se dibuja en espejo. Todo se coloca con P(u, v):
+   u = cuerda (0 = 6ª … 5 = 1ª) y v = traste (0 = cejuela). */
+function chordDiagram(ch, res = {}, o = {}) {
+  const horiz = (o.orient || state.diagram) === 'h', flip = o.lefty ?? state.lefty;
   const fretted = ch.frets.filter((f) => f > 0);
   const maxF = Math.max(0, ...fretted), minF = Math.min(99, ...fretted);
   const base = maxF <= 4 ? 1 : minF, nF = Math.max(4, maxF - base + 1);
-  const W = L + 5 * sx + 30, H = T + nF * sy + 34, xs = (i) => L + i * sx;
-  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="font-family:var(--font);max-width:100%;height:auto" role="img" aria-label="Diagrama del acorde">`;
-  for (let i = 0; i < 6; i++) if (res[6 - i] === 'now') s += `<rect x="${xs(i) - 15}" y="${T - 34}" width="30" height="${nF * sy + 60}" rx="15" fill="var(--accent-soft)"/>`;
-  s += `<rect x="${xs(0)}" y="${T}" width="${5 * sx}" height="${nF * sy}" rx="3" fill="var(--surface-2)"/>`;
-  for (let k = 0; k <= nF; k++) {
-    const y = T + k * sy;
-    s += k === 0 && base === 1 ? `<rect x="${xs(0) - 2}" y="${y - 6}" width="${5 * sx + 4}" height="7" rx="2" fill="var(--text)"/>` : `<line x1="${xs(0)}" x2="${xs(5)}" y1="${y}" y2="${y}" stroke="var(--line-2)" stroke-width="2"/>`;
+  let W, H, P;
+  if (horiz) {
+    const SU = 30, SV = 50, L = 42, T = 20;
+    W = L + nF * SV + 42; H = T + 5 * SU + 38;
+    P = (u, v) => { const x = L + v * SV; return [flip ? W - x : x, T + (5 - u) * SU]; };
+  } else {
+    const SU = 32, SV = 42, L = 42, T = 46;
+    W = L * 2 + 5 * SU; H = T + nF * SV + 34;
+    P = (u, v) => { const x = L + u * SU; return [flip ? W - x : x, T + v * SV]; };
   }
-  if (base > 1) s += `<text x="${xs(0) - 10}" y="${T + sy * 0.5 + 5}" text-anchor="end" font-size="13" font-weight="600" fill="var(--muted)">${base}ª</text>`;
-  for (let i = 0; i < 6; i++) s += `<line x1="${xs(i)}" x2="${xs(i)}" y1="${T}" y2="${T + nF * sy}" stroke="var(--muted)" stroke-opacity=".75" stroke-width="${2.6 - i * 0.32}"/>`;
-  for (let i = 0; i < 6; i++) {
-    const f = ch.frets[i], st = res[6 - i], col = st === 'bad' ? 'var(--bad)' : st === 'ok' ? 'var(--ok)' : st === 'now' ? 'var(--accent)' : null;
-    if (f < 0) s += `<g stroke="${col || 'var(--faint)'}" stroke-width="2.2" stroke-linecap="round"><line x1="${xs(i) - 6}" y1="${T - 24}" x2="${xs(i) + 6}" y2="${T - 12}"/><line x1="${xs(i) + 6}" y1="${T - 24}" x2="${xs(i) - 6}" y2="${T - 12}"/></g>`;
-    if (f === 0) s += `<circle cx="${xs(i)}" cy="${T - 18}" r="7" fill="none" stroke="${col || 'var(--open)'}" stroke-width="2.2"/>`;
-    s += `<text x="${xs(i)}" y="${H - 8}" text-anchor="middle" font-size="12.5" font-weight="650" fill="${col || (f >= 0 ? 'var(--muted)' : 'var(--faint)')}">${f >= 0 ? pcName(OPEN_MIDI[i] + f) : ''}</text>`;
+  const xy = (u, v) => { const [x, y] = P(u, v); return `x="${x.toFixed(1)}" y="${y.toFixed(1)}"`; };
+  const line = (u1, v1, u2, v2, attrs) => { const [a, b] = P(u1, v1), [c, d] = P(u2, v2); return `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" ${attrs}/>`; };
+  const txt = (u, v, t, attrs, dy = 4.5) => { const [x, y] = P(u, v); return `<text x="${x}" y="${y + dy}" text-anchor="middle" ${attrs}>${t}</text>`; };
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="font-family:var(--font);max-width:100%;height:auto" role="img" aria-label="Diagrama del acorde">`;
+  for (let u = 0; u < 6; u++) if (res[6 - u] === 'now') s += line(u, -0.85, u, nF + 0.75, 'stroke="var(--accent-soft)" stroke-width="30" stroke-linecap="round"');
+  { const [a, b] = P(0, 0), [c, d] = P(5, nF); s += `<rect x="${Math.min(a, c)}" y="${Math.min(b, d)}" width="${Math.abs(c - a)}" height="${Math.abs(d - b)}" rx="3" fill="var(--surface-2)"/>`; }
+  for (let k = 0; k <= nF; k++) s += k === 0 && base === 1 ? line(-0.08, 0, 5.08, 0, 'stroke="var(--text)" stroke-width="7" stroke-linecap="round"') : line(0, k, 5, k, 'stroke="var(--line-2)" stroke-width="2"');
+  if (base > 1) s += txt(-0.9, 0.5, `${base}ª`, 'font-size="13" font-weight="600" fill="var(--muted)"');
+  for (let u = 0; u < 6; u++) s += line(u, 0, u, nF, `stroke="var(--muted)" stroke-opacity=".75" stroke-width="${(2.6 - u * 0.32).toFixed(2)}"`);
+  for (let u = 0; u < 6; u++) {
+    const f = ch.frets[u], st = res[6 - u], col = st === 'bad' ? 'var(--bad)' : st === 'ok' ? 'var(--ok)' : st === 'now' ? 'var(--accent)' : null;
+    const [mx, my] = P(u, -0.5);
+    if (f < 0) s += `<g stroke="${col || 'var(--faint)'}" stroke-width="2.2" stroke-linecap="round"><line x1="${mx - 6}" y1="${my - 6}" x2="${mx + 6}" y2="${my + 6}"/><line x1="${mx + 6}" y1="${my - 6}" x2="${mx - 6}" y2="${my + 6}"/></g>`;
+    if (f === 0) s += `<circle cx="${mx}" cy="${my}" r="7" fill="none" stroke="${col || 'var(--open)'}" stroke-width="2.2"/>`;
+    if (f >= 0) s += txt(u, nF + (horiz ? 0.45 : 0.55), pcName(OPEN_MIDI[u] + f), `font-size="12.5" font-weight="650" fill="${col || 'var(--muted)'}"`);
   }
   const b = ch.barre;
-  let bi1 = -1, bi2 = -1;
+  let bu1 = -1, bu2 = -1;
   if (b) {
-    bi1 = 6 - b.from; bi2 = 6 - b.to; const y = T + (b.fret - base + 0.5) * sy;
-    s += `<rect x="${xs(bi1) - 14}" y="${y - 14}" width="${xs(bi2) - xs(bi1) + 28}" height="28" rx="14" fill="${fingerVar(b.finger)}"/>`;
-    s += `<text x="${xs(bi1)}" y="${y + 4.5}" text-anchor="middle" font-size="13" font-weight="750" fill="var(--dot-ink)">${b.finger}</text>`;
+    bu1 = 6 - b.from; bu2 = 6 - b.to; const v = b.fret - base + 0.5;
+    s += line(bu1, v, bu2, v, `stroke="${fingerVar(b.finger)}" stroke-width="28" stroke-linecap="round"`);
+    s += txt(bu1, v, b.finger, 'font-size="13" font-weight="750" fill="var(--dot-ink)"');
   }
-  for (let i = 0; i < 6; i++) {
-    const f = ch.frets[i]; if (f <= 0) continue;
-    if (b && f === b.fret && ch.fingers[i] === b.finger && i >= bi1 && i <= bi2) continue;
-    const y = T + (f - base + 0.5) * sy, st = res[6 - i];
-    s += `<circle cx="${xs(i)}" cy="${y}" r="14" fill="${fingerVar(ch.fingers[i])}" ${st === 'bad' ? 'stroke="var(--bad)" stroke-width="3"' : ''}/>`;
-    s += `<text x="${xs(i)}" y="${y + 4.5}" text-anchor="middle" font-size="13.5" font-weight="750" fill="var(--dot-ink)">${ch.fingers[i]}</text>`;
+  for (let u = 0; u < 6; u++) {
+    const f = ch.frets[u]; if (f <= 0) continue;
+    if (b && f === b.fret && ch.fingers[u] === b.finger && u >= bu1 && u <= bu2) continue;
+    const v = f - base + 0.5, st = res[6 - u], [x, y] = P(u, v);
+    s += `<circle cx="${x}" cy="${y}" r="14" fill="${fingerVar(ch.fingers[u])}" ${st === 'bad' ? 'stroke="var(--bad)" stroke-width="3"' : ''}/>`;
+    s += txt(u, v, ch.fingers[u], 'font-size="13.5" font-weight="750" fill="var(--dot-ink)"');
   }
   return s + '</svg>';
 }
@@ -386,22 +443,28 @@ function chordDiagram(ch, res = {}) {
 // Mano izquierda vista desde la palma: pulgar a la izquierda y dedos 1-4 de izquierda a derecha
 function handSVG(active, w = 150) {
   const F = [null, { x: 76, top: 40 }, { x: 103, top: 22 }, { x: 130, top: 30 }, { x: 155, top: 56 }];
-  let s = `<svg viewBox="0 0 200 214" width="${w}" style="font-family:var(--font);max-width:100%;height:auto;overflow:visible" role="img" aria-label="Número y color de cada dedo">`;
-  s += `<rect x="35" y="108" width="26" height="74" rx="13" transform="rotate(-36 48 145)" fill="var(--surface-3)"/>`;
-  s += `<text x="29" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="var(--faint)">P</text>`;
+  const X = (x) => (state.lefty ? 200 - x : x); // zurdos: la mano que pisa es la derecha
+  let g = '', t = '';
+  g += `<rect x="35" y="108" width="26" height="74" rx="13" transform="rotate(-36 48 145)" fill="var(--surface-3)"/>`;
+  t += `<text x="${X(29)}" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="var(--faint)">P</text>`;
   for (let f = 1; f <= 4; f++) {
     const d = F[f], on = active.has(f);
-    s += `<rect x="${d.x - 12.5}" y="${d.top}" width="25" height="${150 - d.top}" rx="12.5" fill="${on ? fingerVar(f) : 'var(--surface-3)'}" stroke="${fingerVar(f)}" stroke-opacity="${on ? 0 : 0.55}" stroke-width="1.6"/>`;
-    s += `<text x="${d.x}" y="${d.top + 19}" text-anchor="middle" font-size="13" font-weight="750" fill="${on ? 'var(--dot-ink)' : fingerVar(f)}">${f}</text>`;
+    g += `<rect x="${d.x - 12.5}" y="${d.top}" width="25" height="${150 - d.top}" rx="12.5" fill="${on ? fingerVar(f) : 'var(--surface-3)'}" stroke="${fingerVar(f)}" stroke-opacity="${on ? 0 : 0.55}" stroke-width="1.6"/>`;
+    t += `<text x="${X(d.x)}" y="${d.top + 19}" text-anchor="middle" font-size="13" font-weight="750" fill="${on ? 'var(--dot-ink)' : fingerVar(f)}">${f}</text>`;
   }
-  s += `<rect x="58" y="112" width="114" height="96" rx="38" fill="var(--surface-3)"/>`;
-  return s + '</svg>';
+  g += `<rect x="58" y="112" width="114" height="96" rx="38" fill="var(--surface-3)"/>`;
+  return `<svg viewBox="0 0 200 214" width="${w}" style="font-family:var(--font);max-width:100%;height:auto;overflow:visible" role="img" aria-label="Número y color de cada dedo"><g ${state.lefty ? 'transform="matrix(-1 0 0 1 200 0)"' : ''}>${g}</g>${t}</svg>`;
 }
 function fingerLegend(active) {
   return `<div class="legend">${[1, 2, 3, 4].map((f) => `<span style="${active && !active.has(f) ? 'opacity:.45' : ''}"><i style="background:${fingerVar(f)}"></i>${f} ${FINGERS[f].n}</span>`).join('')}</div>`;
 }
 
-// Mástil horizontal (cuerda 1 arriba, como en la tablatura) + columna de mano derecha
+// Lo que hay que tocar ahora: acorde → su diagrama (en la orientación elegida); nota → el mástil
+function fingersSVG(e) {
+  if (e && e.chord && state.diagram === 'v') return chordDiagram(CHORDS[e.chord]);
+  return fretboardSVG(e);
+}
+// Mástil horizontal (cuerda 1 arriba, como en la tablatura) + columna de mano derecha. Zurdos: en espejo.
 function fretboardSVG(e) {
   const shape = e ? (e.chord ? chordNotes(CHORDS[e.chord]) : e.notes) : [];
   const played = new Set(e ? e.notes.map((n) => n.string) : []);
@@ -409,19 +472,21 @@ function fretboardSVG(e) {
   const maxF = Math.max(0, ...shape.map((n) => n.fret)), nF = Math.max(5, maxF);
   const rowH = 28, top = 40, labelW = 44, markW = 30, fw = 64, nutX = labelW + markW + 8;
   const boardR = nutX + nF * fw, rhX = boardR + 46, W = rhX + 40, H = top + 5 * rowH + 34, y = (s) => top + (s - 1) * rowH;
-  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" style="font-family:var(--font)" role="img" aria-label="Dónde poner los dedos">`;
-  s += `<text x="${nutX}" y="16" font-size="12" font-weight="600" fill="var(--muted)">Mano izquierda</text>`;
-  s += `<text x="${rhX}" y="16" text-anchor="middle" font-size="12" font-weight="600" fill="var(--muted)">Derecha</text>`;
+  const X = (x) => (state.lefty ? W - x : x), A = (a) => (!state.lefty ? a : a === 'end' ? 'start' : a === 'start' ? 'end' : a);
+  const T = (x, yy, str, attrs, anchor = 'middle') => `<text x="${X(x)}" y="${yy}" text-anchor="${A(anchor)}" ${attrs}>${str}</text>`;
+  let s = '', t = '';
+  t += T(nutX, 16, 'Mano izquierda', 'font-size="12" font-weight="600" fill="var(--muted)"', 'start');
+  t += T(rhX, 16, 'Derecha', 'font-size="12" font-weight="600" fill="var(--muted)"');
   s += `<rect x="${nutX}" y="${y(1) - 13}" width="${nF * fw}" height="${5 * rowH + 26}" rx="6" fill="var(--surface-2)"/>`;
   for (const k of [3, 5, 7, 9]) if (k <= nF) s += `<circle cx="${nutX + (k - 0.5) * fw}" cy="${(y(3) + y(4)) / 2}" r="5" fill="var(--line-2)"/>`;
   for (let k = 1; k <= nF; k++) {
     s += `<line x1="${nutX + k * fw}" x2="${nutX + k * fw}" y1="${y(1) - 13}" y2="${y(6) + 13}" stroke="var(--line-2)" stroke-width="2"/>`;
-    s += `<text x="${nutX + (k - 0.5) * fw}" y="${H - 4}" text-anchor="middle" font-size="11" fill="var(--faint)">${k}</text>`;
+    t += T(nutX + (k - 0.5) * fw, H - 4, k, 'font-size="11" fill="var(--faint)"');
   }
   s += `<rect x="${nutX - 4}" y="${y(1) - 13}" width="6" height="${5 * rowH + 26}" rx="2" fill="var(--text)" fill-opacity=".85"/>`;
   for (let st = 1; st <= 6; st++) {
     s += `<line x1="${nutX}" x2="${boardR}" y1="${y(st)}" y2="${y(st)}" stroke="var(--muted)" stroke-opacity=".7" stroke-width="${1 + (st - 1) * 0.32}"/>`;
-    s += `<text x="${labelW - 6}" y="${y(st) + 4}" text-anchor="end" font-size="12" font-weight="600" fill="var(--muted)">${pcName(stringMidi(st))}</text>`;
+    t += T(labelW - 6, y(st) + 4, pcName(stringMidi(st)), 'font-size="12" font-weight="600" fill="var(--muted)"', 'end');
     const n = shape.find((x) => x.string === st), mx = labelW + markW / 2, on = played.has(st);
     if (n && n.fret === 0 && on) s += `<circle cx="${mx}" cy="${y(st)}" r="7.5" fill="none" stroke="var(--open)" stroke-width="2.2"/>`;
     else if (isChord && !n) s += `<g stroke="var(--faint)" stroke-width="2" stroke-linecap="round"><line x1="${mx - 5}" y1="${y(st) - 5}" x2="${mx + 5}" y2="${y(st) + 5}"/><line x1="${mx + 5}" y1="${y(st) - 5}" x2="${mx - 5}" y2="${y(st) + 5}"/></g>`;
@@ -435,9 +500,54 @@ function fretboardSVG(e) {
     if (b && n.fret === b.fret && n.finger === b.finger && n.string !== b.to) continue;
     const cx = nutX + (n.fret - 0.5) * fw, dim = !played.has(n.string);
     s += `<circle cx="${cx}" cy="${y(n.string)}" r="12" fill="${fingerVar(n.finger)}" fill-opacity="${dim ? 0.45 : 1}"/>`;
-    s += `<text x="${cx}" y="${y(n.string) + 4.5}" text-anchor="middle" font-size="12.5" font-weight="750" fill="var(--dot-ink)">${n.finger}</text>`;
+    t += T(cx, y(n.string) + 4.5, n.finger, 'font-size="12.5" font-weight="750" fill="var(--dot-ink)"');
   }
-  return s + '</svg>';
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" style="font-family:var(--font)" role="img" aria-label="Dónde poner los dedos"><g ${state.lefty ? `transform="matrix(-1 0 0 1 ${W} 0)"` : ''}>${s}</g>${t}</svg>`;
+}
+
+/* Mástil para los ejercicios: 1ª cuerda arriba y 6ª (la más grave) abajo, como en la tablatura.
+   marks: { string, fret, finger, st: now | next | done | idle | show | hint, label } */
+function neckSVG({ from = 0, to = 5, marks = [], hl = null }) {
+  const open = from === 0, f0 = Math.max(1, from), nF = to - f0 + 1;
+  const rowH = 30, top = 16, labelW = 30, openW = open ? 40 : 10, fw = nF > 8 ? 50 : 60;
+  const nutX = labelW + openW, W = nutX + nF * fw + 12, H = top + 5 * rowH + 32;
+  const y = (s) => top + (s - 1) * rowH, fx = (f) => (f === 0 ? labelW + openW / 2 - 2 : nutX + (f - f0 + 0.5) * fw);
+  const X = (x) => (state.lefty ? W - x : x);
+  const T = (x, yy, str, attrs) => `<text x="${X(x)}" y="${yy}" text-anchor="middle" ${attrs}>${str}</text>`;
+  let s = '', t = '';
+  if (hl) s += `<rect x="${labelW - 4}" y="${y(hl) - 13}" width="${W - labelW}" height="26" rx="13" fill="var(--accent-soft)"/>`;
+  s += `<rect x="${nutX}" y="${y(1) - 12}" width="${nF * fw}" height="${5 * rowH + 24}" rx="6" fill="var(--surface-2)"/>`;
+  for (let k = f0; k <= to; k++) {
+    const cx = nutX + (k - f0 + 0.5) * fw;
+    if ([3, 5, 7, 9, 15].includes(k)) s += `<circle cx="${cx}" cy="${(y(3) + y(4)) / 2}" r="5" fill="var(--line-2)"/>`;
+    if (k === 12) s += `<circle cx="${cx}" cy="${(y(2) + y(3)) / 2}" r="5" fill="var(--line-2)"/><circle cx="${cx}" cy="${(y(4) + y(5)) / 2}" r="5" fill="var(--line-2)"/>`;
+    s += `<line x1="${nutX + (k - f0 + 1) * fw}" x2="${nutX + (k - f0 + 1) * fw}" y1="${y(1) - 12}" y2="${y(6) + 12}" stroke="var(--line-2)" stroke-width="2"/>`;
+    t += T(cx, H - 6, k, `font-size="11.5" font-weight="600" fill="var(--faint)"`);
+  }
+  s += open ? `<rect x="${nutX - 4}" y="${y(1) - 12}" width="6" height="${5 * rowH + 24}" rx="2" fill="var(--text)" fill-opacity=".85"/>`
+    : `<line x1="${nutX}" x2="${nutX}" y1="${y(1) - 12}" y2="${y(6) + 12}" stroke="var(--line-2)" stroke-width="2"/>`;
+  for (let st = 1; st <= 6; st++) {
+    s += `<line x1="${open ? labelW + 6 : nutX}" x2="${W - 12}" y1="${y(st)}" y2="${y(st)}" stroke="var(--muted)" stroke-opacity="${hl && hl !== st ? 0.4 : 0.8}" stroke-width="${1 + (st - 1) * 0.32}"/>`;
+    t += T(labelW / 2 - 2, y(st) + 4, pcName(stringMidi(st)), `font-size="11.5" font-weight="650" fill="${hl === st ? 'var(--accent)' : 'var(--muted)'}"`);
+  }
+  for (const m of marks) {
+    if (m.fret > 0 && (m.fret < f0 || m.fret > to)) continue;
+    const cx = fx(m.fret), cy = y(m.string), fc = m.fret === 0 ? 'var(--open)' : fingerVar(m.finger);
+    const lab = m.label ?? (m.fret === 0 ? '0' : m.finger);
+    if (m.st === 'done') { s += `<circle cx="${cx}" cy="${cy}" r="8" fill="var(--ok)" fill-opacity=".45"/>`; continue; }
+    if (m.st === 'hint') { s += `<circle cx="${cx}" cy="${cy}" r="13" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-dasharray="4 4"/>`; continue; }
+    if (m.st === 'now') {
+      s += `<circle class="ring" cx="${cx}" cy="${cy}" r="19" fill="none" stroke="var(--accent)" stroke-width="3"/>`;
+      s += m.fret === 0 ? `<circle cx="${cx}" cy="${cy}" r="14" fill="var(--bg-2)" stroke="var(--open)" stroke-width="3"/>` : `<circle cx="${cx}" cy="${cy}" r="14" fill="${fc}"/>`;
+      t += T(cx, cy + 5, lab, `font-size="14" font-weight="800" fill="${m.fret === 0 ? 'var(--open)' : 'var(--dot-ink)'}"`);
+      continue;
+    }
+    if (m.st === 'show') { s += `<circle cx="${cx}" cy="${cy}" r="15" fill="var(--ok)"/>`; t += T(cx, cy + 4.5, lab, 'font-size="12" font-weight="800" fill="var(--dot-ink)"'); continue; }
+    const op = m.st === 'next' ? 1 : 0.4;
+    s += m.fret === 0 ? `<circle cx="${cx}" cy="${cy}" r="11" fill="var(--bg-2)" stroke="var(--open)" stroke-width="2" opacity="${op}"/>` : `<circle cx="${cx}" cy="${cy}" r="11" fill="${fc}" opacity="${op}"/>`;
+    t += T(cx, cy + 4.2, lab, `font-size="11.5" font-weight="750" fill="${m.fret === 0 ? 'var(--open)' : 'var(--dot-ink)'}" opacity="${op}"`);
+  }
+  return `<svg class="neck${nF > 8 ? ' wide' : ''}" viewBox="0 0 ${W} ${H}" width="${W}" style="font-family:var(--font)" role="img" aria-label="Mástil"><g ${state.lefty ? `transform="matrix(-1 0 0 1 ${W} 0)"` : ''}>${s}</g>${t}</svg>`;
 }
 
 /* ============================================================
@@ -461,8 +571,6 @@ const Tuner = {
     });
     $('#tnMode').addEventListener('click', () => { if (this.mode === 'manual') this.setMode('auto'); else toast('Para elegir una cuerda, tócala en el dibujo.', 3500, 'information-line'); });
     $('#tnReset').addEventListener('click', () => { this.done.clear(); this.hold = 0; this.renderStrings(); });
-    $('#micSelect').addEventListener('change', async (e) => { try { await Mic.start(e.target.value); } catch { toast('No he podido abrir ese micrófono.'); fillMicSelect(); } });
-    $('#recalBtn').addEventListener('click', () => Cal.recheck());
     this.renderStrings();
   },
   setMode(m) {
@@ -473,13 +581,16 @@ const Tuner = {
     this.renderStrings();
   },
   renderStrings() {
-    $('#tnStrings').innerHTML = [6, 5, 4, 3, 2, 1].map((s) => `
+    // como se ve la guitarra en la tablatura: la 1ª arriba y la 6ª, la más grave, abajo
+    $('#tnStrings').innerHTML = [1, 2, 3, 4, 5, 6].map((s) => `
       <button type="button" class="str ${this.done.has(s) ? 'done' : ''} ${this.mode === 'manual' && this.sel === s ? 'sel' : ''}" data-s="${s}" style="--th:${STRING_TH[s]}px" aria-label="Cuerda ${s}, ${stringName(s)}: tócala para afinar solo esta">
         <span class="peg">${this.done.has(s) ? icon('check-line') : pcName(stringMidi(s))}</span>
         <span class="wire"><svg viewBox="0 0 400 26" preserveAspectRatio="none"><path d="M0 13 L400 13" fill="none" stroke-width="${STRING_TH[s]}" stroke-linecap="round"/></svg></span>
         <span class="info">${this.done.has(s) ? 'Afinada' : `${s}ª`}</span>
       </button>`).join('');
-    $('#tnProgress').textContent = this.done.size;
+    const n = this.done.size;
+    $('#tnProg').innerHTML = `<span class="pips">${[1, 2, 3, 4, 5, 6].map((s) => `<i class="${this.done.has(s) ? 'on' : ''}"></i>`).join('')}</span><b>${n === 6 ? '¡Afinada!' : `${n} de 6`}</b><span class="muted">${n === 6 ? '' : 'afinadas'}</span>`;
+    $('#tnReset').hidden = n === 0;
   },
   set(id, html) { if (this.last[id] !== html) { this.last[id] = html; $(id).innerHTML = html; } },
   frame(f, dt, now) {
@@ -546,220 +657,6 @@ const Tuner = {
 };
 
 /* ============================================================
-   Acordes: aprender uno cada vez y comprobarlo cuerda a cuerda
-   (con audio real, una cuerda suelta se reconoce mucho mejor que un rasgueo completo)
-   ============================================================ */
-const CHORD_ORDER = CHORD_GROUPS.flatMap((g) => g.ids);
-const GUIDE = [
-  { t: 'Sujeta la guitarra', d: 'Siéntate con la espalda recta y apoya la guitarra en la pierna derecha, con el mástil un poco hacia arriba. El <b>pulgar izquierdo va detrás del mástil</b>, más o menos detrás del dedo medio.' },
-  { t: 'Tus dedos tienen número', d: 'Los diagramas usan números: 1 índice, 2 medio, 3 anular y 4 meñique. En Traste cada dedo tiene <b>siempre el mismo color</b>.', art: 'hand' },
-  { t: 'Cómo pisar una cuerda', d: 'Con la <b>punta del dedo</b>, justo <b>detrás del traste</b> (no encima). Arquea el dedo como si sujetaras una pelota pequeña para no rozar las cuerdas de al lado. Mejor con las uñas cortas.' },
-  { t: 'Cómo leer un diagrama', d: 'Las líneas verticales son las cuerdas: la <b>6ª, la más gruesa, a la izquierda</b>. Las horizontales son los trastes. El número es el dedo. <b>O</b>: cuerda al aire. <b>✕</b>: no la toques.', art: 'diagram' },
-  { t: 'Comprueba cuerda a cuerda', d: 'Con el acorde puesto, toca <b>cada cuerda por separado</b>. Si una suena apagada, algún dedo la roza o no aprieta bien. Es lo que hacen los profesores, y Traste te lo dice nota a nota.' },
-  { t: 'Cómo practicar', d: 'Mejor <b>10 minutos cada día</b> que una hora a la semana. Es normal que las yemas duelan la primera semana. Coloca los dedos, rasguea, quita la mano y repite: así la mano aprende la forma.' },
-];
-const Lessons = {
-  cur: null, check: null, drill: null, drillOpen: false, reviewId: null, reveal: false, res: {},
-  init() {
-    const saved = store.get('lesson', null);
-    this.cur = saved && (saved === 'guia' || CHORDS[saved]) ? saved : (Object.keys(state.learned).length ? (CHORD_ORDER.find((x) => !state.learned[x]) || 'Em') : 'guia');
-    $('#lessonPath').addEventListener('click', (e) => { const b = e.target.closest('[data-lesson]'); if (b) this.go(b.dataset.lesson); });
-    $('#lessonBody').addEventListener('click', (e) => {
-      const b = e.target.closest('[data-act]'); if (!b) return;
-      const a = b.dataset.act, id = this.chordId();
-      if (a === 'go') this.go(b.dataset.id);
-      if (a === 'hear') AudioEngine.strum(chordNotes(CHORDS[id]), 'D');
-      if (a === 'arp') [...chordNotes(CHORDS[id])].sort((x, y) => y.string - x.string).forEach((n, i) => AudioEngine.pluck(midiToFreq(n.midi), i * 0.34, 0.45));
-      if (a === 'check') { this.drillOpen = false; this.stopDrill(false); this.startCheck(); }
-      if (a === 'stopcheck') { this.check = null; this.res = {}; this.renderBody(); }
-      if (a === 'got') { state.learned[id] = true; store.set('learned', state.learned); this.renderPath(); this.check = null; this.res = {}; this.renderBody(); }
-      if (a === 'reveal') { this.reveal = true; this.renderBody(); }
-      if (a === 'another') { this.pickReview(); this.renderBody(); }
-      if (a === 'drillopen') { this.check = null; this.res = {}; this.drillOpen = true; this.renderBody(); }
-      if (a === 'drillclose') { this.stopDrill(false); this.drillOpen = false; this.renderBody(); }
-      if (a === 'drill') this.startDrill();
-      if (a === 'stopdrill') { this.stopDrill(false); this.renderBody(); }
-    });
-    $('#lessonBody').addEventListener('change', (e) => { if (e.target.id === 'drillWith') { store.set('drillWith', e.target.value); this.renderBody(); } });
-    this.render();
-  },
-  learnedList() { return CHORD_ORDER.filter((x) => state.learned[x]); },
-  chordId() { return this.cur === 'repaso' ? this.reviewId : this.cur; },
-  nextId() { const i = CHORD_ORDER.indexOf(this.cur); return CHORD_ORDER.find((x, k) => k > i && !state.learned[x]) || CHORD_ORDER[Math.min(i + 1, CHORD_ORDER.length - 1)]; },
-  pickReview() { const l = this.learnedList().filter((x) => x !== this.reviewId); this.reviewId = l[Math.floor(Math.random() * l.length)] || this.learnedList()[0]; this.reveal = false; this.check = null; this.res = {}; },
-  go(id) {
-    this.stopDrill(false); this.drillOpen = false; this.check = null; this.res = {};
-    this.cur = id; if (id !== 'repaso') store.set('lesson', id); else this.pickReview();
-    this.render();
-    $('#lessonPath [aria-current="true"]')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
-    $('#lessonBody').scrollTop = 0;
-  },
-  render() { this.renderPath(); this.renderBody(); },
-  renderPath() {
-    const n = this.learnedList().length;
-    $('#lessonPath').innerHTML = `<button type="button" data-lesson="guia" aria-current="${this.cur === 'guia'}">${icon('book-open-line')}Primeros pasos</button>` +
-      (n >= 2 ? `<button type="button" data-lesson="repaso" aria-current="${this.cur === 'repaso'}">${icon('shuffle-line')}Repaso</button>` : '') + '<span class="sep"></span>' +
-      CHORD_ORDER.map((id) => `<button type="button" data-lesson="${id}" class="${state.learned[id] ? 'learned' : ''}" aria-current="${this.cur === id}" title="${chordLongName(id)}${CHORDS[id].variant ? ' · ' + CHORDS[id].variant : ''}">${chordLabel(id)}${CHORDS[id].variant ? '<small class="font-medium opacity-60">fácil</small>' : ''}</button>`).join('');
-  },
-  renderBody() {
-    if (this.cur === 'guia') {
-      $('#lessonBody').innerHTML = `<div class="guide-grid">${GUIDE.map((g, i) => `
-        <div class="guide-card">
-          <h3><span class="n">${i + 1}</span>${g.t}</h3>
-          ${g.art === 'hand' ? `<div class="flex justify-center py-1">${handSVG(new Set([1, 2, 3, 4]), 120)}</div>${fingerLegend()}` : ''}
-          ${g.art === 'diagram' ? `<div class="diagram">${chordDiagram(CHORDS.Am)}</div>` : ''}
-          <p>${g.d}</p>
-        </div>`).join('')}</div>
-        <div class="flex justify-center mt-5 mb-2"><button type="button" class="btn btn-primary btn-lg" data-act="go" data-id="${CHORD_ORDER[0]}">Empezar con ${chordLabel(CHORD_ORDER[0])}${icon('arrow-right-line')}</button></div>`;
-      return;
-    }
-    const review = this.cur === 'repaso', id = this.chordId(), c = CHORDS[id], notes = chordNotes(c);
-    const idx = CHORD_ORDER.indexOf(id);
-    const used = new Set(c.fingers.filter(Boolean));
-    const steps = [...used].sort().map((f) => {
-      const where = c.barre && c.barre.finger === f
-        ? `estirado sobre el traste ${c.barre.fret}, de la ${c.barre.from}ª a la ${c.barre.to}ª cuerda (cejilla)`
-        : notes.filter((n) => n.finger === f).map((n) => `en la <b>${n.string}ª cuerda</b>, traste ${n.fret}`).join(' y ');
-      return `<li><span class="fdot" style="background:${fingerVar(f)}">${f}</span><span><b>${FINGERS[f].n}</b> ${where}</span></li>`;
-    });
-    const first = Math.max(...notes.map((n) => n.string));
-    const muted = [6, 5, 4, 3, 2, 1].filter((s) => !notes.some((n) => n.string === s));
-    steps.push(`<li><span class="fdot strum">${icon('arrow-down-line')}</span><span><b>Rasguea</b> hacia abajo desde la ${first === 6 ? '6ª cuerda (suenan todas)' : `${first}ª cuerda`}</span></li>`);
-    if (muted.length) steps.push(`<li><span class="fdot mute">${icon('close-line')}</span><span><b>No toques</b> la ${ordinalList(muted.sort((a, b) => a - b))} cuerda</span></li>`);
-    const hidden = review && !this.reveal && !this.check;
-    const learned = !!state.learned[id], nx = this.nextId();
-    let actions;
-    if (this.check) actions = this.checkHTML();
-    else if (this.drillOpen) actions = this.drillHTML(id);
-    else actions = `<div class="lesson-actions">
-        <button type="button" class="btn btn-primary" data-act="check">${icon('mic-line')}Comprobar cuerda a cuerda</button>
-        ${review ? `<button type="button" class="btn btn-soft" data-act="another">${icon('shuffle-line')}Otro</button>`
-          : learned ? (nx !== id ? `<button type="button" class="btn btn-soft" data-act="go" data-id="${nx}">Siguiente: ${chordLabel(nx)}${icon('arrow-right-line')}</button>` : '')
-          : `<button type="button" class="btn btn-soft" data-act="got">${icon('check-line')}Lo tengo</button>`}
-        ${review ? '' : `<button type="button" class="btn btn-ghost" data-act="drillopen" title="Cambios en un minuto">${icon('timer-line')}1 min</button>`}
-      </div>`;
-    $('#lessonBody').innerHTML = `
-      <div class="lesson">
-        <div class="lesson-head">
-          <div class="min-w-0">
-            <div class="chord-name">${chordLabel(id)}<small>${chordLabel(id, state.notation === 'latin' ? 'letter' : 'latin')} · ${chordLongName(id)}${c.variant ? ' · ' + c.variant : ''} · ${review ? 'repaso de memoria' : `${idx + 1} de ${CHORD_ORDER.length}`}${learned && !review ? ` · <span style="color:var(--ok)">aprendido</span>` : ''}</small></div>
-          </div>
-          <div class="flex gap-1.5">
-            <button type="button" class="btn btn-soft btn-icon" data-act="hear" title="Escuchar el acorde" aria-label="Escuchar el acorde">${icon('volume-up-line')}</button>
-            <button type="button" class="btn btn-soft btn-icon" data-act="arp" title="Escuchar nota a nota" aria-label="Escuchar nota a nota">${icon('music-2-line')}</button>
-          </div>
-        </div>
-        ${hidden ? `<div class="diagram" style="min-height:220px"><button type="button" class="btn btn-soft" data-act="reveal">${icon('eye-line')}Ver el diagrama</button></div>` : `<div class="diagram" id="chordDiagram">${chordDiagram(c, this.res)}</div>`}
-        <div class="lesson-info">
-          ${hidden ? '<p class="muted">Coloca los dedos sin mirar y compruébalo.</p>' : `<ol class="steps-list">${steps.join('')}</ol><div class="tip">${icon('lightbulb-line')}<span>${c.tip}</span></div>`}
-          <div class="lesson-foot">${actions}</div>
-        </div>
-      </div>`;
-  },
-  // ---------- comprobación cuerda a cuerda ----------
-  async startCheck() {
-    if (!(await micReady())) return;
-    const notes = chordNotes(CHORDS[this.chordId()]).sort((a, b) => b.string - a.string);
-    this.check = { notes, i: 0, fails: 0, msg: '', sub: '', kind: '', done: false };
-    this.res = {}; this.updateCheck();
-  },
-  checkHTML() {
-    const ck = this.check, played = new Set(ck.notes.map((n) => n.string));
-    const cur = ck.notes[ck.i];
-    const pills = [6, 5, 4, 3, 2, 1].map((s) => {
-      const st = !played.has(s) ? 'skip' : this.res[s] === 'ok' ? 'ok' : cur && cur.string === s ? (this.res[s] === 'bad' ? 'bad' : 'now') : this.res[s] === 'bad' ? 'bad' : '';
-      return `<div class="cs ${st}"><b>${!played.has(s) ? '✕' : st === 'ok' ? icon('check-line') : pcName(OPEN_MIDI[6 - s] + ck.notes.find((n) => n.string === s).fret)}</b>${s}ª</div>`;
-    }).join('');
-    const msg = ck.done ? (ck.fails ? 'Corregido: ya suenan todas.' : '¡Todas las cuerdas suenan limpias!') : ck.msg || `Toca solo la ${cur.string}ª cuerda`;
-    const sub = ck.done ? 'Ahora rasguéalo entero, quita la mano y vuelve a colocarla unas cuantas veces.' : ck.sub || 'Con el acorde puesto. Déjala sonar.';
-    return `<div class="panel" id="checkPanel">
-      <div class="check-strings">${pills}</div>
-      <div class="check-msg" style="color:${ck.kind === 'bad' ? 'var(--bad)' : ck.done ? 'var(--ok)' : ''}">${msg}<p>${sub}</p></div>
-      <div class="flex gap-2 mt-3">${ck.done ? `<button type="button" class="btn btn-soft btn-sm" data-act="check">${icon('restart-line')}Otra vez</button>${!state.learned[this.chordId()] && this.cur !== 'repaso' ? `<button type="button" class="btn btn-primary btn-sm" data-act="got">${icon('check-line')}Lo tengo</button>` : ''}` : ''}<button type="button" class="btn btn-ghost btn-sm" data-act="stopcheck">Terminar</button></div>
-    </div>`;
-  },
-  updateCheck() {
-    const cur = this.check.notes[this.check.i];
-    if (cur && !this.check.done && this.res[cur.string] !== 'bad') this.res = { ...this.res, [cur.string]: 'now' };
-    this.renderBody();
-  },
-  frameCheck(f) {
-    const ck = this.check, a = f.attack;
-    if (!ck || ck.done || !a || a.used) return;
-    const cur = ck.notes[ck.i], got = attackNotes(a);
-    if (got.some((m) => sameNote(m, cur.midi))) {
-      a.used = true; this.res = { ...this.res, [cur.string]: 'ok' }; ck.i++; ck.kind = ''; ck.msg = ''; ck.sub = '';
-      if (ck.i >= ck.notes.length) ck.done = true;
-      this.updateCheck(); return;
-    }
-    if (!a.settled) return;
-    a.used = true;
-    // las cuerdas ya comprobadas siguen sonando: si lo que se oye es una de ellas, no es un error
-    const ringing = ck.notes.slice(0, ck.i).map((n) => n.midi);
-    if (got.every((m) => ringing.some((r) => sameNote(m, r)))) return;
-    // solo se dice "suena X" si lo confirman los dos detectores (primera lectura y lo que aparece)
-    if (a.flux == null || a.yin == null || !sameNote(a.yin, a.flux) || ringing.some((r) => sameNote(a.flux, r))) { ck.kind = ''; ck.msg = `No la he oído clara: toca otra vez la ${cur.string}ª`; ck.sub = 'Una sola cuerda, y deja que suene.'; this.updateCheck(); return; }
-    const heard = a.flux; ck.fails++; ck.kind = 'bad'; this.res = { ...this.res, [cur.string]: 'bad' };
-    ck.msg = `Suena ${pcName(heard)} y debería sonar ${pcName(cur.midi)}`;
-    ck.sub = cur.fret === 0 ? 'Algún dedo pisa o roza esta cuerda: arquéalos más.'
-      : heard > cur.midi ? `Suena más agudo: el dedo ${cur.finger} va en el traste ${cur.fret}.` : `Suena más grave: aprieta con la punta del dedo ${cur.finger}, justo detrás del traste ${cur.fret}.`;
-    this.updateCheck();
-  },
-  // ---------- cambios en un minuto (cuenta rasgueos) ----------
-  drillPartner(id) {
-    const saved = store.get('drillWith', null);
-    if (saved && saved !== id && CHORDS[saved]) return saved;
-    const l = this.learnedList().filter((x) => x !== id);
-    if (l.length) return l[l.length - 1];
-    const i = CHORD_ORDER.indexOf(id); return CHORD_ORDER[i > 0 ? i - 1 : 1];
-  },
-  drillHTML(id) {
-    const d = this.drill, w = d ? d.b : this.drillPartner(id);
-    const best = store.get(`1min:${[id, w].sort().join('-')}`, 0);
-    if (d) {
-      return `<div class="panel flex flex-wrap items-center gap-x-6 gap-y-3">
-        <div><div class="drill-count num" id="drillCount">${d.count}</div><div class="muted text-sm">cambios</div></div>
-        <div class="flex-1 min-w-[160px]"><div class="text-lg font-semibold">Ahora: <span id="drillNow">${chordLabel(d.count % 2 === 0 ? d.a : d.b)}</span></div><div class="muted text-sm">Un rasgueo en cada acorde · <span class="num" id="drillTime">1:00</span></div></div>
-        <button type="button" class="btn btn-soft btn-sm" data-act="stopdrill">Parar</button></div>`;
-    }
-    const opts = CHORD_ORDER.filter((x) => x !== id).map((x) => `<option value="${x}" ${x === w ? 'selected' : ''}>${chordLabel(x)}</option>`).join('');
-    return `<div class="panel flex flex-col gap-3">
-      <div><b class="font-semibold">Cambios en un minuto</b><p class="muted text-sm">Alterna dos acordes con un rasgueo en cada uno. Cuento los rasgueos.${best ? ` Tu récord: ${best}.` : ''}</p></div>
-      <div class="flex flex-wrap items-center gap-2"><label class="flex items-center gap-2 text-sm muted">${chordLabel(id)} y <select id="drillWith">${opts}</select></label>
-        <button type="button" class="btn btn-primary btn-sm" data-act="drill">${icon('timer-line')}Empezar</button>
-        <button type="button" class="btn btn-ghost btn-sm" data-act="drillclose">Cerrar</button></div>
-    </div>`;
-  },
-  async startDrill() {
-    if (!(await micReady())) return;
-    const id = this.chordId(), w = $('#drillWith')?.value || this.drillPartner(id);
-    store.set('drillWith', w);
-    this.drill = { a: id, b: w, count: 0, end: performance.now() + 60000 };
-    this.renderBody();
-  },
-  stopDrill(finished) {
-    const d = this.drill; if (!d) return;
-    this.drill = null;
-    if (finished) {
-      const key = `1min:${[d.a, d.b].sort().join('-')}`, best = store.get(key, 0);
-      if (d.count > best) store.set(key, d.count);
-      toast(d.count > best ? `¡Nuevo récord: ${d.count} cambios!` : `${d.count} cambios. Tu récord es ${best}.`, 5000, 'timer-line');
-      if (state.view === 'acordes') this.renderBody();
-    }
-  },
-  frame(f, now) {
-    const d = this.drill;
-    if (d) {
-      const left = Math.max(0, d.end - now), t = $('#drillTime');
-      if (t) t.textContent = `0:${String(Math.ceil(left / 1000)).padStart(2, '0')}`;
-      if (left <= 0) { this.stopDrill(true); return; }
-      if (f && f.onset && !f.ignoring) { d.count++; $('#drillCount').textContent = d.count; $('#drillNow').textContent = chordLabel(d.count % 2 === 0 ? d.a : d.b); }
-    }
-    if (f && this.check && !Cal.needed()) this.frameCheck(f);
-  },
-};
-
-/* ============================================================
    Canciones: catálogo y reproductor
    ============================================================ */
 const LEVELS = { easy: 'Fácil', hard: 'Difícil' };
@@ -773,6 +670,25 @@ const STAR_AT = [0.4, 0.65, 0.85];
 const songChords = (s) => [...new Set(parseChordBars(s.chords, s.bpb, 0).map((c) => c.chord))];
 const starsFor = (acc) => STAR_AT.filter((t) => acc >= t).length;
 const miniStars = (n) => `<span class="mini-stars">${[1, 2, 3].map((k) => icon('star-fill', k <= n ? 'on' : '')).join('')}</span>`;
+
+/* Ventana de resultado (canciones y ejercicios) */
+function showResult({ stars = null, title, text = '', big = [], grid = [], actions = [] }) {
+  $('#resStars').innerHTML = stars == null ? '' : [1, 2, 3].map((k) => icon('star-fill', k <= stars ? 'on' : '')).join('');
+  $('#resTitle').textContent = title; $('#resText').textContent = text;
+  $('#resBig').innerHTML = big.map(([v, l]) => `<div><b class="num">${v}</b><span>${l}</span></div>`).join('');
+  $('#resGrid').innerHTML = grid.map(([n, v, c]) => `<div><b class="num" style="color:${c}">${v}</b><span>${n}</span></div>`).join('');
+  $('#resGrid').hidden = !grid.length;
+  const acts = [{ label: 'Cerrar', kind: 'ghost' }, ...actions];
+  $('#resActions').innerHTML = acts.map((a, i) => `<button type="button" class="btn btn-${a.kind || 'soft'}" data-res="${i}">${a.icon ? icon(a.icon) : ''}${a.label}</button>`).join('');
+  showResult.acts = acts;
+  openModal('#resModal');
+  $('#resActions .btn-primary')?.focus();
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-res]'); if (!b) return;
+  closeModal('#resModal'); showResult.acts?.[+b.dataset.res]?.fn?.();
+});
+const starsLine = (n) => (n === 3 ? '¡Perfecto!' : n === 2 ? '¡Muy bien!' : n === 1 ? 'Vas por buen camino' : 'Sigue practicando');
 
 const Songs = {
   q: '', cat: 'all', known: false,
@@ -832,15 +748,13 @@ const Player = {
       if ($('#plOpts').classList.contains('open') && !e.target.closest('#plOpts,#plOptsBtn')) this.showOpts(false);
       if (!$('#plDetails').hidden && !e.target.closest('#plDetails,#plFingersBtn')) this.showFingers(false);
     });
-    $('#resAgain').addEventListener('click', () => { closeModal('#resModal'); this.start(false); });
-    $('#resNext').addEventListener('click', () => { closeModal('#resModal'); this.setLevel('hard'); });
     const c = this.canvas;
     c.addEventListener('pointerdown', (e) => this.onDown(e));
     c.addEventListener('pointermove', (e) => this.onMove(e));
     c.addEventListener('pointerup', (e) => this.onUp(e));
     c.addEventListener('pointercancel', (e) => this.onUp(e, true));
     document.addEventListener('keydown', (e) => {
-      if ($('#player').hidden || state.view !== 'canciones' || e.target.closest('input,textarea,select,button')) return;
+      if ($('#player').hidden || state.view !== this.host || e.target.closest('input,textarea,select,button')) return;
       if (e.code === 'Space') { e.preventDefault(); this.togglePlay(); }
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); this.seekTo(this.beat + (e.key === 'ArrowLeft' ? -1 : 1) * this.song.bpb); }
     });
@@ -850,16 +764,38 @@ const Player = {
     this.curIdx = -1; if (this.song) this.renderNow();
   },
   showOpts(on) { $('#plOpts').classList.toggle('open', on); $('#plOptsBtn').setAttribute('aria-expanded', String(on)); },
-  open(song) {
-    this.song = song; this.built = buildSong(song, CHORDS);
+  /* El reproductor sirve para canciones y para los ejercicios "con metrónomo" de Aprender: se coloca en
+     la vista que lo usa (host). Un ejercicio trae sus eventos ya construidos (song.built). */
+  host: 'canciones',
+  mount(host) {
+    const pl = $('#player'), sec = $(`section[data-view="${host}"]`);
+    if (pl.parentElement !== sec) sec.appendChild(pl);
+    this.host = host;
+  },
+  open(song, host = 'canciones') {
+    this.mount(host);
+    this.song = song; this.built = song.built || buildSong(song, CHORDS);
+    const ex = !!song.exercise;
+    $('#plLevel').hidden = ex;
     $('#plLevel').innerHTML = Object.keys(LEVELS).map((l) => `<button type="button" data-l="${l}">${LEVELS[l]}<span class="hidden sm:inline font-medium opacity-60"> · ${LEVEL_HINT[l]}</span></button>`).join('');
-    $('#plTitle').textContent = song.title; $('#plOrigin').textContent = `${song.origin} · ${song.bpm} ppm · ${song.bpb}/4`;
-    $('#songList').hidden = true; $('#player').hidden = false; this.showFingers(false); this.showOpts(false);
+    $('#plTitle').textContent = song.title; $('#plOrigin').textContent = ex ? `${song.origin} · ${song.bpm} ppm` : `${song.origin} · ${song.bpm} ppm · ${song.bpb}/4`;
+    if (ex) { this.metro = true; $('#plMetro').checked = true; }
+    $('#songList').hidden = host === 'canciones';
+    $('#player').hidden = false; this.showFingers(false); this.showOpts(false);
     this.setSpeed(store.get('speed', 1));
-    this.setLevel(store.get('lvl:' + song.id, 'easy'));
+    this.setLevel(ex ? 'easy' : store.get('lvl:' + song.id, 'easy'));
     this.resize(); Cal.sync();
   },
-  close() { this.pause(); $('#player').hidden = true; $('#songList').hidden = false; Songs.render(); },
+  close() {
+    this.pause(); $('#player').hidden = true; closeModal('#resModal');
+    if (this.song?.exercise) { const id = this.song.exercise.id; this.song = null; Cal.sync(); if (location.hash !== '#aprender/ej/' + id) location.hash = '#aprender/ej/' + id; return; }
+    this.song = null; $('#songList').hidden = false; Songs.render(); Cal.sync();
+  },
+  // al salir de la vista que lo tiene, vuelve a su sitio en Canciones
+  release() {
+    if (this.host === 'canciones') return;
+    this.pause(); $('#player').hidden = true; this.song = null; this.mount('canciones'); $('#songList').hidden = false;
+  },
   setLevel(l) {
     if (!this.built.levels[l]) l = 'easy';
     this.level = l; store.set('lvl:' + this.song.id, l);
@@ -924,7 +860,7 @@ const Player = {
     $('#plNowText').innerHTML = e ? this.describe(e) : '';
     $('#plNext').innerHTML = nx ? `Después: ${this.describe(nx, true)}` : 'Es la última';
     if (!$('#plDetails').hidden) {
-      $('#plFret').innerHTML = fretboardSVG(e);
+      $('#plFret').innerHTML = fingersSVG(e);
       const fingers = new Set((e ? (e.chord ? chordNotes(CHORDS[e.chord]) : e.notes) : []).map((n) => n.finger).filter(Boolean));
       $('#plHand').innerHTML = handSVG(fingers, 140) + fingerLegend(fingers);
     }
@@ -1099,14 +1035,16 @@ const Player = {
     const wasDemo = this.demo;
     this.status = 'done'; this.renderButtons();
     if (wasDemo) { this.reset(); return; }
-    const judged = this.events.filter((e) => e.st !== 2), st = this.stats;
-    $('#resNext').hidden = this.level !== 'easy';
+    const judged = this.events.filter((e) => e.st !== 2), st = this.stats, ex = this.song.exercise;
+    const doneKey = ex ? 'ex:' + ex.id : `song:${this.song.id}:${this.level}`;
+    Learn.markDone(doneKey);
+    const acts = [{ label: 'Repetir', icon: 'restart-line', fn: () => this.start(false) }];
+    if (!ex && this.level === 'easy' && this.built.levels.hard) acts.push({ label: 'Pasar a Difícil', fn: () => this.setLevel('hard') });
+    const nxt = Learn.nextAction(doneKey); if (nxt) acts.push(nxt);
+    if (acts.length > 1) acts[acts.length - 1].kind = 'primary'; else acts[0].kind = 'primary';
     if (this.wait) {
-      $('#resStars').innerHTML = '';
-      $('#resTitle').textContent = 'Práctica completada';
-      $('#resText').textContent = `Has tocado las ${judged.length} notas. Quita «Esperarme» para tocar a tempo y puntuar.`;
-      $('#resBig').innerHTML = ''; $('#resGrid').innerHTML = '';
-      openModal('#resModal'); return;
+      showResult({ title: 'Práctica completada', text: `Has tocado las ${judged.length} notas. Quita «Esperarme» para tocar a tempo y puntuar.`, actions: acts });
+      return;
     }
     const acc = judged.length ? (st.perfect + 0.5 * (st.early + st.late)) / judged.length : 0;
     const stars = starsFor(acc), key = `${this.song.id}:${this.level}`, prev = state.best[key];
@@ -1114,13 +1052,13 @@ const Player = {
     state.best[key] = { stars: Math.max(stars, prev?.stars || 0), acc: Math.max(acc, prev?.acc || 0), pts: Math.max(this.points, prev?.pts || 0) };
     store.set('best2', state.best);
     const avg = this.deltas.length >= 4 ? this.deltas.reduce((a, b) => a + b, 0) / this.deltas.length : 0;
-    $('#resStars').innerHTML = [1, 2, 3].map((k) => icon('star-fill', k <= stars ? 'on' : '')).join('');
-    $('#resTitle').textContent = stars === 3 ? '¡Perfecto!' : stars === 2 ? '¡Muy bien!' : stars === 1 ? 'Vas por buen camino' : 'Sigue practicando';
-    $('#resText').textContent = Math.abs(avg) >= 0.06 ? `Sueles ir ${avg < 0 ? 'adelantado: espera a que la bola caiga en la nota' : 'retrasado: anticípate un poco'}.` : stars < 2 ? 'Prueba más lento o activa «Esperarme».' : '';
-    $('#resBig').innerHTML = `<div><b class="num">${Math.round(acc * 100)}%</b><span>precisión</span></div><div><b class="num">${this.points.toLocaleString('es-ES')}</b><span>${record ? 'puntos · récord' : 'puntos'}</span></div><div><b class="num">${this.maxCombo}</b><span>mejor racha</span></div>`;
-    $('#resGrid').innerHTML = [['Perfecto', st.perfect, 'var(--ok)'], ['Pronto', st.early, 'var(--warn)'], ['Tarde', st.late, 'var(--warn)'], ['Fallo', st.miss, 'var(--bad)']]
-      .map(([n, v, c]) => `<div><b class="num" style="color:${c}">${v}</b><span>${n}</span></div>`).join('');
-    openModal('#resModal');
+    showResult({
+      stars, title: starsLine(stars),
+      text: Math.abs(avg) >= 0.06 ? `Sueles ir ${avg < 0 ? 'adelantado: espera a que la bola caiga en la nota' : 'retrasado: anticípate un poco'}.` : stars < 2 ? 'Prueba más lento o activa «Esperarme».' : '',
+      big: [[`${Math.round(acc * 100)}%`, 'precisión'], [this.points.toLocaleString('es-ES'), record ? 'puntos · récord' : 'puntos'], [this.maxCombo, 'mejor racha']],
+      grid: [['Perfecto', st.perfect, 'var(--ok)'], ['Pronto', st.early, 'var(--warn)'], ['Tarde', st.late, 'var(--warn)'], ['Fallo', st.miss, 'var(--bad)']],
+      actions: acts,
+    });
   },
   // ---------- dibujo ----------
   resize() {
@@ -1158,7 +1096,7 @@ const Player = {
       c.strokeStyle = PAL['line-2']; c.lineWidth = 1 + (s - 1) * 0.35;
       c.beginPath(); c.moveTo(gutter, ly(s)); c.lineTo(W, ly(s)); c.stroke();
     }
-    if (this.level !== 'hard') {
+    if (this.level !== 'hard' && this.built.chordTrack.length) {
       c.font = `650 13px ${FONT}`; c.textAlign = 'left';
       for (const seg of this.built.chordTrack) {
         const x = X(seg.t); if (x > W || x + seg.dur * ppb < gutter) continue;
@@ -1293,50 +1231,110 @@ document.addEventListener('click', (e) => {
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $$('.modal').forEach((m) => { m.hidden = true; }); });
 
+const VIEWS = ['afinador', 'aprender', 'canciones', 'ajustes'];
 function route() {
-  const v = (location.hash || '').slice(1);
-  const view = ['afinador', 'acordes', 'canciones'].includes(v) ? v : 'afinador';
+  const [v, ...rest] = (location.hash || '').slice(1).split('/');
+  const view = v === 'acordes' ? 'aprender' : VIEWS.includes(v) ? v : 'afinador';
+  const prev = state.view;
   state.view = view;
   $$('section[data-view]').forEach((s) => { s.hidden = s.dataset.view !== view; });
   $$('[data-tab]').forEach((a) => (a.dataset.tab === view ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
-  if (view !== 'canciones') Player.pause();
-  if (view !== 'acordes') { Lessons.stopDrill(false); if (Lessons.check || Lessons.drillOpen) { Lessons.check = null; Lessons.drillOpen = false; Lessons.res = {}; Lessons.renderBody(); } }
+  if (view !== Player.host) Player.pause();
+  if (view === 'canciones') Player.release();
+  if (view !== 'aprender' || prev !== 'aprender') Learn.leave();
+  if (view === 'aprender') Learn.show(rest.map(decodeURIComponent));
+  if (view === 'ajustes') Settings.render();
   Cal.sync();
-  if (view === 'canciones') requestAnimationFrame(() => Player.resize());
+  if (view === Player.host) requestAnimationFrame(() => Player.resize());
 }
 
 function setNotation(n) {
   state.notation = n; store.set('notation', n);
-  $('#notationKey').textContent = n === 'latin' ? 'Do' : 'C';
-  Tuner.setMode(Tuner.mode); Tuner.last = {}; Lessons.render(); Songs.render();
-  Player.curIdx = -1; if (Player.song) Player.renderNow();
+  refreshAll();
 }
+// tras cambiar notación, orientación de diagramas, mano o tema
+function refreshAll() {
+  readPalette();
+  Tuner.setMode(Tuner.mode); Tuner.last = {}; Learn.render(); Songs.render();
+  Player.curIdx = -1; if (Player.song) Player.renderNow();
+  if (state.view === 'ajustes') Settings.render();
+}
+function applyTheme(t) {
+  state.theme = t; store.set('theme', t);
+  if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.dataset.theme = t;
+  const meta = $('meta[name="theme-color"]'); if (meta) meta.content = getComputedStyle(document.body).backgroundColor;
+}
+
+/* ============================================================
+   Ajustes
+   ============================================================ */
+const Settings = {
+  render() {
+    const seg = (key, opts, cur) => `<div class="seg" data-set="${key}" role="group">${opts.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${String(v) === String(cur)}">${l}</button>`).join('')}</div>`;
+    $('#settings').innerHTML = `<div class="set-wrap">
+      <h1 class="set-title">Ajustes</h1>
+      <section class="set-card">
+        <div class="set-head"><h2>${icon('mic-line')}Micrófono</h2>
+          <p>Traste escucha tu guitarra con el micrófono. El <b>ajuste</b> tarda unos 8 segundos: mide el ruido de tu sala (para no confundirlo con notas) y hace sonar tres notas por el altavoz para comprobar que el micro las oye afinadas. Se guarda para cada micrófono; repítelo si cambias de sitio o notas que falla más de la cuenta.</p></div>
+        <div class="mic-card" data-mic-card></div>
+        <div class="cal-host" hidden></div>
+      </section>
+      <section class="set-card">
+        <div class="set-row"><div><h3>Nombres de las notas</h3><p>En toda la app: afinador, acordes y canciones.</p></div>${seg('notation', [['latin', 'Do Re Mi'], ['letter', 'C D E']], state.notation)}</div>
+        <div class="set-row"><div><h3>Diagramas de acordes</h3><p>${state.diagram === 'h' ? 'Horizontal, como una tablatura: la 6ª cuerda, la más grave, abajo.' : 'Vertical, como en los cancioneros: la 6ª cuerda, la más grave, a la ' + (state.lefty ? 'derecha.' : 'izquierda.')}</p></div>${seg('diagram', [['v', icon('layout-column-line') + 'Vertical'], ['h', icon('layout-row-line') + 'Horizontal']], state.diagram)}</div>
+        <div class="set-row"><div><h3>Mano</h3><p>${state.lefty ? 'Zurdo: los diagramas, el mástil y la mano se dibujan en espejo.' : 'Si tocas con la guitarra al revés, elige zurdo y los dibujos se ven en espejo.'}</p></div>${seg('lefty', [['0', 'Diestro'], ['1', 'Zurdo']], state.lefty ? 1 : 0)}</div>
+        <div class="set-preview"><div class="diagram">${chordDiagram(CHORDS.C)}</div><p>Así se ven ahora los acordes (Do mayor).</p></div>
+        <div class="set-row"><div><h3>Tema</h3><p>Automático sigue el de tu dispositivo.</p></div>${seg('theme', [['auto', 'Auto'], ['dark', icon('moon-line') + 'Oscuro'], ['light', icon('sun-line') + 'Claro']], state.theme)}</div>
+      </section>
+      <section class="set-card">
+        <div class="set-row"><div><h3>Tu progreso</h3><p>Acordes aprendidos, récords y la práctica de hoy. Todo se guarda solo en este navegador.</p></div><button type="button" class="btn btn-soft btn-sm" data-reset>${icon('delete-bin-line')}Borrar</button></div>
+      </section>
+      <p class="set-foot">Traste es gratis y no tiene cuentas. El sonido se analiza en tu navegador y no sale de tu equipo.</p>
+    </div>`;
+    MicCard.render(); Cal.sync();
+  },
+  init() {
+    $('#settings').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-set] button');
+      if (b) {
+        const key = b.closest('[data-set]').dataset.set, v = b.dataset.v;
+        if (key === 'notation') return setNotation(v);
+        if (key === 'diagram') { state.diagram = v; store.set('diagram', v); }
+        if (key === 'lefty') { state.lefty = v === '1'; store.set('lefty', state.lefty); }
+        if (key === 'theme') applyTheme(v);
+        refreshAll(); return;
+      }
+      if (e.target.closest('[data-reset]') && confirm('¿Borrar tus acordes aprendidos, récords y la práctica de hoy? Los ajustes y el micrófono se mantienen.')) {
+        state.learned = {}; state.best = {}; state.rec = {};
+        for (const k of ['learned', 'best2', 'rec', 'today', 'lesson']) store.set(k, k === 'lesson' ? null : {});
+        refreshAll(); toast('Progreso borrado.', 3000, 'check-line');
+      }
+    });
+  },
+};
 
 let lastT = performance.now();
 function loop(t) {
   const dt = Math.min(0.1, (t - lastT) / 1000); lastT = t;
   let f = null;
-  if (Mic.on) { f = Mic.analyze(t); renderMeter(f.level); }
+  if (Mic.on) { f = Mic.analyze(t); MicCard.frame(f.level); }
   try {
     Cal.frame(f, t);
     if (state.view === 'afinador') Tuner.frame(f, dt, t);
-    else if (state.view === 'acordes') Lessons.frame(f, t);
-    else Player.frame(f, dt, t);
+    else if (state.view === Player.host && !$('#player').hidden) Player.frame(f, dt, t);
+    else if (state.view === 'aprender') Learn.frame(f, dt, t);
   } catch (err) { console.error(err); }
   requestAnimationFrame(loop);
 }
 
 function boot() {
   hydrateIcons();
-  readPalette();
-  matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', () => { readPalette(); Tuner.renderStrings(); });
-  Tuner.init(); Lessons.init(); Songs.init(); Player.init();
-  $('#notationBtn').addEventListener('click', () => setNotation(state.notation === 'latin' ? 'letter' : 'latin'));
-  $('#micBtn').addEventListener('click', () => (Mic.on ? Mic.stop() : ensureMic()));
+  applyTheme(state.theme);
+  matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', () => { readPalette(); Tuner.renderStrings(); Learn.render(); });
+  Tuner.init(); Learn.init(); Songs.init(); Player.init(); Settings.init();
   navigator.mediaDevices?.addEventListener?.('devicechange', () => { if (Mic.on) fillMicSelect(); });
   window.addEventListener('hashchange', route);
-  setNotation(state.notation);
+  readPalette(); Tuner.renderStrings();
   onMicChange(); route();
   requestAnimationFrame(loop);
 }
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();

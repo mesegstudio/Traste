@@ -4,11 +4,10 @@
       <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2.5c-7.4 0-12.5 3.2-12.5 8.6 0 6.6 6.6 14 11 18.1a2.2 2.2 0 0 0 3 0c4.4-4.1 11-11.5 11-18.1C28.5 5.7 23.4 2.5 16 2.5Z" fill="var(--accent)"/><path d="M9.5 11h13M11 15.5h10M13 20h6" stroke="var(--accent-ink)" stroke-width="1.9" stroke-linecap="round" opacity=".5"/></svg>
     </a>
     <a class="rail-item" href="#afinador" data-tab="afinador"><span data-icon="dashboard-3-line"></span>Afinar</a>
-    <a class="rail-item" href="#acordes" data-tab="acordes"><span data-icon="hand"></span>Acordes</a>
+    <a class="rail-item" href="#aprender" data-tab="aprender"><span data-icon="graduation-cap-line"></span>Aprender</a>
     <a class="rail-item" href="#canciones" data-tab="canciones"><span data-icon="music-2-line"></span>Canciones</a>
     <div class="rail-end">
-      <button type="button" class="rail-item" id="notationBtn" title="Nombres de las notas: Do Re Mi o C D E"><span class="key" id="notationKey">Do</span>Notas</button>
-      <button type="button" class="rail-item mic" id="micBtn" data-on="false"><span id="micIcon" data-icon="mic-off-line"></span><span class="meter" id="micMeter"><i></i><i></i><i></i><i></i><i></i></span></button>
+      <a class="rail-item" href="#ajustes" data-tab="ajustes"><span data-icon="settings-3-line"></span>Ajustes<i class="rail-dot" id="railMicDot" hidden></i></a>
     </div>
   </nav>
 
@@ -34,14 +33,12 @@
           <div class="hint" id="tnHint" aria-live="polite"></div>
         </div>
         <div class="t-strings">
-          <div class="strings" id="tnStrings"></div>
-          <div class="t-foot">
-            <span><b id="tnProgress">0</b> <span class="muted">de 6 afinadas ·</span> <button type="button" class="link-btn" id="tnReset">empezar de nuevo</button></span>
-            <span class="flex items-center gap-3" id="micBox" hidden>
-              <select id="micSelect" aria-label="Micrófono"></select>
-              <button type="button" class="link-btn" id="recalBtn">Comprobar micro</button>
-            </span>
+          <div class="t-head">
+            <span class="t-prog" id="tnProg"></span>
+            <button type="button" class="btn btn-ghost btn-sm" id="tnReset" title="Marcar todas como sin afinar"><span data-icon="restart-line"></span>Reiniciar</button>
           </div>
+          <div class="strings" id="tnStrings"></div>
+          <div class="mic-card compact" data-mic-card></div>
         </div>
         <div class="overlay-cta" id="tunerCta">
           <div>
@@ -51,14 +48,13 @@
           </div>
         </div>
       </div>
-      <div class="cal-host overlay" data-cal-host="afinador" hidden></div>
+      <div class="cal-host overlay" hidden></div>
     </section>
 
-    <!-- ======================= ACORDES ======================= -->
-    <section class="view" data-view="acordes" hidden>
-      <nav class="lesson-path" id="lessonPath" aria-label="Lecciones"></nav>
-      <div class="lesson-body scroll" id="lessonBody"></div>
-      <div class="cal-host overlay" data-cal-host="acordes" hidden></div>
+    <!-- ======================= APRENDER ======================= -->
+    <section class="view" data-view="aprender" hidden>
+      <div class="learn" id="learn"></div>
+      <div class="cal-host overlay" hidden></div>
     </section>
 
     <!-- ======================= CANCIONES ======================= -->
@@ -95,7 +91,7 @@
           <label class="toggle" title="Modo práctica: la canción se para hasta que tocas la nota (sin puntuación)"><input type="checkbox" id="plWait">Esperarme</label>
           <label class="toggle"><input type="checkbox" id="plMetro">Metrónomo</label>
         </div>
-        <div class="cal-card" data-cal-host="canciones" hidden></div>
+        <div class="cal-card" hidden></div>
         <div class="highway"><canvas id="hw" aria-label="Partitura en movimiento: toca para empezar o pausar, desliza para moverte"></canvas></div>
         <div class="now-strip">
           <div class="min-w-0 flex-1">
@@ -110,6 +106,10 @@
         </div>
       </div>
     </section>
+    <!-- ======================= AJUSTES ======================= -->
+    <section class="view" data-view="ajustes" hidden>
+      <div class="settings scroll" id="settings"></div>
+    </section>
   </main>
 </div>
 
@@ -121,10 +121,6 @@
     <p class="muted mt-1" id="resText"></p>
     <div class="res-big" id="resBig"></div>
     <div class="res-grid" id="resGrid"></div>
-    <div class="flex justify-center gap-2 mt-6 flex-wrap">
-      <button type="button" class="btn btn-ghost" data-close>Cerrar</button>
-      <button type="button" class="btn btn-soft" id="resAgain"><span data-icon="restart-line"></span>Repetir</button>
-      <button type="button" class="btn btn-primary" id="resNext">Pasar a Difícil</button>
-    </div>
+    <div class="res-actions" id="resActions"></div>
   </div>
 </div>
