@@ -559,7 +559,7 @@ const GUIDE = [
   { t: 'Cómo practicar', d: 'Mejor <b>10 minutos cada día</b> que una hora a la semana. Es normal que las yemas duelan la primera semana. Coloca los dedos, rasguea, quita la mano y repite: así la mano aprende la forma.' },
 ];
 const Lessons = {
-  cur: null, check: null, drill: null, reviewId: null, reveal: false, res: {},
+  cur: null, check: null, drill: null, drillOpen: false, reviewId: null, reveal: false, res: {},
   init() {
     const saved = store.get('lesson', null);
     this.cur = saved && (saved === 'guia' || CHORDS[saved]) ? saved : (Object.keys(state.learned).length ? (CHORD_ORDER.find((x) => !state.learned[x]) || 'Em') : 'guia');
@@ -570,15 +570,17 @@ const Lessons = {
       if (a === 'go') this.go(b.dataset.id);
       if (a === 'hear') AudioEngine.strum(chordNotes(CHORDS[id]), 'D');
       if (a === 'arp') [...chordNotes(CHORDS[id])].sort((x, y) => y.string - x.string).forEach((n, i) => AudioEngine.pluck(midiToFreq(n.midi), i * 0.34, 0.45));
-      if (a === 'check') this.startCheck();
+      if (a === 'check') { this.drillOpen = false; this.stopDrill(false); this.startCheck(); }
       if (a === 'stopcheck') { this.check = null; this.res = {}; this.renderBody(); }
       if (a === 'got') { state.learned[id] = true; store.set('learned', state.learned); this.renderPath(); this.check = null; this.res = {}; this.renderBody(); }
       if (a === 'reveal') { this.reveal = true; this.renderBody(); }
       if (a === 'another') { this.pickReview(); this.renderBody(); }
+      if (a === 'drillopen') { this.check = null; this.res = {}; this.drillOpen = true; this.renderBody(); }
+      if (a === 'drillclose') { this.stopDrill(false); this.drillOpen = false; this.renderBody(); }
       if (a === 'drill') this.startDrill();
-      if (a === 'stopdrill') this.stopDrill(false);
+      if (a === 'stopdrill') { this.stopDrill(false); this.renderBody(); }
     });
-    $('#lessonBody').addEventListener('change', (e) => { if (e.target.id === 'drillWith') store.set('drillWith', e.target.value); });
+    $('#lessonBody').addEventListener('change', (e) => { if (e.target.id === 'drillWith') { store.set('drillWith', e.target.value); this.renderBody(); } });
     this.render();
   },
   learnedList() { return CHORD_ORDER.filter((x) => state.learned[x]); },
@@ -586,17 +588,15 @@ const Lessons = {
   nextId() { const i = CHORD_ORDER.indexOf(this.cur); return CHORD_ORDER.find((x, k) => k > i && !state.learned[x]) || CHORD_ORDER[Math.min(i + 1, CHORD_ORDER.length - 1)]; },
   pickReview() { const l = this.learnedList().filter((x) => x !== this.reviewId); this.reviewId = l[Math.floor(Math.random() * l.length)] || this.learnedList()[0]; this.reveal = false; this.check = null; this.res = {}; },
   go(id) {
-    this.stopDrill(false); this.check = null; this.res = {};
+    this.stopDrill(false); this.drillOpen = false; this.check = null; this.res = {};
     this.cur = id; if (id !== 'repaso') store.set('lesson', id); else this.pickReview();
     this.render();
     $('#lessonPath [aria-current="true"]')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
-    const top = $('#lessonPath').getBoundingClientRect().top + window.scrollY - 90;
-    if (window.scrollY > top) window.scrollTo({ top, behavior: 'smooth' });
+    $('#lessonBody').scrollTop = 0;
   },
   render() { this.renderPath(); this.renderBody(); },
   renderPath() {
     const n = this.learnedList().length;
-    $('#learnedCount').textContent = n ? `${n} de ${CHORD_ORDER.length} aprendidos` : '';
     $('#lessonPath').innerHTML = `<button type="button" data-lesson="guia" aria-current="${this.cur === 'guia'}">${icon('book-open-line')}Primeros pasos</button>` +
       (n >= 2 ? `<button type="button" data-lesson="repaso" aria-current="${this.cur === 'repaso'}">${icon('shuffle-line')}Repaso</button>` : '') + '<span class="sep"></span>' +
       CHORD_ORDER.map((id) => `<button type="button" data-lesson="${id}" class="${state.learned[id] ? 'learned' : ''}" aria-current="${this.cur === id}" title="${chordLongName(id)}${CHORDS[id].variant ? ' · ' + CHORDS[id].variant : ''}">${chordLabel(id)}${CHORDS[id].variant ? '<small class="font-medium opacity-60">fácil</small>' : ''}</button>`).join('');
@@ -606,19 +606,19 @@ const Lessons = {
       $('#lessonBody').innerHTML = `<div class="guide-grid">${GUIDE.map((g, i) => `
         <div class="guide-card">
           <h3><span class="n">${i + 1}</span>${g.t}</h3>
-          ${g.art === 'hand' ? `<div class="flex justify-center py-1">${handSVG(new Set([1, 2, 3, 4]), 130)}</div>${fingerLegend()}` : ''}
+          ${g.art === 'hand' ? `<div class="flex justify-center py-1">${handSVG(new Set([1, 2, 3, 4]), 120)}</div>${fingerLegend()}` : ''}
           ${g.art === 'diagram' ? `<div class="diagram">${chordDiagram(CHORDS.Am)}</div>` : ''}
           <p>${g.d}</p>
         </div>`).join('')}</div>
-        <div class="flex justify-center mt-7"><button type="button" class="btn btn-primary btn-lg" data-act="go" data-id="${CHORD_ORDER[0]}">Empezar con ${chordLabel(CHORD_ORDER[0])}${icon('arrow-right-line')}</button></div>`;
+        <div class="flex justify-center mt-5 mb-2"><button type="button" class="btn btn-primary btn-lg" data-act="go" data-id="${CHORD_ORDER[0]}">Empezar con ${chordLabel(CHORD_ORDER[0])}${icon('arrow-right-line')}</button></div>`;
       return;
     }
     const review = this.cur === 'repaso', id = this.chordId(), c = CHORDS[id], notes = chordNotes(c);
-    const idx = CHORD_ORDER.indexOf(id), group = CHORD_GROUPS.find((g) => g.ids.includes(id))?.name || '';
+    const idx = CHORD_ORDER.indexOf(id);
     const used = new Set(c.fingers.filter(Boolean));
     const steps = [...used].sort().map((f) => {
       const where = c.barre && c.barre.finger === f
-        ? `estirado sobre el traste ${c.barre.fret}, pisando de la ${c.barre.from}ª a la ${c.barre.to}ª cuerda (cejilla)`
+        ? `estirado sobre el traste ${c.barre.fret}, de la ${c.barre.from}ª a la ${c.barre.to}ª cuerda (cejilla)`
         : notes.filter((n) => n.finger === f).map((n) => `en la <b>${n.string}ª cuerda</b>, traste ${n.fret}`).join(' y ');
       return `<li><span class="fdot" style="background:${fingerVar(f)}">${f}</span><span><b>${FINGERS[f].n}</b> ${where}</span></li>`;
     });
@@ -628,36 +628,33 @@ const Lessons = {
     if (muted.length) steps.push(`<li><span class="fdot mute">${icon('close-line')}</span><span><b>No toques</b> la ${ordinalList(muted.sort((a, b) => a - b))} cuerda</span></li>`);
     const hidden = review && !this.reveal && !this.check;
     const learned = !!state.learned[id], nx = this.nextId();
-    const drillWith = this.drillPartner(id);
+    let actions;
+    if (this.check) actions = this.checkHTML();
+    else if (this.drillOpen) actions = this.drillHTML(id);
+    else actions = `<div class="lesson-actions">
+        <button type="button" class="btn btn-primary" data-act="check">${icon('mic-line')}Comprobar cuerda a cuerda</button>
+        ${review ? `<button type="button" class="btn btn-soft" data-act="another">${icon('shuffle-line')}Otro</button>`
+          : learned ? (nx !== id ? `<button type="button" class="btn btn-soft" data-act="go" data-id="${nx}">Siguiente: ${chordLabel(nx)}${icon('arrow-right-line')}</button>` : '')
+          : `<button type="button" class="btn btn-soft" data-act="got">${icon('check-line')}Lo tengo</button>`}
+        ${review ? '' : `<button type="button" class="btn btn-ghost" data-act="drillopen" title="Cambios en un minuto">${icon('timer-line')}1 min</button>`}
+      </div>`;
     $('#lessonBody').innerHTML = `
-      <div class="stage lesson">
+      <div class="lesson">
         <div class="lesson-head">
           <div class="min-w-0">
-            <div class="eyebrow">${review ? 'Repaso · colócalo de memoria' : `Acorde ${idx + 1} de ${CHORD_ORDER.length} · ${group}`}</div>
-            <div class="chord-name">${chordLabel(id)}<small>${chordLabel(id, state.notation === 'latin' ? 'letter' : 'latin')} · ${chordLongName(id)}${c.variant ? ' · ' + c.variant : ''}</small></div>
+            <div class="chord-name">${chordLabel(id)}<small>${chordLabel(id, state.notation === 'latin' ? 'letter' : 'latin')} · ${chordLongName(id)}${c.variant ? ' · ' + c.variant : ''} · ${review ? 'repaso de memoria' : `${idx + 1} de ${CHORD_ORDER.length}`}${learned && !review ? ` · <span style="color:var(--ok)">aprendido</span>` : ''}</small></div>
           </div>
-          <div class="flex gap-2">
-            <button type="button" class="btn btn-soft btn-sm" data-act="hear">${icon('volume-up-line')}Escuchar</button>
-            <button type="button" class="btn btn-soft btn-sm" data-act="arp">${icon('music-2-line')}Nota a nota</button>
+          <div class="flex gap-1.5">
+            <button type="button" class="btn btn-soft btn-icon" data-act="hear" title="Escuchar el acorde" aria-label="Escuchar el acorde">${icon('volume-up-line')}</button>
+            <button type="button" class="btn btn-soft btn-icon" data-act="arp" title="Escuchar nota a nota" aria-label="Escuchar nota a nota">${icon('music-2-line')}</button>
           </div>
         </div>
-        ${hidden ? `<div class="mt-6 flex flex-wrap gap-2"><button type="button" class="btn btn-soft" data-act="reveal">${icon('eye-line')}Ver el diagrama</button></div>` : `
-        <div class="lesson-grid">
-          <div class="diagram" id="chordDiagram">${chordDiagram(c, this.res)}</div>
-          <div class="flex flex-col gap-6 min-w-0">
-            <ol class="steps-list">${steps.join('')}</ol>
-            <div class="tip">${icon('lightbulb-line')}<span>${c.tip}</span></div>
-          </div>
-        </div>`}
-        ${this.check ? this.checkHTML() : `
-        <div class="lesson-actions">
-          <button type="button" class="btn btn-primary" data-act="check">${icon('mic-line')}Comprobar cuerda a cuerda</button>
-          ${review ? `<button type="button" class="btn btn-soft" data-act="another">${icon('shuffle-line')}Otro acorde</button>`
-            : learned ? `<span class="muted text-sm flex items-center gap-1.5">${icon('checkbox-circle-fill', 'text-[var(--ok)]')}Aprendido</span>${nx !== id ? `<button type="button" class="btn btn-soft" data-act="go" data-id="${nx}">Siguiente: ${chordLabel(nx)}${icon('arrow-right-line')}</button>` : ''}`
-            : `<button type="button" class="btn btn-soft" data-act="got">${icon('check-line')}Lo tengo</button>`}
-        </div>`}
-      </div>
-      ${!review && drillWith ? `<div class="stage drill" id="drill">${this.drillHTML(id, drillWith)}</div>` : ''}`;
+        ${hidden ? `<div class="diagram" style="min-height:220px"><button type="button" class="btn btn-soft" data-act="reveal">${icon('eye-line')}Ver el diagrama</button></div>` : `<div class="diagram" id="chordDiagram">${chordDiagram(c, this.res)}</div>`}
+        <div class="lesson-info">
+          ${hidden ? '<p class="muted">Coloca los dedos sin mirar y compruébalo.</p>' : `<ol class="steps-list">${steps.join('')}</ol><div class="tip">${icon('lightbulb-line')}<span>${c.tip}</span></div>`}
+          <div class="lesson-foot">${actions}</div>
+        </div>
+      </div>`;
   },
   // ---------- comprobación cuerda a cuerda ----------
   async startCheck() {
@@ -670,12 +667,12 @@ const Lessons = {
     const ck = this.check, played = new Set(ck.notes.map((n) => n.string));
     const cur = ck.notes[ck.i];
     const pills = [6, 5, 4, 3, 2, 1].map((s) => {
-      const st = !played.has(s) ? 'skip' : this.res[s] === 'ok' ? 'ok' : this.res[s] === 'bad' && !(cur && cur.string === s) ? 'bad' : cur && cur.string === s ? (this.res[s] === 'bad' ? 'bad' : 'now') : '';
+      const st = !played.has(s) ? 'skip' : this.res[s] === 'ok' ? 'ok' : cur && cur.string === s ? (this.res[s] === 'bad' ? 'bad' : 'now') : this.res[s] === 'bad' ? 'bad' : '';
       return `<div class="cs ${st}"><b>${!played.has(s) ? '✕' : st === 'ok' ? icon('check-line') : pcName(OPEN_MIDI[6 - s] + ck.notes.find((n) => n.string === s).fret)}</b>${s}ª</div>`;
     }).join('');
     const msg = ck.done ? (ck.fails ? 'Corregido: ya suenan todas.' : '¡Todas las cuerdas suenan limpias!') : ck.msg || `Toca solo la ${cur.string}ª cuerda`;
     const sub = ck.done ? 'Ahora rasguéalo entero, quita la mano y vuelve a colocarla unas cuantas veces.' : ck.sub || 'Con el acorde puesto. Déjala sonar.';
-    return `<div class="check" id="checkPanel">
+    return `<div class="panel" id="checkPanel">
       <div class="check-strings">${pills}</div>
       <div class="check-msg" style="color:${ck.kind === 'bad' ? 'var(--bad)' : ck.done ? 'var(--ok)' : ''}">${msg}<p>${sub}</p></div>
       <div class="flex gap-2 mt-3">${ck.done ? `<button type="button" class="btn btn-soft btn-sm" data-act="check">${icon('restart-line')}Otra vez</button>${!state.learned[this.chordId()] && this.cur !== 'repaso' ? `<button type="button" class="btn btn-primary btn-sm" data-act="got">${icon('check-line')}Lo tengo</button>` : ''}` : ''}<button type="button" class="btn btn-ghost btn-sm" data-act="stopcheck">Terminar</button></div>
@@ -714,27 +711,31 @@ const Lessons = {
     if (saved && saved !== id && CHORDS[saved]) return saved;
     const l = this.learnedList().filter((x) => x !== id);
     if (l.length) return l[l.length - 1];
-    const i = CHORD_ORDER.indexOf(id); return i > 0 ? CHORD_ORDER[i - 1] : null;
+    const i = CHORD_ORDER.indexOf(id); return CHORD_ORDER[i > 0 ? i - 1 : 1];
   },
-  drillHTML(id, w) {
-    const d = this.drill;
+  drillHTML(id) {
+    const d = this.drill, w = d ? d.b : this.drillPartner(id);
     const best = store.get(`1min:${[id, w].sort().join('-')}`, 0);
     if (d) {
-      return `<div><div class="eyebrow">Cambios en un minuto</div><div class="big num" id="drillCount">${d.count}</div></div>
-        <div class="flex-1 min-w-[180px]"><div class="text-lg font-semibold">Ahora: <span id="drillNow">${chordLabel(d.count % 2 === 0 ? d.a : d.b)}</span></div><div class="muted text-sm">Un rasgueo en cada acorde y cambia · <span class="num" id="drillTime">1:00</span></div></div>
-        <button type="button" class="btn btn-soft" data-act="stopdrill">Parar</button>`;
+      return `<div class="panel flex flex-wrap items-center gap-x-6 gap-y-3">
+        <div><div class="drill-count num" id="drillCount">${d.count}</div><div class="muted text-sm">cambios</div></div>
+        <div class="flex-1 min-w-[160px]"><div class="text-lg font-semibold">Ahora: <span id="drillNow">${chordLabel(d.count % 2 === 0 ? d.a : d.b)}</span></div><div class="muted text-sm">Un rasgueo en cada acorde · <span class="num" id="drillTime">1:00</span></div></div>
+        <button type="button" class="btn btn-soft btn-sm" data-act="stopdrill">Parar</button></div>`;
     }
     const opts = CHORD_ORDER.filter((x) => x !== id).map((x) => `<option value="${x}" ${x === w ? 'selected' : ''}>${chordLabel(x)}</option>`).join('');
-    return `<div class="flex-1 min-w-[220px]"><div class="font-semibold text-[16px]">Cambios en un minuto</div><div class="muted text-sm">Alterna ${chordLabel(id)} con otro acorde: un rasgueo en cada uno. Cuento los rasgueos.${best ? ` Tu récord: ${best}.` : ''}</div></div>
-      <label class="flex items-center gap-2 text-sm muted">con <select id="drillWith">${opts}</select></label>
-      <button type="button" class="btn btn-soft" data-act="drill">${icon('timer-line')}Empezar</button>`;
+    return `<div class="panel flex flex-col gap-3">
+      <div><b class="font-semibold">Cambios en un minuto</b><p class="muted text-sm">Alterna dos acordes con un rasgueo en cada uno. Cuento los rasgueos.${best ? ` Tu récord: ${best}.` : ''}</p></div>
+      <div class="flex flex-wrap items-center gap-2"><label class="flex items-center gap-2 text-sm muted">${chordLabel(id)} y <select id="drillWith">${opts}</select></label>
+        <button type="button" class="btn btn-primary btn-sm" data-act="drill">${icon('timer-line')}Empezar</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-act="drillclose">Cerrar</button></div>
+    </div>`;
   },
   async startDrill() {
     if (!(await micReady())) return;
     const id = this.chordId(), w = $('#drillWith')?.value || this.drillPartner(id);
     store.set('drillWith', w);
     this.drill = { a: id, b: w, count: 0, end: performance.now() + 60000 };
-    $('#drill').innerHTML = this.drillHTML(id, w);
+    this.renderBody();
   },
   stopDrill(finished) {
     const d = this.drill; if (!d) return;
@@ -743,8 +744,8 @@ const Lessons = {
       const key = `1min:${[d.a, d.b].sort().join('-')}`, best = store.get(key, 0);
       if (d.count > best) store.set(key, d.count);
       toast(d.count > best ? `¡Nuevo récord: ${d.count} cambios!` : `${d.count} cambios. Tu récord es ${best}.`, 5000, 'timer-line');
+      if (state.view === 'acordes') this.renderBody();
     }
-    if ($('#drill')) $('#drill').innerHTML = this.drillHTML(d.a, d.b);
   },
   frame(f, now) {
     const d = this.drill;
@@ -825,7 +826,12 @@ const Player = {
     $('#plSpeedLabels').addEventListener('click', (e) => { const s = e.target.closest('[data-i]'); if (s) this.setSpeed(+s.dataset.i); });
     $('#plWait').addEventListener('change', (e) => { this.wait = e.target.checked; this.reset(); });
     $('#plMetro').addEventListener('change', (e) => { this.metro = e.target.checked; });
-    $('#plFingersBtn').addEventListener('click', () => this.showFingers($('#plFingersBtn').getAttribute('aria-expanded') !== 'true', true));
+    $('#plFingersBtn').addEventListener('click', () => this.showFingers($('#plFingersBtn').getAttribute('aria-expanded') !== 'true'));
+    $('#plOptsBtn').addEventListener('click', (e) => { e.stopPropagation(); this.showOpts(!$('#plOpts').classList.contains('open')); });
+    document.addEventListener('pointerdown', (e) => {
+      if ($('#plOpts').classList.contains('open') && !e.target.closest('#plOpts,#plOptsBtn')) this.showOpts(false);
+      if (!$('#plDetails').hidden && !e.target.closest('#plDetails,#plFingersBtn')) this.showFingers(false);
+    });
     $('#resAgain').addEventListener('click', () => { closeModal('#resModal'); this.start(false); });
     $('#resNext').addEventListener('click', () => { closeModal('#resModal'); this.setLevel('hard'); });
     const c = this.canvas;
@@ -838,19 +844,17 @@ const Player = {
       if (e.code === 'Space') { e.preventDefault(); this.togglePlay(); }
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); this.seekTo(this.beat + (e.key === 'ArrowLeft' ? -1 : 1) * this.song.bpb); }
     });
-    this.showFingers(store.get('fingers', window.innerWidth >= 900), false);
   },
-  showFingers(on, save) {
+  showFingers(on) {
     $('#plFingersBtn').setAttribute('aria-expanded', String(on)); $('#plDetails').hidden = !on;
-    if (save) store.set('fingers', on);
     this.curIdx = -1; if (this.song) this.renderNow();
   },
+  showOpts(on) { $('#plOpts').classList.toggle('open', on); $('#plOptsBtn').setAttribute('aria-expanded', String(on)); },
   open(song) {
     this.song = song; this.built = buildSong(song, CHORDS);
     $('#plLevel').innerHTML = Object.keys(LEVELS).map((l) => `<button type="button" data-l="${l}">${LEVELS[l]}<span class="hidden sm:inline font-medium opacity-60"> · ${LEVEL_HINT[l]}</span></button>`).join('');
     $('#plTitle').textContent = song.title; $('#plOrigin').textContent = `${song.origin} · ${song.bpm} ppm · ${song.bpb}/4`;
-    $('#songList').hidden = true; $('#player').hidden = false;
-    window.scrollTo({ top: 0 });
+    $('#songList').hidden = true; $('#player').hidden = false; this.showFingers(false); this.showOpts(false);
     this.setSpeed(store.get('speed', 1));
     this.setLevel(store.get('lvl:' + song.id, 'easy'));
     this.resize(); Cal.sync();
@@ -897,7 +901,7 @@ const Player = {
     const playing = this.status === 'playing';
     $('#plPlay').innerHTML = icon(playing && !this.demo ? 'pause-fill' : 'play-fill');
     $('#plPlay').setAttribute('aria-label', playing && !this.demo ? 'Pausa' : 'Tocar');
-    $('#plDemo').innerHTML = playing && this.demo ? `${icon('pause-fill')}<span class="hidden sm:inline">Parar</span>` : `${icon('headphone-line')}<span class="hidden sm:inline">Escuchar</span>`;
+    $('#plDemo').innerHTML = playing && this.demo ? `${icon('pause-fill')}<span>Parar</span>` : `${icon('headphone-line')}<span>Escuchar</span>`;
   },
   mult() { return this.combo >= 30 ? 4 : this.combo >= 20 ? 3 : this.combo >= 10 ? 2 : 1; },
   renderHud() {
@@ -1132,7 +1136,8 @@ const Player = {
   },
   draw(now) {
     const c = this.ctx, W = this.W, H = this.H; if (!c || !W) return;
-    const top = 74, gap = (H - top - 30) / 5, ly = (s) => top + (s - 1) * gap;
+    const top = clamp(H * 0.22, 48, 74), gap = (H - top - 28) / 5, ly = (s) => top + (s - 1) * gap;
+    this.r = clamp(gap * 0.42, 9, 15); this.rc = clamp(gap * 0.36, 8, 11);
     const gutter = 46, nowX = gutter + Math.min(160, W * 0.22), ppb = this.ppb(), beat = this.beat;
     const X = (t) => nowX + (t - beat) * ppb;
     const FONT = 'Inter, system-ui, sans-serif', DISP = '"Bricolage Grotesque", Inter, sans-serif';
@@ -1157,7 +1162,7 @@ const Player = {
       c.font = `650 13px ${FONT}`; c.textAlign = 'left';
       for (const seg of this.built.chordTrack) {
         const x = X(seg.t); if (x > W || x + seg.dur * ppb < gutter) continue;
-        c.fillStyle = PAL.muted; c.fillText(chordLabel(seg.chord), Math.max(gutter + 4, x + 4), 22);
+        c.fillStyle = PAL.muted; c.fillText(chordLabel(seg.chord), Math.max(gutter + 4, x + 4), Math.min(22, top * 0.32));
       }
     }
     for (const e of this.events) {
@@ -1179,7 +1184,7 @@ const Player = {
         c.globalAlpha = age < life - 200 ? 1 : 1 - (age - life + 200) / 200;
         const sc = 1 + 0.25 * Math.max(0, 1 - age / 120);
         c.font = `800 ${Math.round((this.flash.big ? 19 : 16) * sc)}px ${DISP}`; c.textAlign = 'center';
-        const tw = c.measureText(this.flash.text).width + 26, fx = nowX + 40 + tw / 2, fy = 40 - Math.min(age, 300) * 0.02;
+        const tw = c.measureText(this.flash.text).width + 26, fx = nowX + 40 + tw / 2, fy = Math.min(40, top * 0.55) - Math.min(age, 300) * 0.02;
         c.fillStyle = this.hexA(this.flash.color, 0.16); c.beginPath(); c.roundRect(fx - tw / 2, fy - 16, tw, 32, 16); c.fill();
         c.fillStyle = this.flash.color; c.textBaseline = 'middle'; c.fillText(this.flash.text, fx, fy + 1); c.textBaseline = 'alphabetic';
         c.globalAlpha = 1;
@@ -1203,7 +1208,7 @@ const Player = {
   // Bola que salta de nota en nota y cae justo cuando hay que tocar
   drawBall(c, nowX, ly, now) {
     const ev = this.events; if (!ev.length) return;
-    const yOf = (e) => (this.isChord(e) ? ly(Math.min(...e.notes.map((n) => n.string))) - 30 : ly(e.notes[0].string) - 22);
+    const yOf = (e) => (this.isChord(e) ? ly(Math.min(...e.notes.map((n) => n.string))) - this.rc - 19 : ly(e.notes[0].string) - this.r - 7);
     let j = ev.findIndex((e) => e.t > this.beat + 1e-6);
     if (j < 0) j = ev.length;
     const nx = ev[j], pv = ev[j - 1];
@@ -1241,8 +1246,8 @@ const Player = {
   drawNote(c, e, x, ly, ppb, now) {
     const n = e.notes[0], y = ly(n.string), len = e.dur * ppb - 22, a = c.globalAlpha;
     if (len > 4) { c.fillStyle = fingerHex(n.finger); c.globalAlpha = a * 0.25; c.beginPath(); c.roundRect(x, y - 4, len, 8, 4); c.fill(); c.globalAlpha = a; }
-    this.drawDot(c, x, y, n, 15);
-    this.drawHit(c, e, x, y, 15, now);
+    this.drawDot(c, x, y, n, this.r);
+    this.drawHit(c, e, x, y, this.r, now);
   },
   drawChord(c, e, x, ly, now) {
     const ss = e.notes.map((n) => n.string), s1 = Math.min(...ss), s2 = Math.max(...ss);
@@ -1252,12 +1257,12 @@ const Player = {
       c.strokeStyle = PAL.faint; c.lineWidth = 2; const y = ly(s);
       c.beginPath(); c.moveTo(x - 4, y - 4); c.lineTo(x + 4, y + 4); c.moveTo(x + 4, y - 4); c.lineTo(x - 4, y + 4); c.stroke();
     }
-    for (const n of e.notes) this.drawDot(c, x, ly(n.string), n, 11);
+    for (const n of e.notes) this.drawDot(c, x, ly(n.string), n, this.rc);
     const ay = ly(s2) + 26; c.fillStyle = e.dir === 'U' ? PAL.muted : PAL.text;
     c.beginPath();
     if (e.dir === 'U') { c.moveTo(x, ay - 6); c.lineTo(x - 6, ay + 3); c.lineTo(x + 6, ay + 3); } else { c.moveTo(x, ay + 4); c.lineTo(x - 6, ay - 5); c.lineTo(x + 6, ay - 5); }
     c.fill();
-    if (e.chord && e.first) { c.fillStyle = PAL.text; c.font = '750 14px Inter, system-ui, sans-serif'; c.textAlign = 'center'; c.fillText(chordLabel(e.chord), x, 22); }
+    if (e.chord && e.first) { c.fillStyle = PAL.text; c.font = '750 14px Inter, system-ui, sans-serif'; c.textAlign = 'center'; c.fillText(chordLabel(e.chord), x, Math.min(22, ly(1) * 0.32)); }
     if (e.st === 1 && now - e.hitAt < 450) { const k = (now - e.hitAt) / 450; c.globalAlpha = 1 - k; c.strokeStyle = this.hitColor(e); c.lineWidth = 2; c.beginPath(); c.roundRect(x - 16 - k * 14, ly(s1) - 16 - k * 14, 32 + k * 28, ly(s2) - ly(s1) + 32 + k * 28, 16 + k * 14); c.stroke(); c.globalAlpha = 1; }
   },
 };
@@ -1295,15 +1300,14 @@ function route() {
   $$('section[data-view]').forEach((s) => { s.hidden = s.dataset.view !== view; });
   $$('[data-tab]').forEach((a) => (a.dataset.tab === view ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
   if (view !== 'canciones') Player.pause();
-  if (view !== 'acordes') { Lessons.stopDrill(false); if (Lessons.check) { Lessons.check = null; Lessons.res = {}; Lessons.renderBody(); } }
+  if (view !== 'acordes') { Lessons.stopDrill(false); if (Lessons.check || Lessons.drillOpen) { Lessons.check = null; Lessons.drillOpen = false; Lessons.res = {}; Lessons.renderBody(); } }
   Cal.sync();
   if (view === 'canciones') requestAnimationFrame(() => Player.resize());
 }
 
 function setNotation(n) {
   state.notation = n; store.set('notation', n);
-  $$('#notation button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.n === n)));
-  $('#notationMobileLabel').textContent = n === 'latin' ? 'Do' : 'C';
+  $('#notationKey').textContent = n === 'latin' ? 'Do' : 'C';
   Tuner.setMode(Tuner.mode); Tuner.last = {}; Lessons.render(); Songs.render();
   Player.curIdx = -1; if (Player.song) Player.renderNow();
 }
@@ -1327,8 +1331,7 @@ function boot() {
   readPalette();
   matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', () => { readPalette(); Tuner.renderStrings(); });
   Tuner.init(); Lessons.init(); Songs.init(); Player.init();
-  $('#notation').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setNotation(b.dataset.n); });
-  $('#notationMobile').addEventListener('click', () => setNotation(state.notation === 'latin' ? 'letter' : 'latin'));
+  $('#notationBtn').addEventListener('click', () => setNotation(state.notation === 'latin' ? 'letter' : 'latin'));
   $('#micBtn').addEventListener('click', () => (Mic.on ? Mic.stop() : ensureMic()));
   navigator.mediaDevices?.addEventListener?.('devicechange', () => { if (Mic.on) fillMicSelect(); });
   window.addEventListener('hashchange', route);

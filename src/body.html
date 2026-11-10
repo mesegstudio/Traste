@@ -1,153 +1,117 @@
-<header class="topbar">
-  <div class="wrap">
-    <a class="brand" href="#afinador" aria-label="Traste, inicio">
+<div class="app">
+  <nav class="rail" aria-label="Traste">
+    <a class="rail-brand" href="#afinador" aria-label="Traste">
       <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2.5c-7.4 0-12.5 3.2-12.5 8.6 0 6.6 6.6 14 11 18.1a2.2 2.2 0 0 0 3 0c4.4-4.1 11-11.5 11-18.1C28.5 5.7 23.4 2.5 16 2.5Z" fill="var(--accent)"/><path d="M9.5 11h13M11 15.5h10M13 20h6" stroke="var(--accent-ink)" stroke-width="1.9" stroke-linecap="round" opacity=".5"/></svg>
-      traste
     </a>
-    <nav class="tabs" aria-label="Herramientas">
-      <a href="#afinador" data-tab="afinador"><span data-icon="dashboard-3-line"></span>Afinador</a>
-      <a href="#acordes" data-tab="acordes"><span data-icon="hand"></span>Acordes</a>
-      <a href="#canciones" data-tab="canciones"><span data-icon="music-2-line"></span>Canciones</a>
-    </nav>
-    <div class="ml-auto flex items-center gap-2">
-      <div class="seg hidden sm:inline-flex" id="notation" role="group" aria-label="Nombres de las notas">
-        <button type="button" data-n="latin">Do Re Mi</button>
-        <button type="button" data-n="letter">C D E</button>
-      </div>
-      <button type="button" class="btn btn-soft btn-icon sm:hidden" id="notationMobile" aria-label="Cambiar nombres de notas"><span class="text-xs font-bold" id="notationMobileLabel">Do</span></button>
-      <button type="button" class="mic-chip" id="micBtn" data-on="false" aria-label="Micrófono">
-        <span id="micIcon" data-icon="mic-off-line"></span>
-        <span class="meter" id="micMeter"><i></i><i></i><i></i><i></i><i></i></span>
-      </button>
+    <a class="rail-item" href="#afinador" data-tab="afinador"><span data-icon="dashboard-3-line"></span>Afinar</a>
+    <a class="rail-item" href="#acordes" data-tab="acordes"><span data-icon="hand"></span>Acordes</a>
+    <a class="rail-item" href="#canciones" data-tab="canciones"><span data-icon="music-2-line"></span>Canciones</a>
+    <div class="rail-end">
+      <button type="button" class="rail-item" id="notationBtn" title="Nombres de las notas: Do Re Mi o C D E"><span class="key" id="notationKey">Do</span>Notas</button>
+      <button type="button" class="rail-item mic" id="micBtn" data-on="false"><span id="micIcon" data-icon="mic-off-line"></span><span class="meter" id="micMeter"><i></i><i></i><i></i><i></i><i></i></span></button>
     </div>
-  </div>
-</header>
+  </nav>
 
-<main class="wrap">
-  <!-- ======================= AFINADOR ======================= -->
-  <section data-view="afinador" hidden>
-    <div class="view-title">
-      <div>
-        <h1>Afinador</h1>
-        <p>Pulsa una cuerda al aire y déjala sonar. Si prefieres elegirla tú, toca la cuerda en el dibujo.</p>
-      </div>
-    </div>
-    <div class="stage tuner-stage">
-      <div class="tuner-top">
-        <button type="button" class="mode-chip" id="tnMode"><i></i><span id="tnModeText">Automático</span></button>
-        <span class="faint num text-sm" id="tnFreq"></span>
-      </div>
-      <div class="readout">
-        <div class="note-big" id="tnNote">—</div>
-        <div class="sub" id="tnSub">Pulsa una cuerda</div>
-      </div>
-      <div class="gauge" id="gauge" aria-hidden="true">
-        <div class="band"></div>
-        <div id="ticks"></div>
-        <div class="needle" id="needle"></div>
-      </div>
-      <div class="gauge-scale num"><span>Grave</span><span>−25</span><span>0</span><span>+25</span><span>Aguda</span></div>
-      <div class="hint" id="tnHint" aria-live="polite"></div>
-      <div class="strings" id="tnStrings"></div>
-      <div class="overlay-cta" id="tunerCta">
-        <div>
-          <h3>Necesito oír tu guitarra</h3>
-          <p>El sonido se analiza en tu navegador y no sale de tu equipo.</p>
-          <button type="button" class="btn btn-primary btn-lg" data-action="mic-on"><span data-icon="mic-line"></span>Activar micrófono</button>
+  <main class="views">
+    <!-- ======================= AFINADOR ======================= -->
+    <section class="view" data-view="afinador" hidden>
+      <div class="tuner">
+        <div class="t-main">
+          <div class="t-top">
+            <button type="button" class="mode-chip" id="tnMode"><i></i><span id="tnModeText">Automático</span></button>
+            <span class="faint num text-sm" id="tnFreq"></span>
+          </div>
+          <div class="readout">
+            <div class="note-big" id="tnNote">—</div>
+            <div class="sub" id="tnSub">Pulsa una cuerda al aire</div>
+          </div>
+          <div class="gauge" id="gauge" aria-hidden="true">
+            <div class="band"></div>
+            <div id="ticks"></div>
+            <div class="needle" id="needle"></div>
+          </div>
+          <div class="gauge-scale num"><span>Grave</span><span>−25</span><span>0</span><span>+25</span><span>Aguda</span></div>
+          <div class="hint" id="tnHint" aria-live="polite"></div>
+        </div>
+        <div class="t-strings">
+          <div class="strings" id="tnStrings"></div>
+          <div class="t-foot">
+            <span><b id="tnProgress">0</b> <span class="muted">de 6 afinadas ·</span> <button type="button" class="link-btn" id="tnReset">empezar de nuevo</button></span>
+            <span class="flex items-center gap-3" id="micBox" hidden>
+              <select id="micSelect" aria-label="Micrófono"></select>
+              <button type="button" class="link-btn" id="recalBtn">Comprobar micro</button>
+            </span>
+          </div>
+        </div>
+        <div class="overlay-cta" id="tunerCta">
+          <div>
+            <h3>Necesito oír tu guitarra</h3>
+            <p>Activa el micrófono. El sonido se analiza en tu navegador y no sale de tu equipo.</p>
+            <button type="button" class="btn btn-primary btn-lg" data-action="mic-on"><span data-icon="mic-line"></span>Activar micrófono</button>
+          </div>
         </div>
       </div>
       <div class="cal-host overlay" data-cal-host="afinador" hidden></div>
-    </div>
-    <div class="tuner-foot">
-      <span><b id="tnProgress">0</b> <span class="muted">de 6 cuerdas afinadas</span> · <button type="button" class="link-btn" id="tnReset">empezar de nuevo</button></span>
-      <span class="flex items-center gap-3" id="micBox" hidden>
-        <select id="micSelect" aria-label="Micrófono"></select>
-        <button type="button" class="link-btn" id="recalBtn">Comprobar el micrófono</button>
-      </span>
-    </div>
-  </section>
+    </section>
 
-  <!-- ======================= ACORDES ======================= -->
-  <section data-view="acordes" hidden>
-    <div class="view-title">
-      <div>
-        <h1>Acordes</h1>
-        <p>Uno cada vez: mira dónde va cada dedo, escúchalo y compruébalo cuerda a cuerda.</p>
-      </div>
-      <span class="muted text-sm" id="learnedCount"></span>
-    </div>
-    <nav class="lesson-path" id="lessonPath" aria-label="Lecciones"></nav>
-    <div id="lessonBody" class="mt-3"></div>
-  </section>
+    <!-- ======================= ACORDES ======================= -->
+    <section class="view" data-view="acordes" hidden>
+      <nav class="lesson-path" id="lessonPath" aria-label="Lecciones"></nav>
+      <div class="lesson-body scroll" id="lessonBody"></div>
+      <div class="cal-host overlay" data-cal-host="acordes" hidden></div>
+    </section>
 
-  <!-- ======================= CANCIONES ======================= -->
-  <section data-view="canciones" hidden>
-    <div id="songList">
-      <div class="view-title">
-        <div>
-          <h1>Canciones</h1>
-          <p>Fácil: la melodía nota a nota. Difícil: el acompañamiento con acordes.</p>
+    <!-- ======================= CANCIONES ======================= -->
+    <section class="view" data-view="canciones" hidden>
+      <div class="list-pane" id="songList">
+        <div class="list-top">
+          <label class="search"><span data-icon="search-line"></span><input type="search" id="songSearch" placeholder="Buscar canción" aria-label="Buscar canción"></label>
+          <div class="filters" id="songFilters"></div>
         </div>
-        <label class="search"><span data-icon="search-line"></span><input type="search" id="songSearch" placeholder="Buscar canción" aria-label="Buscar canción"></label>
+        <div class="song-list scroll" id="songGrid"></div>
       </div>
-      <div class="filters" id="songFilters"></div>
-      <div class="song-list" id="songGrid"></div>
-    </div>
 
-    <div id="player" hidden>
-      <div class="player-head">
-        <button type="button" class="btn btn-soft btn-icon" id="plBack" aria-label="Volver a las canciones"><span data-icon="arrow-left-line"></span></button>
-        <div class="min-w-0 flex-1">
-          <h1 id="plTitle" class="truncate">—</h1>
-          <p id="plOrigin" class="truncate"></p>
+      <div class="player" id="player" hidden>
+        <div class="pl-top">
+          <button type="button" class="btn btn-soft btn-icon" id="plBack" aria-label="Volver a las canciones"><span data-icon="arrow-left-line"></span></button>
+          <div class="pl-title"><h1 id="plTitle">—</h1><p id="plOrigin"></p></div>
+          <div class="hud">
+            <div><div class="pts num" id="plScore">0</div><div class="lbl" id="plScoreLbl">puntos</div></div>
+            <div class="mult" id="plMult" title="Multiplicador por racha">×1</div>
+          </div>
+          <div class="pl-btns">
+            <button type="button" class="btn btn-soft btn-icon pl-opts-btn" id="plOptsBtn" aria-label="Opciones: nivel y velocidad" aria-expanded="false"><span data-icon="equalizer-2-line"></span></button>
+            <button type="button" class="btn btn-soft" id="plDemo"><span data-icon="headphone-line"></span><span>Escuchar</span></button>
+            <button type="button" class="btn btn-soft btn-icon" id="plRestart" aria-label="Empezar desde el principio" title="Empezar desde el principio"><span data-icon="restart-line"></span></button>
+            <button type="button" class="btn btn-primary btn-icon" id="plPlay" aria-label="Tocar"><span data-icon="play-fill"></span></button>
+          </div>
         </div>
-        <div class="hud" id="plHud">
-          <div class="text-right"><div class="pts num" id="plScore">0</div><div class="lbl" id="plScoreLbl">puntos</div></div>
-          <div class="mult" id="plMult" title="Multiplicador por racha">×1</div>
-        </div>
-      </div>
-      <div class="player-bar">
-        <div class="seg" id="plLevel" role="group" aria-label="Nivel"></div>
-        <div class="speed" role="group" aria-label="Velocidad">
-          <input type="range" id="plSpeed" min="0" max="3" step="1" value="1" aria-label="Velocidad" aria-valuetext="Lento">
-          <div class="speed-labels" id="plSpeedLabels"></div>
-        </div>
-        <div class="flex items-center gap-5">
+        <div class="pl-opts" id="plOpts">
+          <div class="seg" id="plLevel" role="group" aria-label="Nivel"></div>
+          <div class="speed" role="group" aria-label="Velocidad">
+            <input type="range" id="plSpeed" min="0" max="3" step="1" value="1" aria-label="Velocidad" aria-valuetext="Lento">
+            <div class="speed-labels" id="plSpeedLabels"></div>
+          </div>
           <label class="toggle" title="Modo práctica: la canción se para hasta que tocas la nota (sin puntuación)"><input type="checkbox" id="plWait">Esperarme</label>
           <label class="toggle"><input type="checkbox" id="plMetro">Metrónomo</label>
         </div>
-        <div class="flex gap-2 ml-auto">
-          <button type="button" class="btn btn-soft" id="plDemo"><span data-icon="headphone-line"></span><span class="hidden sm:inline">Escuchar</span></button>
-          <button type="button" class="btn btn-soft btn-icon" id="plRestart" aria-label="Empezar desde el principio" title="Empezar desde el principio"><span data-icon="restart-line"></span></button>
-          <button type="button" class="btn btn-primary btn-icon" id="plPlay" aria-label="Tocar"><span data-icon="play-fill"></span></button>
-        </div>
-      </div>
-      <div class="cal-card" data-cal-host="canciones" hidden></div>
-      <div class="highway">
-        <canvas id="hw" aria-label="Partitura en movimiento: toca para empezar o pausar, desliza para moverte"></canvas>
-      </div>
-      <div class="now-strip">
-        <div class="now-row">
+        <div class="cal-card" data-cal-host="canciones" hidden></div>
+        <div class="highway"><canvas id="hw" aria-label="Partitura en movimiento: toca para empezar o pausar, desliza para moverte"></canvas></div>
+        <div class="now-strip">
           <div class="min-w-0 flex-1">
             <div id="plNowText" class="now-text"></div>
-            <div id="plNext" class="text-sm muted mt-0.5"></div>
+            <div id="plNext" class="text-sm muted truncate"></div>
           </div>
           <button type="button" class="btn btn-soft btn-sm" id="plFingersBtn" aria-expanded="false" aria-controls="plDetails"><span data-icon="hand"></span>Dedos<span data-icon="arrow-down-s-line" class="chev"></span></button>
         </div>
-        <div id="plDetails" class="now-details" hidden>
+        <div id="plDetails" class="sheet" hidden>
           <div class="fret-wrap" id="plFret"></div>
           <div class="flex flex-col items-center gap-2" id="plHand"></div>
         </div>
       </div>
-    </div>
-  </section>
-</main>
-
-<nav class="botnav" aria-label="Herramientas">
-  <a href="#afinador" data-tab="afinador"><span data-icon="dashboard-3-line"></span>Afinador</a>
-  <a href="#acordes" data-tab="acordes"><span data-icon="hand"></span>Acordes</a>
-  <a href="#canciones" data-tab="canciones"><span data-icon="music-2-line"></span>Canciones</a>
-</nav>
+    </section>
+  </main>
+</div>
 
 <!-- Resultado de canción -->
 <div class="modal" id="resModal" hidden>
