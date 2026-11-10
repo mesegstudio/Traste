@@ -72,7 +72,7 @@
             <div class="mult" id="plMult" title="Multiplicador por racha">×1</div>
           </div>
           <div class="pl-btns">
-            <button type="button" class="btn btn-soft btn-icon pl-opts-btn" id="plOptsBtn" aria-label="Opciones: nivel y velocidad" aria-expanded="false"><span data-icon="equalizer-2-line"></span></button>
+            <button type="button" class="btn btn-soft btn-icon pl-opts-btn" id="plOptsBtn" aria-label="Nivel y velocidad" aria-expanded="false"><span data-icon="equalizer-2-line"></span></button>
             <button type="button" class="btn btn-soft" id="plDemo"><span data-icon="headphone-line"></span><span>Escuchar</span></button>
             <button type="button" class="btn btn-soft btn-icon" id="plRestart" aria-label="Empezar desde el principio" title="Empezar desde el principio"><span data-icon="restart-line"></span></button>
             <button type="button" class="btn btn-primary btn-icon" id="plPlay" aria-label="Tocar"><span data-icon="play-fill"></span></button>
@@ -84,11 +84,11 @@
             <input type="range" id="plSpeed" min="0" max="3" step="1" value="1" aria-label="Velocidad" aria-valuetext="Lento">
             <div class="speed-labels" id="plSpeedLabels"></div>
           </div>
-          <label class="toggle" title="Modo práctica: la canción se para hasta que tocas la nota (sin puntuación)"><input type="checkbox" id="plWait">Esperarme</label>
+          <label class="toggle" title="La canción se para hasta que tocas cada nota. No puntúa."><input type="checkbox" id="plWait">Esperarme</label>
           <label class="toggle"><input type="checkbox" id="plMetro">Metrónomo</label>
         </div>
         <div class="cal-card" hidden></div>
-        <div class="highway"><canvas id="hw" aria-label="Partitura en movimiento: toca para empezar o pausar, desliza para moverte"></canvas></div>
+        <div class="highway"><canvas id="hw" aria-label="Partitura. Toca para empezar o pausar y desliza para moverte"></canvas></div>
         <div class="now-strip">
           <div class="min-w-0 flex-1">
             <div id="plNowText" class="now-text"></div>

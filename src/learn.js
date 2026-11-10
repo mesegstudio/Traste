@@ -10,9 +10,9 @@ const enc = encodeURIComponent;
 const pairKey = (p) => [...p].sort().join('-');
 
 const LVL = [null,
-  { n: 'Empiezo', d: 'Primeras semanas: fuerza en los dedos, tus primeros acordes y un ritmo sencillo.' },
-  { n: 'Básico', d: 'Ya cambias entre acordes abiertos: más soltura, notas del mástil y escalas.' },
-  { n: 'Intermedio', d: 'Cejilla, rasgueos con ritmo y todo el mástil.' },
+  { n: 'Empiezo', d: 'Para las primeras semanas. Fortalece los dedos, aprende tus primeros acordes y coge el ritmo.' },
+  { n: 'Básico', d: 'Ya cambias entre acordes abiertos. Ganarás soltura y empezarás con las notas del mástil y las escalas.' },
+  { n: 'Intermedio', d: 'Llega la cejilla, los rasgueos con más ritmo y el mástil entero.' },
 ];
 
 /* ---------- Secuencias de notas ---------- */
@@ -32,34 +32,34 @@ const STRUM8 = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5].map((t, i) => [t, i % 2 ? 'U' : 
 const EXERCISES = [
   // ---- Punteo: dedos ----
   { id: 'spider5', track: 'punteo', group: 'Fuerza y agilidad', lvl: 1, kind: 'seq', icon: 'hand', title: 'Araña 1-2-3-4', sub: 'Un dedo por traste, desde el traste 5',
-    why: 'El calentamiento clásico. Índice en el traste 5, medio en el 6, anular en el 7 y meñique en el 8, cuerda a cuerda de la 6ª a la 1ª. Aquí los trastes están más juntos y cuesta menos. Deja apoyado cada dedo hasta que necesites el siguiente.',
+    why: 'El calentamiento clásico. Pon el índice en el traste 5, el medio en el 6, el anular en el 7 y el meñique en el 8, y recorre las cuerdas de la 6ª a la 1ª. Aquí los trastes están más juntos y cuesta menos. Deja cada dedo apoyado hasta que necesites el siguiente.',
     notes: spider(5, [0, 1, 2, 3], false), bpm: 60, view: [4, 9] },
   { id: 'spider1', track: 'punteo', group: 'Fuerza y agilidad', lvl: 2, kind: 'seq', icon: 'hand', title: 'Araña completa', sub: 'Trastes 1 a 4, subiendo y bajando',
-    why: 'La misma idea en los primeros trastes, donde hay que abrir más la mano, y de vuelta de la 1ª a la 6ª con 4-3-2-1. Si un dedo se levanta de más, ve más despacio.',
+    why: 'La misma idea en los primeros trastes, donde hay que abrir más la mano, y volviendo de la 1ª a la 6ª con 4-3-2-1. Si algún dedo se levanta de más, ve más despacio.',
     notes: spider(1, [0, 1, 2, 3], true), bpm: 70, view: [0, 5] },
   { id: 'spider1324', track: 'punteo', group: 'Fuerza y agilidad', lvl: 2, kind: 'seq', icon: 'hand', title: 'Araña cruzada 1-3-2-4', sub: 'Independencia de los dedos',
-    why: 'Cambiar el orden obliga a cada dedo a moverse por su cuenta. Despacio y limpio vale más que rápido: la velocidad llega sola.',
+    why: 'Al cambiar el orden, cada dedo tiene que moverse por su cuenta. Ve despacio y limpio, que la velocidad llega sola.',
     notes: spider(5, [0, 2, 1, 3], true), bpm: 70, view: [4, 9] },
   { id: 'spider1423', track: 'punteo', group: 'Fuerza y agilidad', lvl: 3, kind: 'seq', icon: 'hand', title: 'Araña 1-4-2-3', sub: 'Estiramiento y control del meñique',
-    why: 'Del índice saltas al meñique (estira la mano) y vuelven el medio y el anular. Trastes 3 a 6.',
+    why: 'Saltas del índice al meñique, lo que estira la mano, y luego vuelven el medio y el anular. Se toca entre los trastes 3 y 6.',
     notes: spider(3, [0, 3, 1, 2], true), bpm: 80, view: [2, 7] },
   // ---- Punteo: notas del mástil ----
   { id: 'open', track: 'punteo', group: 'Notas del mástil', lvl: 1, kind: 'seq', icon: 'music-line', title: 'Las cuerdas al aire', sub: 'Mi La Re Sol Si Mi, ida y vuelta',
-    why: 'Antes de pisar nada, aprende cómo se llama y cómo suena cada cuerda. Toca solo la que te pido, sin pisar: de la 6ª (la más gruesa) a la 1ª y vuelta.',
+    why: 'Antes de pisar nada, aprende cómo se llama y cómo suena cada cuerda. Tócalas al aire de una en una, de la 6ª (la más gruesa) a la 1ª y vuelta.',
     notes: upDown([[6, 0], [5, 0], [4, 0], [3, 0], [2, 0], [1, 0]], () => 0), bpm: 60, view: [0, 3] },
-  { id: 'find6', track: 'punteo', group: 'Notas del mástil', lvl: 1, kind: 'find', icon: 'focus-3-line', title: 'Encuentra la nota: 6ª cuerda', sub: 'Notas naturales, trastes 0 a 12',
-    why: 'Saber dónde está cada nota de la 6ª cuerda te orienta en todo el mástil y es la base de los acordes con cejilla. Pistas: Sol en el traste 3, La en el 5, Do en el 8 y Mi otra vez en el 12.', strings: [6], naturals: true },
-  { id: 'find5', track: 'punteo', group: 'Notas del mástil', lvl: 2, kind: 'find', icon: 'focus-3-line', title: 'Encuentra la nota: 5ª cuerda', sub: 'Notas naturales, trastes 0 a 12',
-    why: 'La 5ª cuerda empieza en La. Pistas: Do en el traste 3, Re en el 5, Mi en el 7 y La otra vez en el 12.', strings: [5], naturals: true },
-  { id: 'find65', track: 'punteo', group: 'Notas del mástil', lvl: 2, kind: 'find', icon: 'focus-3-line', title: 'Encuentra la nota: 6ª y 5ª', sub: 'Las dos cuerdas graves mezcladas',
-    why: 'El traste 5 de una cuerda suena igual que la siguiente al aire: el 5 de la 6ª es La. Úsalo para pasar de una cuerda a otra.', strings: [6, 5], naturals: true },
-  { id: 'findall', track: 'punteo', group: 'Notas del mástil', lvl: 3, kind: 'find', icon: 'focus-3-line', title: 'Encuentra la nota: todo el mástil', sub: 'Seis cuerdas, con sostenidos',
-    why: 'Todas las cuerdas y todas las notas hasta el traste 12. Recuerda: entre Mi y Fa y entre Si y Do no hay traste de por medio.', strings: [1, 2, 3, 4, 5, 6], naturals: false },
+  { id: 'find6', track: 'punteo', group: 'Notas del mástil', lvl: 1, kind: 'find', icon: 'focus-3-line', title: 'Notas de la 6ª cuerda', sub: 'Notas naturales, trastes 0 a 12',
+    why: 'Saber dónde está cada nota de la 6ª cuerda te orienta en todo el mástil y es la base de los acordes con cejilla. Para empezar, Sol está en el traste 3, La en el 5, Do en el 8 y Mi otra vez en el 12.', strings: [6], naturals: true },
+  { id: 'find5', track: 'punteo', group: 'Notas del mástil', lvl: 2, kind: 'find', icon: 'focus-3-line', title: 'Notas de la 5ª cuerda', sub: 'Notas naturales, trastes 0 a 12',
+    why: 'La 5ª cuerda empieza en La. Do está en el traste 3, Re en el 5, Mi en el 7 y La otra vez en el 12.', strings: [5], naturals: true },
+  { id: 'find65', track: 'punteo', group: 'Notas del mástil', lvl: 2, kind: 'find', icon: 'focus-3-line', title: 'Notas de la 6ª y la 5ª', sub: 'Las dos cuerdas graves mezcladas',
+    why: 'El traste 5 de una cuerda suena igual que la siguiente al aire, así que el 5 de la 6ª es La. Te sirve para pasar de una cuerda a otra.', strings: [6, 5], naturals: true },
+  { id: 'findall', track: 'punteo', group: 'Notas del mástil', lvl: 3, kind: 'find', icon: 'focus-3-line', title: 'Notas de todo el mástil', sub: 'Seis cuerdas, con sostenidos',
+    why: 'Todas las cuerdas y todas las notas hasta el traste 12. Recuerda que entre Mi y Fa, y entre Si y Do, no hay ningún traste de por medio.', strings: [1, 2, 3, 4, 5, 6], naturals: false },
   // ---- Punteo: escalas ----
   { id: 'cmaj', track: 'punteo', group: 'Escalas', lvl: 2, kind: 'seq', icon: 'music-line', title: 'Escala de Do mayor', sub: 'Do Re Mi Fa Sol La Si Do, posición abierta',
-    why: 'La escala de toda la vida, subiendo y bajando. Un dedo por traste: el índice en el traste 1, el medio en el 2 y el anular en el 3.',
+    why: 'La escala de toda la vida, subiendo y bajando. Va un dedo por traste, con el índice en el 1, el medio en el 2 y el anular en el 3.',
     notes: upDown([[5, 3], [4, 0], [4, 2], [4, 3], [3, 0], [3, 2], [2, 0], [2, 1]], (f) => f), bpm: 70, view: [0, 4] },
-  { id: 'penta', track: 'punteo', group: 'Escalas', lvl: 2, kind: 'seq', icon: 'music-line', title: 'Pentatónica menor de La', sub: 'Traste 5: la escala del rock y el blues',
+  { id: 'penta', track: 'punteo', group: 'Escalas', lvl: 2, kind: 'seq', icon: 'music-line', title: 'Pentatónica menor de La', sub: 'En el traste 5, la escala del rock y el blues',
     why: 'Dos notas por cuerda con el índice en el traste 5. Es la base de casi todos los solos. Ve subiendo y bajando sin prisa.',
     notes: upDown([[6, 5], [6, 8], [5, 5], [5, 7], [4, 5], [4, 7], [3, 5], [3, 7], [2, 5], [2, 8], [1, 5], [1, 8]], (f) => f - 4), bpm: 70, view: [4, 9] },
   { id: 'gmaj', track: 'punteo', group: 'Escalas', lvl: 3, kind: 'seq', icon: 'music-line', title: 'Escala de Sol mayor', sub: 'Dos octavas en posición abierta',
@@ -67,15 +67,15 @@ const EXERCISES = [
     notes: upDown([[6, 3], [5, 0], [5, 2], [5, 3], [4, 0], [4, 2], [4, 4], [3, 0], [3, 2], [2, 0], [2, 1], [2, 3], [1, 0], [1, 2], [1, 3]], (f) => f), bpm: 80, view: [0, 4] },
   // ---- Acordes: cambios y ritmo ----
   { id: 'changes', track: 'acordes', group: 'Practica', lvl: 1, kind: 'changes', icon: 'timer-line', title: 'Cambios de un minuto', sub: 'Cuenta cuántas veces cambias entre dos acordes',
-    why: 'Elige dos acordes y alterna entre ellos con un rasgueo en cada uno durante un minuto. Es el ejercicio que más rápido mejora los cambios: apunta tu récord y supéralo cada día.' },
+    why: 'Elige dos acordes y alterna entre ellos durante un minuto, con un rasgueo en cada uno. Es el ejercicio con el que más rápido mejoran los cambios. Intenta superar tu récord cada día.' },
   { id: 'strum4', track: 'acordes', group: 'Ritmo', lvl: 1, kind: 'rhythm', icon: 'pulse-line', title: 'Rasgueo en negras', sub: '↓ ↓ ↓ ↓ · un golpe por tiempo con Mim y Lam',
-    why: 'Mueve el brazo desde el codo, relajado, y rasguea hacia abajo justo con cada clic. Cuenta en voz alta: 1, 2, 3, 4.',
+    why: 'Mueve el brazo desde el codo, relajado, y rasguea hacia abajo justo con cada clic. Ayuda contar en voz alta «1, 2, 3, 4».',
     pattern: [[0, 'D'], [1, 'D'], [2, 'D'], [3, 'D']], chords: ['Em', 'Em', 'Am', 'Am', 'Em', 'Em', 'Am', 'Am'], bpm: 70 },
   { id: 'strum8', track: 'acordes', group: 'Ritmo', lvl: 2, kind: 'rhythm', icon: 'pulse-line', title: 'Rasgueo en corcheas', sub: '↓↑↓↑↓↑↓↑ con Sol, Do y Re',
-    why: 'La mano no para: baja en cada tiempo y sube entre medias («1 y 2 y 3 y 4 y»). Las subidas, más suaves y solo por las cuerdas agudas.',
+    why: 'La mano no para nunca. Baja en cada tiempo y sube entre medias, contando «1 y 2 y 3 y 4 y». Las subidas van más suaves y solo por las cuerdas agudas.',
     pattern: STRUM8, chords: ['G', 'G', 'C', 'C', 'G', 'G', 'D', 'D'], bpm: 70 },
   { id: 'strumPop', track: 'acordes', group: 'Ritmo', lvl: 3, kind: 'rhythm', icon: 'pulse-line', title: 'El rasgueo más usado', sub: '↓ ↓↑ ↑↓↑ con Sol, Mim, Do y Re',
-    why: 'Abajo, abajo-arriba, arriba-abajo-arriba («1, 2 y, y 4 y»). En el tiempo 3 el brazo sigue bajando pero sin tocar las cuerdas: así no pierdes el pulso.',
+    why: 'Abajo, abajo-arriba, arriba-abajo-arriba, contando «1, 2 y, y 4 y». En el tiempo 3 el brazo baja igual pero sin tocar las cuerdas, y así no pierdes el pulso.',
     pattern: STRUM_PATTERNS[4], chords: ['G', 'G', 'Em', 'Em', 'C', 'C', 'D', 'D'], bpm: 75 },
 ];
 const EXI = Object.fromEntries(EXERCISES.map((e) => [e.id, e]));
@@ -119,7 +119,7 @@ function routine(level) {
   else if (learned.length >= 2) steps.push({ key: 'review', kicker: 'Repaso', icon: 'shuffle-line', title: 'Repaso de memoria', sub: 'Un acorde que ya sabes, sin mirar el diagrama', min: 3, hash: '#aprender/repaso' });
   const known = PAIRS[level].filter(([a, b]) => state.learned[a] && state.learned[b]);
   const pr = known.length ? pick(known) : PAIRS[level][0];
-  steps.push({ key: 'chg:' + pairKey(pr), kicker: 'Cambios', icon: 'timer-line', title: `${chordLabel(pr[0])} ↔ ${chordLabel(pr[1])} en un minuto`, sub: 'Un rasgueo en cada acorde: cuenta los cambios', min: 2, hash: `#aprender/cambios/${enc(pr[0])}~${enc(pr[1])}` });
+  steps.push({ key: 'chg:' + pairKey(pr), kicker: 'Cambios', icon: 'timer-line', title: `${chordLabel(pr[0])} ↔ ${chordLabel(pr[1])} en un minuto`, sub: 'Alterna con un rasgueo en cada uno', min: 2, hash: `#aprender/cambios/${enc(pr[0])}~${enc(pr[1])}` });
   ex('Ritmo', ['', 'strum4', 'strum8', 'strumPop'][level], 3);
   ex('Notas', ['', pick(['open', 'find6']), pick(['find5', 'find65', 'find6']), 'findall'][level], 3);
   if (level > 1) ex('Escala', level === 2 ? pick(['cmaj', 'penta']) : pick(['gmaj', 'penta']), 3);
@@ -128,7 +128,7 @@ function routine(level) {
   let lvl = level === 1 ? 'easy' : 'hard', cand = SONGS.filter((s) => (level === 1 ? s.stars === 1 : lvl === 'hard' ? fits(s) : true));
   if (!cand.length) { lvl = 'easy'; cand = SONGS.filter((s) => s.stars <= level); }
   const song = pick(cand);
-  steps.push({ key: `song:${song.id}:${lvl}`, kicker: 'Canción', icon: 'music-2-line', title: song.title, sub: lvl === 'easy' ? 'Nivel Fácil: la melodía nota a nota' : 'Nivel Difícil: con acordes y rasgueo', min: 4, song, lvl });
+  steps.push({ key: `song:${song.id}:${lvl}`, kicker: 'Canción', icon: 'music-2-line', title: song.title, sub: lvl === 'easy' ? 'En Fácil, la melodía nota a nota' : 'En Difícil, con acordes y rasgueo', min: 4, song, lvl });
   return steps;
 }
 
@@ -137,12 +137,12 @@ function guideItems() {
   const h = state.diagram === 'h';
   return [
     { t: 'Sujeta la guitarra', d: `Siéntate con la espalda recta y apoya la guitarra en la pierna ${state.lefty ? 'izquierda' : 'derecha'}, con el mástil un poco hacia arriba. El <b>pulgar de la mano que pisa va detrás del mástil</b>, más o menos detrás del dedo medio.` },
-    { t: 'Tus dedos tienen número', d: 'Los diagramas usan números: 1 índice, 2 medio, 3 anular y 4 meñique. En Traste cada dedo tiene <b>siempre el mismo color</b>.', art: 'hand' },
+    { t: 'Tus dedos tienen número', d: 'En los diagramas, el 1 es el índice, el 2 el medio, el 3 el anular y el 4 el meñique. En Traste cada dedo tiene <b>siempre el mismo color</b>.', art: 'hand' },
     { t: 'Cómo pisar una cuerda', d: 'Con la <b>punta del dedo</b>, justo <b>detrás del traste</b> (no encima). Arquea el dedo como si sujetaras una pelota pequeña para no rozar las cuerdas de al lado. Mejor con las uñas cortas.' },
-    { t: 'Cómo leer un diagrama', d: h ? 'Las líneas horizontales son las cuerdas: la <b>6ª, la más gruesa, abajo</b>, como en la tablatura. Las verticales son los trastes y la barra gruesa es la cejuela. El número es el dedo. <b>O</b>: cuerda al aire. <b>✕</b>: no la toques.'
-      : `Las líneas verticales son las cuerdas: la <b>6ª, la más gruesa, a la ${state.lefty ? 'derecha' : 'izquierda'}</b>. Las horizontales son los trastes. El número es el dedo. <b>O</b>: cuerda al aire. <b>✕</b>: no la toques.`, art: 'diagram' },
-    { t: 'Comprueba cuerda a cuerda', d: 'Con el acorde puesto, toca <b>cada cuerda por separado</b>. Si una suena apagada, algún dedo la roza o no aprieta bien. Es lo que hacen los profesores, y Traste te lo dice nota a nota.' },
-    { t: 'Cómo practicar', d: 'Mejor <b>10-20 minutos cada día</b> que una hora a la semana. Es normal que las yemas duelan la primera semana. Sigue la <b>práctica de hoy</b>: calentar, un acorde, cambios, ritmo y una canción.' },
+    { t: 'Cómo leer un diagrama', d: h ? 'Las líneas horizontales son las cuerdas, con la <b>6ª, la más gruesa, abajo</b>, como en la tablatura. Las verticales son los trastes y la barra gruesa es la cejuela. El número indica el dedo, la <b>O</b> una cuerda al aire y la <b>✕</b> una cuerda que no se toca.'
+      : `Las líneas verticales son las cuerdas, con la <b>6ª, la más gruesa, a la ${state.lefty ? 'derecha' : 'izquierda'}</b>. Las horizontales son los trastes. El número indica el dedo, la <b>O</b> una cuerda al aire y la <b>✕</b> una cuerda que no se toca.`, art: 'diagram' },
+    { t: 'Comprueba cuerda a cuerda', d: 'Con el acorde puesto, toca <b>cada cuerda por separado</b>. Si una suena apagada, algún dedo la roza o no aprieta bien. Así lo hacen los profesores, y Traste te avisa nota a nota.' },
+    { t: 'Cómo practicar', d: 'Mejor <b>10-20 minutos cada día</b> que una hora a la semana. Es normal que las yemas duelan la primera semana. La <b>práctica de hoy</b> te propone qué tocar cada día.' },
   ];
 }
 
@@ -191,10 +191,10 @@ const Lesson = {
       panel = hidden
         ? `<p class="ls-lead">Coloca los dedos de memoria y compruébalo. Si no te acuerdas, mira el diagrama.</p>
            <div class="ls-actions"><button type="button" class="btn btn-primary" data-act="check">${icon('mic-line')}Compruébalo</button><button type="button" class="btn btn-soft" data-act="reveal">${icon('eye-line')}Ver el diagrama</button><button type="button" class="btn btn-ghost" data-act="another">${icon('shuffle-line')}Otro</button></div>`
-        : `<p class="ls-lead">Coloca los dedos así${review ? '' : ' y rasguea para oír cómo suena'}:</p>
+        : `<p class="ls-lead">Coloca los dedos como en el dibujo${review ? '' : ' y rasguea para oír cómo suena'}.</p>
            <ol class="steps-list">${items.join('')}</ol>
            <div class="tip">${icon('lightbulb-line')}<span>${c.tip}</span></div>
-           <div class="ls-actions"><button type="button" class="btn btn-primary" data-act="check">${icon('mic-line')}Ya lo tengo puesto: compruébalo</button>
+           <div class="ls-actions"><button type="button" class="btn btn-primary" data-act="check">${icon('mic-line')}Comprobar cuerda a cuerda</button>
            ${review ? `<button type="button" class="btn btn-ghost" data-act="another">${icon('shuffle-line')}Otro</button>` : learned ? '' : `<button type="button" class="btn btn-ghost" data-act="known">Ya me lo sé</button>`}</div>`;
     } else if (this.step === 2) {
       const ck = this.check;
@@ -207,23 +207,23 @@ const Lesson = {
           const st = !played.has(s) ? 'skip' : this.res[s] === 'ok' ? 'ok' : cur && cur.string === s ? (this.res[s] === 'bad' ? 'bad' : 'now') : this.res[s] === 'bad' ? 'bad' : '';
           return `<div class="cs ${st}"><b>${!played.has(s) ? '✕' : st === 'ok' ? icon('check-line') : pcName(OPEN_MIDI[6 - s] + ck.notes.find((n) => n.string === s).fret)}</b>${s}ª</div>`;
         }).join('');
-        const msg = ck.done ? (ck.fails ? 'Corregido: ya suenan todas.' : '¡Todas las cuerdas suenan limpias!') : ck.msg || `Toca solo la ${cur.string}ª cuerda`;
-        const sub = ck.done ? (review ? 'Lo recordabas bien.' : 'Ahora rasguéalo entero un par de veces y pasa a los cambios.') : ck.sub || 'Con el acorde puesto. Déjala sonar.';
+        const msg = ck.done ? (ck.fails ? 'Corregido, ya suenan todas.' : '¡Todas las cuerdas suenan limpias!') : ck.msg || `Toca solo la ${cur.string}ª cuerda`;
+        const sub = ck.done ? (review ? 'Lo recordabas bien.' : 'Ahora rasguéalo entero un par de veces y pasa a los cambios.') : ck.sub || 'Sin quitar el acorde, y déjala sonar.';
         panel = `<div class="check-strings">${pills}</div>
           <div class="check-msg" style="color:${ck.kind === 'bad' ? 'var(--bad)' : ck.done ? 'var(--ok)' : ''}">${msg}<p>${sub}</p></div>
           <div class="ls-actions">${ck.done
-            ? (review ? `<button type="button" class="btn btn-primary" data-act="another">${icon('shuffle-line')}Otro acorde</button>` : `<button type="button" class="btn btn-primary" data-act="step" data-n="3">Siguiente: cámbialo${icon('arrow-right-line')}</button>`) + `<button type="button" class="btn btn-soft" data-act="check">${icon('restart-line')}Otra vez</button>`
+            ? (review ? `<button type="button" class="btn btn-primary" data-act="another">${icon('shuffle-line')}Otro acorde</button>` : `<button type="button" class="btn btn-primary" data-act="step" data-n="3">Pasar a los cambios${icon('arrow-right-line')}</button>`) + `<button type="button" class="btn btn-soft" data-act="check">${icon('restart-line')}Otra vez</button>`
             : `<button type="button" class="btn btn-ghost" data-act="check">${icon('restart-line')}Empezar de nuevo</button>`}</div>`;
       }
     } else {
       const ps = this.partners(), p = this.partner && ps.includes(this.partner) ? this.partner : ps[0];
       this.partner = p;
       const best = state.rec['changes:' + pairKey([id, p])], nx = this.nextId();
-      panel = `<p class="ls-lead">Ahora practica el cambio: coloca ${chordLabel(id)}, rasguea, quita la mano y pasa a otro acorde. Así la mano aprende la forma de memoria.</p>
+      panel = `<p class="ls-lead">Ahora practica el cambio. Coloca ${chordLabel(id)}, rasguea, quita la mano y pasa a otro acorde. Así la mano aprende la forma de memoria.</p>
         <div class="pair-pick"><span class="muted">Cambiar entre <b>${chordLabel(id)}</b> y</span><div class="chips">${ps.map((x) => `<button type="button" class="chip" data-act="partner" data-id="${esc(x)}" aria-pressed="${x === p}">${chordLabel(x)}${state.learned[x] ? '' : '<small>nuevo</small>'}</button>`).join('')}</div></div>
-        <div class="mini-pair"><div class="diagram sm">${chordDiagram(CHORDS[p])}</div><p>${chordLongName(p)}${best ? `<br><span class="rec-line">${icon('trophy-line')}Tu récord: <b>${best.v} cambios</b></span>` : ''}</p></div>
+        <div class="mini-pair"><div class="diagram sm">${chordDiagram(CHORDS[p])}</div><p>${chordLongName(p)}${best ? `<br><span class="rec-line">${icon('trophy-line')}Tu récord es de <b>${best.v} cambios</b></span>` : ''}</p></div>
         <div class="ls-actions"><a class="btn btn-primary" href="#aprender/cambios/${enc(id)}~${enc(p)}">${icon('timer-line')}Cambios de un minuto</a>
-        ${nx !== id ? `<a class="btn btn-soft" href="#aprender/acorde/${enc(nx)}">Siguiente: ${chordLabel(nx)}${icon('arrow-right-line')}</a>` : ''}</div>`;
+        ${nx !== id ? `<a class="btn btn-soft" href="#aprender/acorde/${enc(nx)}">Aprender ${chordLabel(nx)}${icon('arrow-right-line')}</a>` : ''}</div>`;
     }
     const idx = CHORD_ORDER.indexOf(id);
     return `<div class="screen lesson2">
@@ -282,11 +282,11 @@ const Lesson = {
     const ringing = ck.notes.slice(0, ck.i).map((n) => n.midi);
     if (got.every((m) => ringing.some((r) => sameNote(m, r)))) return;
     // solo se dice "suena X" si lo confirman los dos detectores (primera lectura y lo que aparece)
-    if (a.flux == null || a.yin == null || !sameNote(a.yin, a.flux) || ringing.some((r) => sameNote(a.flux, r))) { ck.kind = ''; ck.msg = `No la he oído clara: toca otra vez la ${cur.string}ª`; ck.sub = 'Una sola cuerda, y deja que suene.'; this.update(); return; }
+    if (a.flux == null || a.yin == null || !sameNote(a.yin, a.flux) || ringing.some((r) => sameNote(a.flux, r))) { ck.kind = ''; ck.msg = `No la he oído bien. Toca otra vez la ${cur.string}ª`; ck.sub = 'Una sola cuerda, y deja que suene.'; this.update(); return; }
     const heard = a.flux; ck.fails++; ck.kind = 'bad'; this.res = { ...this.res, [cur.string]: 'bad' };
     ck.msg = `Suena ${pcName(heard)} y debería sonar ${pcName(cur.midi)}`;
-    ck.sub = cur.fret === 0 ? 'Algún dedo pisa o roza esta cuerda: arquéalos más.'
-      : heard > cur.midi ? `Suena más agudo: el dedo ${cur.finger} va en el traste ${cur.fret}.` : `Suena más grave: aprieta con la punta del dedo ${cur.finger}, justo detrás del traste ${cur.fret}.`;
+    ck.sub = cur.fret === 0 ? 'Algún dedo la está rozando. Arquéalos un poco más.'
+      : heard > cur.midi ? `Suena más agudo de la cuenta. El dedo ${cur.finger} va en el traste ${cur.fret}.` : `Suena más grave de la cuenta. Aprieta con la punta del dedo ${cur.finger}, justo detrás del traste ${cur.fret}.`;
     this.update();
   },
 };
@@ -302,7 +302,7 @@ const MODES = {
 };
 const modeHelp = (kind, mode) => ({
   crono: 'Toca la secuencia lo más rápido que puedas. El tiempo empieza con la primera nota y cada nota equivocada suma 1 segundo.',
-  tempo: kind === 'rhythm' ? 'Rasguea con el clic. Cada golpe se puntúa: Perfecto, Pronto o Tarde. Puedes bajar la velocidad en las opciones.' : 'Las notas avanzan solas con el clic y cada una se puntúa como en las canciones. Puedes bajar la velocidad en las opciones.',
+  tempo: kind === 'rhythm' ? 'Rasguea con el clic y cada golpe contará como Perfecto, Pronto o Tarde. Si va muy rápido, baja la velocidad en las opciones.' : 'Las notas avanzan solas con el clic y se puntúan como en las canciones. Si va muy rápido, baja la velocidad en las opciones.',
   m60: kind === 'changes' ? 'Un rasgueo en cada acorde durante un minuto. Cuento los cambios y te digo cuáles suenan limpios.' : 'Acierta todas las notas que puedas en un minuto.',
   n10: 'Encuentra 10 notas lo más rápido posible.',
 }[mode]);
@@ -391,7 +391,7 @@ const Drill = {
     if (prev && got.every((m) => sameNote(m, prev.midi))) return; // la anterior aún suena
     if (a.yin != null && a.flux != null && sameNote(a.yin, a.flux)) {
       if (this.t0 != null) this.errs++;
-      this.say(`Eso es ${pcName(a.flux)}: toca ${pcName(want.midi)}`, 'bad'); this.renderStats();
+      this.say(`Eso es ${pcName(a.flux)}, toca ${pcName(want.midi)}`, 'bad'); this.renderStats();
     }
   },
   frameFind(f, now) {
@@ -407,7 +407,7 @@ const Drill = {
     if (this.flash && got.every((m) => sameNote(m, this.flash.midi))) return; // la anterior aún suena
     if (a.yin != null && a.flux != null && sameNote(a.yin, a.flux)) {
       this.errs++; this.misses++;
-      this.say(`Eso es ${pcName(a.flux)}. Busca ${pcName(T.midi)}${this.misses >= 2 ? ': te marco dónde está' : ''}`, 'bad'); this.renderStage();
+      this.say(`Eso es ${pcName(a.flux)}. Busca ${pcName(T.midi)}${this.misses >= 2 ? ', te marco dónde está' : ''}`, 'bad'); this.renderStage();
     }
   },
   frameChanges(f, now) {
@@ -424,7 +424,7 @@ const Drill = {
     if (now - c.t0 < 450) return;
     this.check = null; c.a.used = true;
     if (!broad) { this.say('Rasguea todas las cuerdas del acorde.', 'warn'); return; }
-    if (c.other) { this.say(`Sigue sonando ${chordLabel(other)}: cambia a ${chordLabel(want)}.`, 'warn'); return; }
+    if (c.other) { this.say(`Sigue sonando ${chordLabel(other)}. Cambia a ${chordLabel(want)}.`, 'warn'); return; }
     this.score++; this.last = now; this.say('Cuenta, pero alguna cuerda no ha sonado limpia.', 'warn'); this.renderStage();
   },
   finish(now) {
@@ -508,7 +508,7 @@ const Drill = {
       const strs = ex.strings.length === 6 ? 'cualquier cuerda' : ex.strings.map((s) => `la ${s}ª`).join(' o ');
       const prompt = run && T && this.st === 'run'
         ? `<div class="find-target"><b>${pcName(T.midi)}</b><span>en la ${T.string}ª cuerda</span></div>`
-        : `<div class="find-target idle"><b>?</b><span>Te diré una nota: búscala en ${strs} y tócala</span></div>`;
+        : `<div class="find-target idle"><b>?</b><span>Te diré una nota. Búscala en ${strs} y tócala</span></div>`;
       return `${prompt}<div class="neck-wrap">${neckSVG({ from: 0, to: 12, marks, hl: run && T ? T.string : ex.strings.length === 1 ? ex.strings[0] : null })}</div>${count}`;
     }
     if (ex.kind === 'changes') {
@@ -580,7 +580,7 @@ const Learn = {
     if (!steps.some((s) => s.key === doneKey) && !doneKey.startsWith('song:')) return null;
     const nx = steps.find((s) => !done.includes(s.key));
     if (!nx) return { label: '¡Práctica de hoy hecha!', icon: 'check-line', fn: () => { this.inRoutine = false; location.hash = '#aprender'; } };
-    return { label: `Siguiente: ${nx.kicker.toLowerCase()}`, icon: 'arrow-right-line', fn: () => this.goStep(nx) };
+    return { label: `Seguir con ${nx.kicker.toLowerCase()}`, icon: 'arrow-right-line', fn: () => this.goStep(nx) };
   },
   leave() { Drill.stop(); Lesson.check = null; if (Player.host === 'aprender') Player.release(); },
   show(parts) {
@@ -694,7 +694,7 @@ const Learn = {
     return `<div class="screen">
       <div class="scr-top">
         <a class="btn btn-soft btn-icon" href="#aprender" aria-label="Volver">${icon('arrow-left-line')}</a>
-        <div class="scr-title"><h1>${chords ? 'Acordes' : 'Punteo'}</h1><p>${chords ? 'Aprende cada acorde en tres pasos y practica los cambios y el ritmo' : 'Notas sueltas: dedos, mástil y escalas'}</p></div>
+        <div class="scr-title"><h1>${chords ? 'Acordes' : 'Punteo'}</h1><p>${chords ? 'Aprende cada acorde en tres pasos y practica los cambios y el ritmo' : 'Dedos ágiles, notas del mástil y escalas'}</p></div>
       </div>
       <div class="scr-body scroll"><div class="trk">${body}</div></div>
     </div>`;

@@ -274,7 +274,7 @@ const MicCard = {
       const name = `<b class="mc-name">${esc(devLabel(Mic.label))}</b>`;
       const status = cal
         ? `<span class="mc-st ok">${icon('checkbox-circle-fill')}Calibrado ${timeAgo(cal.at)} · ${cal.noise > 0.02 ? 'sala ruidosa' : 'sala tranquila'}${cal.toneOk ? '' : ' · no oyó el tono de prueba'}</span>`
-        : `<span class="mc-st warn">${icon('error-warning-line')}Sin calibrar: puede confundir ruido con notas</span>`;
+        : `<span class="mc-st warn">${icon('error-warning-line')}Sin calibrar, puede confundir el ruido con notas</span>`;
       const gate = cal ? dbPct(cal.gate) : dbPct(Mic.gate());
       el.innerHTML = `
         <div class="mc-row">
@@ -284,7 +284,7 @@ const MicCard = {
         </div>
         <div class="mc-status">${status}</div>
         <div class="mc-meter"><div class="lv"><i class="fill"></i><i class="gate" style="left:${gate.toFixed(1)}%"></i></div>
-          <span>Nivel de entrada. Lo que queda a la izquierda de la marca se ignora como ruido de la sala.</span></div>
+          <span>Lo que no pasa de la marca lo tomo por ruido de la sala.</span></div>
         <button type="button" class="link-btn mc-off" data-mic-off>Apagar el micrófono</button>`;
     });
   },
@@ -323,8 +323,8 @@ const Cal = {
   render(h) {
     const stIcon = (st, i) => (st === 'ok' ? icon('check-line') : st === 'warn' ? '!' : String(i + 1));
     const items = [
-      ['Silencio', 'No toques nada: mido el ruido de la sala.'],
-      ['Tono de prueba', 'Sonarán tres notas por el altavoz y compruebo que el micrófono las oye afinadas.'],
+      ['Silencio', 'No toques nada mientras mido el ruido de la sala.'],
+      ['Tono de prueba', 'Sonarán tres notas por el altavoz para ver si el micrófono las oye afinadas.'],
     ];
     let acts = '';
     if (this.phase === 'intro') acts = `<button type="button" class="btn btn-primary btn-lg w-full" data-cal="start">${icon('play-fill')}Comenzar</button>`;
@@ -368,7 +368,7 @@ const Cal = {
       lv.sort((a, b) => a - b);
       // percentil 30: un golpe o una cuerda que suene durante la medida no dispara el umbral
       const noise = lv[Math.floor(lv.length * 0.3)] || 0.001, noisy = noise > 0.02;
-      this.setStep(0, noisy ? 'warn' : 'ok', noisy ? 'Hay bastante ruido. Funcionará, pero mejor en un sitio tranquilo.' : 'Sala tranquila.');
+      this.setStep(0, noisy ? 'warn' : 'ok', noisy ? 'Hay bastante ruido. Funcionará, aunque irá mejor en un sitio tranquilo.' : 'Sala tranquila.');
       this.setStep(1, 'run');
       const rs = [];
       for (const fq of [196, 330, 440]) { rs.push(await this.testTone(fq)); if (this.aborted) return; await new Promise((r) => setTimeout(r, 200)); }
@@ -379,7 +379,7 @@ const Cal = {
       const toneOk = good.length >= 2;
       this.setStep(1, toneOk ? 'ok' : 'warn', toneOk
         ? `Oigo ${good.length} de 3 notas afinadas (desvío de ${fmt(err)} cents).`
-        : 'No he oído bien las notas. Con auriculares es normal y puedes seguir; si no, sube el volumen y repite.');
+        : 'No he oído bien las notas. Con auriculares es normal y puedes seguir. Si no los llevas, sube el volumen y repite.');
       state.cals[key] = { noise, gate: clamp(noise * 3, 0.002, 0.02), latency, toneOk, label: Mic.label, at: Date.now() };
       store.set('cals', state.cals);
       this.allOk = toneOk && !noisy;
@@ -664,10 +664,10 @@ const Tuner = {
       this.set('#tnFreq', `${fmt(this.freq)} Hz`);
       const off = Math.abs(this.cents) > 100 ? `suena ${pcName(this.heard)}${octave(this.heard)}, muy lejos de ${pcName(stringMidi(this.cur))}` : `${this.cents > 0 ? '+' : ''}${Math.round(this.cents)} cents`;
       this.set('#tnSub', `${this.cur}ª cuerda · ${off}`);
-      const far = Math.abs(this.cents) > 50 ? ' bastante' : '';
+      const far = Math.abs(this.cents) > 50 ? 'bastante ' : '';
       this.set('#tnHint', inTune ? `<span style="color:var(--ok)">${icon('checkbox-circle-fill')}</span><span style="color:var(--ok)">${this.done.has(this.cur) ? 'Afinada' : 'Mantén… casi está'}</span>`
-        : this.cents < 0 ? `${icon('arrow-up-line')}<span>Grave: aprieta la clavija${far}</span>`
-        : `${icon('arrow-down-line')}<span>Aguda: afloja la clavija${far}</span>`);
+        : this.cents < 0 ? `${icon('arrow-up-line')}<span>Está ${far}grave, aprieta la clavija</span>`
+        : `${icon('arrow-down-line')}<span>Está ${far}aguda, afloja la clavija</span>`);
     } else {
       this.set('#tnFreq', '');
       this.set('#tnSub', this.mode === 'manual' ? `Pulsa la ${this.sel}ª cuerda al aire` : 'Pulsa una cuerda al aire');
@@ -877,7 +877,7 @@ const Player = {
     const i = this.currentIndex(); if (i === this.curIdx) return; this.curIdx = i;
     const e = this.events[i], nx = this.events[i + 1];
     $('#plNowText').innerHTML = e ? this.describe(e) : '';
-    $('#plNext').innerHTML = nx ? `Después: ${this.describe(nx, true)}` : 'Es la última';
+    $('#plNext').innerHTML = nx ? `Luego viene ${this.describe(nx, true)}` : 'Es la última';
     if (!$('#plDetails').hidden) {
       $('#plFret').innerHTML = fingersSVG(e);
       const fingers = new Set((e ? (e.chord ? chordNotes(CHORDS[e.chord]) : e.notes) : []).map((n) => n.finger).filter(Boolean));
@@ -1073,7 +1073,7 @@ const Player = {
     const avg = this.deltas.length >= 4 ? this.deltas.reduce((a, b) => a + b, 0) / this.deltas.length : 0;
     showResult({
       stars, title: starsLine(stars),
-      text: Math.abs(avg) >= 0.06 ? `Sueles ir ${avg < 0 ? 'adelantado: espera a que la bola caiga en la nota' : 'retrasado: anticípate un poco'}.` : stars < 2 ? 'Prueba más lento o activa «Esperarme».' : '',
+      text: Math.abs(avg) >= 0.06 ? (avg < 0 ? 'Sueles adelantarte. Espera a que la bola caiga en la nota.' : 'Sueles ir con retraso. Anticípate un poco.') : stars < 2 ? 'Prueba más lento o activa «Esperarme».' : '',
       big: [[`${Math.round(acc * 100)}%`, 'precisión'], [this.points.toLocaleString('es-ES'), record ? 'puntos · récord' : 'puntos'], [this.maxCombo, 'mejor racha']],
       grid: [['Perfecto', st.perfect, 'var(--ok)'], ['Pronto', st.early, 'var(--warn)'], ['Tarde', st.late, 'var(--warn)'], ['Fallo', st.miss, 'var(--bad)']],
       actions: acts,
@@ -1160,7 +1160,7 @@ const Player = {
       const n = Math.ceil(this.firstT() - beat), k = this.firstT() - beat - (n - 1);
       c.textAlign = 'center'; c.fillStyle = PAL.text; c.globalAlpha = 0.4 + 0.6 * k; c.font = `800 ${Math.round(56 + 24 * k)}px ${DISP}`; c.fillText(n, cx, H / 2 + 22); c.globalAlpha = 1;
     } else if (this.status === 'idle' || this.status === 'done') banner('Toca aquí para empezar', 'Desliza a los lados para moverte por la canción');
-    else if (this.status === 'paused' && !this.scrubbing && !this.drag) banner('En pausa', 'Toca para seguir · desliza para moverte');
+    else if (this.status === 'paused' && !this.scrubbing && !this.drag) banner('En pausa', 'Toca para seguir o desliza para moverte');
   },
   // Bola que salta de nota en nota y cae justo cuando hay que tocar
   drawBall(c, nowX, ly, now) {
@@ -1293,22 +1293,21 @@ const Settings = {
     $('#settings').innerHTML = `<div class="set-wrap">
       <h1 class="set-title">Ajustes</h1>
       <section class="set-card">
-        <div class="set-head"><h2>${icon('mic-line')}Micrófono</h2>
-          <p>Traste escucha tu guitarra con el micrófono. <b>Calibrarlo</b> tarda unos 8 segundos: mide el ruido de tu sala (para no confundirlo con notas) y hace sonar tres notas por el altavoz para comprobar que el micro las oye afinadas. Se guarda para cada micrófono; repítelo si cambias de sitio o notas que falla más de la cuenta.</p></div>
+        <div class="set-head"><h2>${icon('mic-line')}Micrófono</h2></div>
         <div class="mic-card" data-mic-card></div>
         <div class="cal-host" hidden></div>
       </section>
       <section class="set-card">
-        <div class="set-row"><div><h3>Nombres de las notas</h3><p>En toda la app: afinador, acordes y canciones.</p></div>${seg('notation', [['latin', 'Do Re Mi'], ['letter', 'C D E']], state.notation)}</div>
-        <div class="set-row"><div><h3>Diagramas de acordes</h3><p>${state.diagram === 'h' ? 'Horizontal, como una tablatura: la 6ª cuerda, la más grave, abajo.' : 'Vertical, como en los cancioneros: la 6ª cuerda, la más grave, a la ' + (state.lefty ? 'derecha.' : 'izquierda.')}</p></div>${seg('diagram', [['v', icon('layout-column-line') + 'Vertical'], ['h', icon('layout-row-line') + 'Horizontal']], state.diagram)}</div>
-        <div class="set-row"><div><h3>Mano</h3><p>${state.lefty ? 'Zurdo: los diagramas, el mástil y la mano se dibujan en espejo.' : 'Si tocas con la guitarra al revés, elige zurdo y los dibujos se ven en espejo.'}</p></div>${seg('lefty', [['0', 'Diestro'], ['1', 'Zurdo']], state.lefty ? 1 : 0)}</div>
+        <div class="set-row"><div><h3>Nombres de las notas</h3><p>Se aplica en toda la app.</p></div>${seg('notation', [['latin', 'Do Re Mi'], ['letter', 'C D E']], state.notation)}</div>
+        <div class="set-row"><div><h3>Diagramas de acordes</h3><p>${state.diagram === 'h' ? 'En horizontal, como en la tablatura, con la 6ª cuerda abajo.' : 'En vertical, como en los cancioneros, con la 6ª cuerda a la ' + (state.lefty ? 'derecha.' : 'izquierda.')}</p></div>${seg('diagram', [['v', icon('layout-column-line') + 'Vertical'], ['h', icon('layout-row-line') + 'Horizontal']], state.diagram)}</div>
+        <div class="set-row"><div><h3>Mano</h3><p>${state.lefty ? 'Los diagramas, el mástil y la mano se dibujan en espejo.' : 'Si tocas con la guitarra al revés, elige zurdo y verás los dibujos en espejo.'}</p></div>${seg('lefty', [['0', 'Diestro'], ['1', 'Zurdo']], state.lefty ? 1 : 0)}</div>
         <div class="set-preview"><div class="diagram">${chordDiagram(CHORDS.C)}</div><p>Así se ven ahora los acordes (Do mayor).</p></div>
-        <div class="set-row"><div><h3>Tema</h3><p>Automático sigue el de tu dispositivo.</p></div>${seg('theme', [['auto', 'Auto'], ['dark', icon('moon-line') + 'Oscuro'], ['light', icon('sun-line') + 'Claro']], state.theme)}</div>
+        <div class="set-row"><div><h3>Tema</h3><p>En automático sigue el de tu dispositivo.</p></div>${seg('theme', [['auto', 'Auto'], ['dark', icon('moon-line') + 'Oscuro'], ['light', icon('sun-line') + 'Claro']], state.theme)}</div>
       </section>
       <section class="set-card">
-        <div class="set-row"><div><h3>Tu progreso</h3><p>Acordes aprendidos, récords y la práctica de hoy. Todo se guarda solo en este navegador.</p></div><button type="button" class="btn btn-soft btn-sm" data-reset>${icon('delete-bin-line')}Borrar</button></div>
+        <div class="set-row"><div><h3>Tu progreso</h3><p>Acordes aprendidos, récords y práctica de hoy. Solo se guarda en este navegador.</p></div><button type="button" class="btn btn-soft btn-sm" data-reset>${icon('delete-bin-line')}Borrar</button></div>
       </section>
-      <p class="set-foot">Traste es gratis y no tiene cuentas. El sonido se analiza en tu navegador y no sale de tu equipo.</p>
+      <p class="set-foot">Traste es gratis y no necesita cuenta. El sonido se analiza en tu navegador y no sale de tu equipo.</p>
     </div>`;
     MicCard.render(); Cal.sync();
   },
