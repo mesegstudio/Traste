@@ -15,6 +15,7 @@ En ambos casos, permite el micrófono cuando el navegador lo pida. La primera ve
 - **Aprender**: eliges nivel (Empiezo, Básico, Intermedio) y sigues la **práctica de hoy** (calentar, acorde nuevo, cambios, ritmo, notas, escala y una canción; unos 15-25 minutos) o entras en:
   - **Acordes**: 25 acordes en orden de aprendizaje, cada uno en tres pasos (colócalo → **compruébalo cuerda a cuerda** con el micrófono → cámbialo), repaso de memoria, **cambios de un minuto** (cuenta los cambios y cuáles suenan limpios) y rasgueo con metrónomo (negras, corcheas y ↓ ↓↑ ↑↓↑).
   - **Punteo**: araña 1-2-3-4 y variantes, cuerdas al aire, **encuentra la nota** (6ª, 5ª o todo el mástil) y escalas (Do mayor, pentatónica menor de La, Sol mayor). Modos contrarreloj (cada nota equivocada suma 1 s), con metrónomo, 60 segundos o 10 notas, con récord y estrellas.
+- **Añadir canción**: pegas el cifrado de una canción tal cual lo copias de La Cuerda, Ultimate Guitar o Cifra Club y Traste lo convierte en una canción para practicar. Entiende acordes en las dos notaciones (Am, LAm, Lam), encima de la letra o entre corchetes, partes (Intro, Estribillo…), repeticiones (`/: … :/`, `x2`, «(Estribillo)») y tablaturas de seis líneas. Descarta la leyenda de diagramas y lo que se copie de más, genera con cejilla los acordes que no conoce (Fm, G#, Bm7b5…) y muestra la letra mientras tocas. Se guarda solo en el navegador, para uso personal.
 - **Ajustes**: micrófono y su ajuste, notación Do Re Mi / C D E, diagramas verticales u horizontales (6ª abajo, como la tablatura), diestro o zurdo (dibujos en espejo), tema y borrar el progreso.
 - **Canciones**: 17 canciones de dominio público con buscador y categorías. Fácil (melodía) y Difícil (acordes con rasgueo), velocidad Muy lento 50 % · Lento 75 % · Normal 100 % · Rápido 120 %. Bola que salta a la nota que toca, avisos Perfecto / Pronto / Tarde / Fallo, puntos con multiplicador de racha (×2 a 10, ×3 a 20, ×4 a 30) y estrellas por precisión (perfecto 1, pronto/tarde 0,5, fallo 0: 40 % / 65 % / 85 %). Toca la partitura para empezar o pausar; desliza (con inercia) para moverte.
 
@@ -42,6 +43,8 @@ Melodías tradicionales o de compositores en dominio público, transcritas a man
 ```
 src/dsp.js      DSP y teoría (funciones puras)
 src/data.js     acordes, canciones de dominio público y categorías
+src/cifrado.js  lector de cifrados pegados (funciones puras, con pruebas)
+src/mysongs.js  pantalla «Añadir canción» y canciones guardadas en el navegador
 src/app.js      interfaz: afinador, micrófono, diagramas, canciones, ajustes
 src/learn.js    Aprender: niveles, práctica de hoy, lecciones y ejercicios
 src/body.html   estructura · src/styles.css  estilos

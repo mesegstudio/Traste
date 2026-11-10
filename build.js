@@ -25,7 +25,9 @@ const scripts = `<script>
 ${src('icons.js')}
 ${src('dsp.js')}
 ${src('data.js')}
+${src('cifrado.js')}
 ${src('app.js')}
+${src('mysongs.js')}
 ${src('learn.js')}
 </script>`;
 const body = src('body.html');

@@ -39,7 +39,8 @@ function toast(msg, ms = 6000, ico = 'error-warning-line') {
 }
 
 /* ---------- Nombres de notas y acordes ---------- */
-const SUFFIX_NAME = { '': 'mayor', m: 'menor', 7: 'séptima', maj7: 'mayor séptima', m7: 'menor séptima', sus2: 'sus2', sus4: 'sus4', add9: 'add9' };
+const SUFFIX_NAME = { '': 'mayor', m: 'menor', 7: 'séptima', maj7: 'mayor séptima', m7: 'menor séptima', sus2: 'sus2', sus4: 'sus4', add9: 'add9',
+  dim: 'disminuido', m7b5: 'semidisminuido', aug: 'aumentado', 6: 'sexta', m6: 'menor sexta', '7sus4': 'séptima sus4', 5: 'quinta' };
 const pcName = (pc, n = state.notation) => (n === 'latin' ? LATIN : LETTERS)[((pc % 12) + 12) % 12];
 const octave = (m) => Math.floor(m / 12) - 1;
 function chordParts(id) {
@@ -687,7 +688,7 @@ const SPEEDS = [{ n: 'Muy lento', p: 0.5 }, { n: 'Lento', p: 0.75 }, { n: 'Norma
 // Estrellas por precisión: perfecto cuenta 1, pronto/tarde 0,5 y fallo 0 (40 %, 65 % y 85 %).
 const WIN = { note: 0.25, notePerfect: 0.08, chord: 0.3, chordPerfect: 0.12 };
 const STAR_AT = [0.4, 0.65, 0.85];
-const songChords = (s) => [...new Set(parseChordBars(s.chords, s.bpb, 0).map((c) => c.chord))];
+const songChords = (s) => s.chordList || [...new Set(parseChordBars(s.chords, s.bpb, 0).map((c) => c.chord))];
 const starsFor = (acc) => STAR_AT.filter((t) => acc >= t).length;
 const miniStars = (n) => `<span class="mini-stars">${[1, 2, 3].map((k) => icon('star-fill', k <= n ? 'on' : '')).join('')}</span>`;
 
@@ -724,7 +725,9 @@ const Songs = {
   },
   render() {
     const nKnown = Object.keys(state.learned).length;
-    $('#songFilters').innerHTML = [{ id: 'all', name: 'Todas' }, ...SONG_CATS].map((c) => `<button type="button" class="chip" data-cat="${c.id}" aria-pressed="${this.cat === c.id}">${c.name}</button>`).join('') +
+    const cats = [{ id: 'all', name: 'Todas' }, ...(MySongs.list.length ? [{ id: 'mias', name: 'Mis canciones' }] : []), ...SONG_CATS];
+    if (!cats.some((c) => c.id === this.cat)) this.cat = 'all';
+    $('#songFilters').innerHTML = cats.map((c) => `<button type="button" class="chip" data-cat="${c.id}" aria-pressed="${this.cat === c.id}">${c.name}</button>`).join('') +
       `<button type="button" class="chip" data-known aria-pressed="${this.known}" ${nKnown ? '' : 'disabled title="Aprende algún acorde primero"'}>${icon('hand')}Con acordes que ya sé</button>`;
     this.renderList();
   },
@@ -736,7 +739,7 @@ const Songs = {
     $('#songGrid').innerHTML = list.length ? list.map((s) => {
       const b = (l) => state.best[`${s.id}:${l}`];
       return `<div class="song-row" role="button" tabindex="0" data-song="${s.id}">
-        <div class="min-w-0"><h3>${s.title}</h3><div class="meta">${s.origin} · ${songChords(s).map((c) => chordLabel(c)).join(' ')}</div></div>
+        <div class="min-w-0"><h3>${esc(s.title)}${s.user ? '<span class="tag">Tuya</span>' : ''}</h3><div class="meta">${esc(s.origin)} · ${songChords(s).map((c) => chordLabel(c)).join(' ')}</div></div>
         <span class="dots" title="Dificultad: ${['', 'fácil', 'media', 'difícil'][s.stars]}">${[1, 2, 3].map((k) => `<i class="${k <= s.stars ? 'on' : ''}"></i>`).join('')}</span>
         <div class="best"><span>Fácil ${miniStars(b('easy')?.stars || 0)}</span><span>Difícil ${miniStars(b('hard')?.stars || 0)}</span></div>
       </div>`;
@@ -796,8 +799,9 @@ const Player = {
     this.song = song; this.built = song.built || buildSong(song, CHORDS);
     const ex = !!song.exercise;
     $('#plLevel').hidden = ex;
-    $('#plLevel').innerHTML = Object.keys(LEVELS).map((l) => `<button type="button" data-l="${l}">${LEVELS[l]}<span class="hidden sm:inline font-medium opacity-60"> · ${LEVEL_HINT[l]}</span></button>`).join('');
-    $('#plTitle').textContent = song.title; $('#plOrigin').textContent = ex ? `${song.origin} · ${song.bpm} ppm` : `${song.origin} · ${song.bpm} ppm · ${song.bpb}/4`;
+    $('#plLevel').innerHTML = Object.keys(LEVELS).map((l) => `<button type="button" data-l="${l}">${LEVELS[l]}<span class="hidden sm:inline font-medium opacity-60"> · ${song.levelHints?.[l] || LEVEL_HINT[l]}</span></button>`).join('');
+    $('#plTitle').textContent = song.title; $('#plOrigin').textContent = ex || song.user ? `${song.origin} · ${song.bpm} ppm` : `${song.origin} · ${song.bpm} ppm · ${song.bpb}/4`;
+    $('#plEdit').hidden = !song.user; $('#songImport').hidden = true;
     if (ex) { this.metro = true; $('#plMetro').checked = true; }
     $('#songList').hidden = host === 'canciones';
     $('#player').hidden = false; this.showFingers(false); this.showOpts(false);
@@ -876,8 +880,15 @@ const Player = {
   renderNow() {
     const i = this.currentIndex(); if (i === this.curIdx) return; this.curIdx = i;
     const e = this.events[i], nx = this.events[i + 1];
-    $('#plNowText').innerHTML = e ? this.describe(e) : '';
-    $('#plNext').innerHTML = nx ? `Luego viene ${this.describe(nx, true)}` : 'Es la última';
+    const ly = this.built.lyrics;
+    if (ly?.length) { // canciones añadidas: la letra de la línea que suena y la siguiente
+      const k = ly.findLastIndex((l) => l.t <= (e ? e.t : this.beat) + 0.01);
+      $('#plNowText').innerHTML = k < 0 ? (e ? this.describe(e) : '') : `${e?.chord ? `<b class="lyr-ch">${chordLabel(e.chord)}</b>` : ''}${esc(ly[k].text)}`;
+      $('#plNext').innerHTML = ly[k + 1] ? esc(ly[k + 1].text) : 'Es la última línea';
+    } else {
+      $('#plNowText').innerHTML = e ? this.describe(e) : '';
+      $('#plNext').innerHTML = nx ? `Luego viene ${this.describe(nx, true)}` : 'Es la última';
+    }
     if (!$('#plDetails').hidden) {
       $('#plFret').innerHTML = fingersSVG(e);
       const fingers = new Set((e ? (e.chord ? chordNotes(CHORDS[e.chord]) : e.notes) : []).map((n) => n.finger).filter(Boolean));
@@ -1349,7 +1360,8 @@ function boot() {
   hydrateIcons();
   applyTheme(state.theme);
   matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', () => { readPalette(); Tuner.renderStrings(); Learn.render(); });
-  Tuner.init(); Learn.init(); Songs.init(); Player.init(); Settings.init();
+  MySongs.load();
+  Tuner.init(); Learn.init(); Songs.init(); Player.init(); Settings.init(); MySongs.init();
   navigator.mediaDevices?.addEventListener?.('devicechange', () => { if (Mic.on) fillMicSelect(); });
   window.addEventListener('hashchange', route);
   readPalette(); Tuner.renderStrings();

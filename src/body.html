@@ -58,10 +58,13 @@
       <div class="list-pane" id="songList">
         <div class="list-top">
           <label class="search"><span data-icon="search-line"></span><input type="search" id="songSearch" placeholder="Buscar canción" aria-label="Buscar canción"></label>
+          <button type="button" class="btn btn-soft" id="songAdd" title="Añadir una canción pegando sus acordes"><span data-icon="add-line"></span>Añadir</button>
           <div class="filters" id="songFilters"></div>
         </div>
         <div class="song-list scroll" id="songGrid"></div>
       </div>
+
+      <div class="import" id="songImport" hidden></div>
 
       <div class="player" id="player" hidden>
         <div class="pl-top">
@@ -69,7 +72,7 @@
           <div class="pl-title"><h1 id="plTitle">—</h1><p id="plOrigin"></p></div>
           <div class="hud">
             <div><div class="pts num" id="plScore">0</div><div class="lbl" id="plScoreLbl">puntos</div></div>
-            <div class="mult" id="plMult" title="Multiplicador por racha">×1</div>
+            <div class="mult m1" id="plMult" title="Multiplicador por racha">×1</div>
           </div>
           <div class="pl-btns">
             <button type="button" class="btn btn-soft btn-icon pl-opts-btn" id="plOptsBtn" aria-label="Nivel y velocidad" aria-expanded="false"><span data-icon="equalizer-2-line"></span></button>
@@ -86,6 +89,7 @@
           </div>
           <label class="toggle" title="La canción se para hasta que tocas cada nota. No puntúa."><input type="checkbox" id="plWait">Esperarme</label>
           <label class="toggle"><input type="checkbox" id="plMetro">Metrónomo</label>
+          <button type="button" class="btn btn-ghost btn-sm" id="plEdit" hidden><span data-icon="edit-line"></span>Editar canción</button>
         </div>
         <div class="cal-card" hidden></div>
         <div class="highway"><canvas id="hw" aria-label="Partitura. Toca para empezar o pausar y desliza para moverte"></canvas></div>
