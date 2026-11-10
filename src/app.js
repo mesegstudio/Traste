@@ -736,10 +736,9 @@ const Songs = {
     $('#songGrid').innerHTML = list.length ? list.map((s) => {
       const b = (l) => state.best[`${s.id}:${l}`];
       return `<div class="song-row" role="button" tabindex="0" data-song="${s.id}">
-        <div class="art">${s.title.replace(/^[¿¡]/, '')[0]}</div>
         <div class="min-w-0"><h3>${s.title}</h3><div class="meta">${s.origin} · ${songChords(s).map((c) => chordLabel(c)).join(' ')}</div></div>
-        <div class="best"><span class="dots" title="Dificultad">${[1, 2, 3].map((k) => `<i class="${k <= s.stars ? 'on' : ''}"></i>`).join('')}</span>
-          <span>Fácil ${miniStars(b('easy')?.stars || 0)}</span><span>Difícil ${miniStars(b('hard')?.stars || 0)}</span></div>
+        <span class="dots" title="Dificultad: ${['', 'fácil', 'media', 'difícil'][s.stars]}">${[1, 2, 3].map((k) => `<i class="${k <= s.stars ? 'on' : ''}"></i>`).join('')}</span>
+        <div class="best"><span>Fácil ${miniStars(b('easy')?.stars || 0)}</span><span>Difícil ${miniStars(b('hard')?.stars || 0)}</span></div>
       </div>`;
     }).join('') : `<div class="empty">No hay canciones con esos filtros.</div>`;
   },
