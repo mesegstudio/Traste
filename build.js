@@ -34,20 +34,25 @@ ${src('learn.js')}
 const body = src('body.html');
 fs.mkdirSync(path.join(__dirname, 'dist'), { recursive: true });
 fs.writeFileSync(path.join(__dirname, 'dist', 'artifact.html'), `${head}\n${body}\n${scripts}\n`);
-const page = `<!doctype html>
+// extra: lo que solo lleva la portada publicada (instalable y con copia sin conexión)
+const page = (extraHead = '', extraBody = '') => `<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0e1014">
-${head}
+<meta name="theme-color" content="#100e17">
+${head}${extraHead}
 </head>
 <body>
 ${body}
-${scripts}
+${scripts}${extraBody}
 </body>
 </html>
 `;
-fs.writeFileSync(path.join(__dirname, 'dist', 'traste.html'), page);
-fs.writeFileSync(path.join(__dirname, 'index.html'), page); // portada de GitHub Pages
+fs.writeFileSync(path.join(__dirname, 'dist', 'traste.html'), page());
+// portada de GitHub Pages: con manifiesto (se puede instalar en el móvil) y service worker (funciona sin conexión)
+fs.writeFileSync(path.join(__dirname, 'index.html'), page(
+  '\n<link rel="manifest" href="manifest.webmanifest">\n<link rel="apple-touch-icon" href="icon-192.png">\n<meta name="mobile-web-app-capable" content="yes">',
+  `\n<script>if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});</script>`,
+));
 console.log('dist/traste.html', fs.statSync(path.join(__dirname, 'dist', 'traste.html')).size, 'bytes');

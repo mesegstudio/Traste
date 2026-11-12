@@ -69,7 +69,7 @@
       <div class="player" id="player" hidden>
         <div class="pl-top">
           <button type="button" class="btn btn-soft btn-icon" id="plBack" aria-label="Volver a las canciones"><span data-icon="arrow-left-line"></span></button>
-          <div class="pl-title"><h1 id="plTitle">—</h1><p id="plOrigin"></p></div>
+          <div class="pl-title"><h1 id="plTitle">—</h1><p id="plOrigin"></p><button type="button" class="pl-chip" id="plChip" aria-label="Cambiar nivel y velocidad"></button></div>
           <div class="hud">
             <div><div class="pts num" id="plScore">0</div><div class="lbl" id="plScoreLbl">puntos</div></div>
             <div class="mult m1" id="plMult" title="Multiplicador por racha">×1</div>
@@ -89,6 +89,11 @@
           </div>
           <label class="toggle" title="La canción se para hasta que tocas cada nota. No puntúa."><input type="checkbox" id="plWait">Esperarme</label>
           <label class="toggle"><input type="checkbox" id="plMetro">Metrónomo</label>
+          <div class="loop-ctl" title="Repite unos compases desde donde estés. Si te salen bien, la velocidad sube sola.">
+            <span><span data-icon="repeat-line"></span>Repetir</span>
+            <div class="seg seg-sm" id="plLoop" role="group" aria-label="Repetir un tramo"></div>
+            <span class="loop-unit">compases</span>
+          </div>
           <button type="button" class="btn btn-ghost btn-sm" id="plEdit" hidden><span data-icon="edit-line"></span>Editar canción</button>
         </div>
         <div class="cal-card" hidden></div>

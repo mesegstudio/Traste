@@ -246,7 +246,20 @@ async function micReady() {
   if (Cal.needed()) { Cal.sync(); return false; }
   return true;
 }
+/* Pantalla encendida mientras el micrófono escucha: con las dos manos en la guitarra no se puede tocar el móvil */
+const Wake = {
+  lock: null,
+  async sync() {
+    const want = Mic.on && document.visibilityState === 'visible';
+    try {
+      if (want && !this.lock && navigator.wakeLock) { this.lock = await navigator.wakeLock.request('screen'); this.lock.addEventListener('release', () => { this.lock = null; }); }
+      else if (!want && this.lock) { const l = this.lock; this.lock = null; await l.release(); }
+    } catch { this.lock = null; }
+  },
+};
+document.addEventListener('visibilitychange', () => Wake.sync());
 function onMicChange() {
+  Wake.sync();
   $('#railMicDot').hidden = !Mic.on;
   $('#tunerCta').hidden = Mic.on;
   if (Mic.on) fillMicSelect(); else MicCard.devs = [];
@@ -791,7 +804,7 @@ const Songs = {
       return `<div class="song-row" role="button" tabindex="0" data-song="${s.id}">
         <div class="min-w-0"><h3>${esc(s.title)}${s.user ? '<span class="tag">Tuya</span>' : ''}</h3><div class="meta">${esc(s.origin)} · ${songChords(s).length ? songChords(s).map((c) => chordLabel(c)).join(' ') : 'tablatura'}</div></div>
         <span class="dots" title="Dificultad: ${['', 'fácil', 'media', 'difícil'][s.stars]}">${[1, 2, 3].map((k) => `<i class="${k <= s.stars ? 'on' : ''}"></i>`).join('')}</span>
-        <div class="best">${Object.keys(LEVELS).filter((l) => l !== 'arp' || songChords(s).length).map((l) => `<span>${LEVELS[l]} ${miniStars(b(l)?.stars || 0)}</span>`).join('')}</div>
+        <div class="best">${(() => { const top = Object.keys(LEVELS).filter((l) => b(l)).pop(); return top ? `<span>${LEVELS[top]} ${miniStars(b(top).stars)}</span>` : ''; })()}</div>
       </div>`;
     }).join('') : `<div class="empty">No hay canciones con esos filtros.</div>`;
   },
@@ -800,7 +813,7 @@ const Songs = {
 const Player = {
   song: null, built: null, level: 'easy', events: [], status: 'idle', demo: false, beat: 0, speedIdx: 1, wait: false, metro: false,
   idx: 0, combo: 0, maxCombo: 0, points: 0, check: null, lastHitMidi: null, frozen: false, curIdx: -1, ctx: null, W: 0, H: 0,
-  flash: null, stats: null, drag: null, inertia: null, resumeTimer: 0, scrubbing: false, attackBeats: new Map(), deltas: [], clicked: null, clickNodes: [],
+  flash: null, stats: null, drag: null, inertia: null, resumeTimer: 0, scrubbing: false, attackBeats: new Map(), deltas: [], clicked: null, clickNodes: [], loop: null, quals: [],
   init() {
     this.canvas = $('#hw'); this.ctx = this.canvas.getContext('2d');
     new ResizeObserver(() => this.resize()).observe(this.canvas);
@@ -814,10 +827,13 @@ const Player = {
     $('#plSpeedLabels').addEventListener('click', (e) => { const s = e.target.closest('[data-i]'); if (s) this.setSpeed(+s.dataset.i); });
     $('#plWait').addEventListener('change', (e) => { this.wait = e.target.checked; this.reset(); });
     $('#plMetro').addEventListener('change', (e) => { this.metro = e.target.checked; });
+    $('#plLoop').innerHTML = [0, 1, 2, 4, 8].map((n) => `<button type="button" data-n="${n}">${n || 'No'}</button>`).join('');
+    $('#plLoop').addEventListener('click', (e) => { const b = e.target.closest('[data-n]'); if (b) this.setLoop(+b.dataset.n); });
+    $('#plChip').addEventListener('click', (e) => { e.stopPropagation(); this.showOpts(!$('#plOpts').classList.contains('open')); });
     $('#plFingersBtn').addEventListener('click', () => this.showFingers($('#plFingersBtn').getAttribute('aria-expanded') !== 'true'));
     $('#plOptsBtn').addEventListener('click', (e) => { e.stopPropagation(); this.showOpts(!$('#plOpts').classList.contains('open')); });
     document.addEventListener('pointerdown', (e) => {
-      if ($('#plOpts').classList.contains('open') && !e.target.closest('#plOpts,#plOptsBtn')) this.showOpts(false);
+      if ($('#plOpts').classList.contains('open') && !e.target.closest('#plOpts,#plOptsBtn,#plChip')) this.showOpts(false);
       if (!$('#plDetails').hidden && !e.target.closest('#plDetails,#plFingersBtn')) this.showFingers(false);
     });
     const c = this.canvas;
@@ -855,6 +871,7 @@ const Player = {
     if (ex) { this.metro = true; $('#plMetro').checked = true; }
     $('#songList').hidden = host === 'canciones';
     $('#player').hidden = false; this.showFingers(false); this.showOpts(false);
+    this.loop = null; this.renderLoop();
     this.setSpeed(store.get('speed', 1));
     this.setLevel(ex ? 'easy' : store.get('lvl:' + song.id, 'easy'));
     this.resize(); Cal.sync();
@@ -873,12 +890,46 @@ const Player = {
     if (!this.built.levels[l]) l = 'easy';
     this.level = l; store.set('lvl:' + this.song.id, l);
     $$('#plLevel button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.l === l)));
-    this.reset();
+    if (this.loop) { this.loop = null; this.renderLoop(); }
+    this.reset(); this.renderChip();
+  },
+  // en pantallas estrechas, bajo el título: nivel y velocidad de un vistazo (y abre las opciones)
+  renderChip() {
+    if (!this.song) return;
+    $('#plChip').innerHTML = `${this.song.exercise ? '' : LEVELS[this.level] + ' · '}${SPEEDS[this.speedIdx].n}${this.loop ? icon('repeat-line') : ''}${icon('arrow-down-s-line')}`;
+  },
+  /* Repetir un tramo: n compases desde el compás en el que estés. Al llegar al final vuelve al principio
+     con un compás de cuenta, y si la vuelta sale con un 90 % o más, sube un punto la velocidad. */
+  setLoop(n) {
+    if (!n) this.loop = null;
+    else {
+      const bpb = this.song.bpb, p = this.built.pickup, last = this.events[this.events.length - 1];
+      const started = this.status === 'playing' || this.status === 'paused';
+      const at = started ? Math.max(this.beat, this.firstT()) : this.loop?.a ?? this.firstT();
+      const a = p + Math.floor((at - p) / bpb + 1e-6) * bpb, end = p + Math.ceil(((last?.t ?? 0) + 0.01 - p) / bpb) * bpb;
+      this.loop = { a, b: Math.min(a + n * bpb, Math.max(end, a + bpb)), n, pass: 0 };
+      if (this.status !== 'playing') this.toLoopStart();
+    }
+    this.renderLoop(); this.renderChip();
+  },
+  renderLoop() { $$('#plLoop button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.n === (this.loop?.n || 0)))); },
+  toLoopStart() { this.seekTo(this.loop.a - this.song.bpb); },
+  loopPass() {
+    const L = this.loop, ev = this.events.filter((e) => e.t >= L.a - 1e-6 && e.t < L.b - 1e-6);
+    const acc = ev.length ? ev.reduce((s, e) => s + (e.st === 1 ? HIT[e.kind]?.w ?? 1 : 0), 0) / ev.length : 0, pct = Math.round(acc * 100);
+    L.pass++;
+    let msg = `Vuelta ${L.pass} · ${pct} %`;
+    if (!this.wait && acc >= 0.9) {
+      if (SPEEDS[this.speedIdx].p < 1) { this.setSpeed(this.speedIdx + 1); msg = `¡Bien! Ahora ${SPEEDS[this.speedIdx].n.toLowerCase()}`; } else msg = `Tramo dominado · ${pct} %`;
+    }
+    this.toLoopStart();
+    this.say(msg, acc >= 0.9 ? PAL.ok : PAL.muted, true);
   },
   setSpeed(i) {
     this.speedIdx = clamp(i, 0, 3); store.set('speed', this.speedIdx);
     const sp = $('#plSpeed'); sp.value = this.speedIdx; sp.setAttribute('aria-valuetext', SPEEDS[this.speedIdx].n);
     $$('#plSpeedLabels span').forEach((s) => s.classList.toggle('on', +s.dataset.i === this.speedIdx));
+    this.renderChip();
   },
   bps() { return (this.song.bpm * SPEEDS[this.speedIdx].p) / 60; },
   firstT() { return this.events[0]?.t ?? 0; },
@@ -895,7 +946,9 @@ const Player = {
   async start(demo) { // siempre desde el principio
     AudioEngine.ensure();
     if (!demo && !(await micReady())) return;
-    this.reset(); this.demo = demo; this.status = 'playing'; this.renderButtons();
+    this.reset(); this.demo = demo; this.status = 'playing';
+    if (this.loop && !demo) { this.loop.pass = 0; this.toLoopStart(); }
+    this.renderButtons();
   },
   async togglePlay() {
     if (this.status === 'playing') return this.pause();
@@ -1025,11 +1078,12 @@ const Player = {
       if (e && next >= e.t) { next = Math.max(this.beat, e.t); this.frozen = true; }
     }
     // el clic se programa con antelación, restando lo que tarda el altavoz, para que suene justo en el pulso
+    if (this.loop && !this.demo && next >= this.loop.b + 0.3 * bps) { this.loopPass(); return; } // deja 0,3 s para juzgar la última nota
     const out = this.wait ? 0 : Mic.outLatency(), ahead = this.beat + (out + 0.05) * bps;
     if (this.clicked == null || this.clicked < Math.floor(this.beat) || this.clicked > ahead + 1) this.clicked = Math.floor(this.beat);
     for (let b = this.clicked + 1; b <= (this.wait ? next : ahead); b++) {
       this.clicked = b;
-      if (b < first || this.metro) this.clickNodes.push([b, AudioEngine.click((((b - this.built.pickup) % bpb) + bpb) % bpb === 0, (b - this.beat) / bps - out)]);
+      if (b < first || this.metro || (this.loop && b < this.loop.a)) this.clickNodes.push([b, AudioEngine.click((((b - this.built.pickup) % bpb) + bpb) % bpb === 0, (b - this.beat) / bps - out)]);
     }
     while (this.clickNodes.length && this.clickNodes[0][0] < this.beat - 1) this.clickNodes.shift();
     if (this.demo) {
@@ -1043,7 +1097,7 @@ const Player = {
     if (!this.demo) this.judge(f, now, bps);
     this.renderNow();
     const last = this.events[this.events.length - 1];
-    const doneAll = this.demo ? this.beat > this.built.total + 0.5 : this.idx >= this.events.length && this.beat > (last?.t ?? 0) + 1;
+    const doneAll = this.demo ? this.beat > this.built.total + 0.5 : !this.loop && this.idx >= this.events.length && this.beat > (last?.t ?? 0) + 1;
     if (doneAll) this.finish();
   },
   say(text, color, big) { this.flash = { text, color, t: performance.now(), big }; },
@@ -1165,9 +1219,16 @@ const Player = {
     state.best[key] = { stars: Math.max(stars, prev?.stars || 0), acc: Math.max(acc, prev?.acc || 0), pts: Math.max(this.points, prev?.pts || 0) };
     store.set('best2', state.best);
     const avg = this.deltas.length >= 4 ? this.deltas.reduce((a, b) => a + b, 0) / this.deltas.length : 0;
+    // los dos compases seguidos donde más se falla, para repetirlos
+    const bpb = this.song.bpb, pk = this.built.pickup, bars = new Map();
+    for (const e of judged) { const k = Math.floor((e.t - pk) / bpb + 1e-6); bars.set(k, (bars.get(k) || 0) + (e.st === -1 ? 1 : e.kind === 'early' || e.kind === 'late' ? 0.5 : 0)); }
+    let worst = null;
+    for (const k of bars.keys()) { const v = bars.get(k) + (bars.get(k + 1) || 0); if (v >= 2 && (!worst || v > worst.v)) worst = { k, v }; }
+    if (worst && !ex && st.miss < judged.length * 0.8) acts.splice(1, 0, { label: `Repetir los compases ${worst.k + 1} y ${worst.k + 2}`, icon: 'repeat-line', fn: () => { this.loop = { a: pk + worst.k * bpb, b: pk + (worst.k + 2) * bpb, n: 2, pass: 0 }; this.renderLoop(); this.renderChip(); this.start(false); } });
     showResult({
       stars, title: starsLine(stars),
       text: [Math.abs(avg) >= 0.045 ? (avg < 0 ? `Sueles adelantarte unos ${Math.round(-avg * 1000)} ms. Espera a que la bola caiga en la nota.` : `Sueles ir unos ${Math.round(avg * 1000)} ms tarde. Anticípate un poco.`) : stars < 2 ? 'Prueba más lento o activa «Esperarme».' : '',
+        worst && !ex && st.miss < judged.length * 0.8 ? `Donde más fallas es en los compases ${worst.k + 1} y ${worst.k + 2}.` : '',
         st.dead >= 2 ? `${st.dead} notas se apagaron pronto. Mantén el dedo apretado justo detrás del traste hasta la nota siguiente.` : '',
         st.buzz >= 2 ? `${st.buzz} notas trastearon. Acerca el dedo al traste y aprieta un poco más.` : ''].filter(Boolean).join(' '),
       big: [[`${Math.round(acc * 100)}%`, 'precisión'], [this.points.toLocaleString('es-ES'), record ? 'puntos · récord' : 'puntos'], [this.maxCombo, 'mejor racha']],
@@ -1191,7 +1252,11 @@ const Player = {
     const c = this.ctx, W = this.W, H = this.H; if (!c || !W) return;
     const top = clamp(H * 0.22, 48, 74), gap = (H - top - 28) / 5, ly = (s) => top + (s - 1) * gap;
     this.r = clamp(gap * 0.42, 9, 15); this.rc = clamp(gap * 0.36, 8, 11);
-    const gutter = 46, nowX = gutter + Math.min(160, W * 0.22), ppb = this.ppb(), beat = this.beat;
+    const gutter = 46, nowX = gutter + Math.min(160, W * 0.22), ppb = this.ppb();
+    // en reposo se enseña el principio de la canción, no el hueco de la cuenta atrás
+    // (y con un tramo marcado y en pausa antes de él, el principio del tramo)
+    const rest = this.status === 'idle' ? this.firstT() : this.status === 'paused' && this.loop && this.beat < this.loop.a && !this.drag && !this.inertia ? this.loop.a : null;
+    const beat = rest == null ? this.beat : Math.max(this.beat, rest - (W < 640 ? 0.5 : 1));
     const X = (t) => nowX + (t - beat) * ppb;
     const FONT = 'Inter, system-ui, sans-serif', DISP = '"Bricolage Grotesque", Inter, sans-serif';
     c.clearRect(0, 0, W, H);
@@ -1206,6 +1271,10 @@ const Player = {
       const x = X(b); if (x < gutter) continue;
       c.strokeStyle = PAL.line; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x, top - 22); c.lineTo(x, ly(6) + 18); c.stroke();
       const n = Math.round((b - p) / bpb) + 1; if (n >= 1) { c.fillStyle = PAL.faint; c.fillText(n, x, H - 8); }
+    }
+    if (this.loop) { // tramo que se repite
+      const xa = Math.max(gutter, X(this.loop.a)), xb = Math.min(W, X(this.loop.b));
+      if (xb > xa) { c.fillStyle = this.hexA(PAL.accent, 0.045); c.fillRect(xa, top - 26, xb - xa, ly(6) + 48 - top); c.fillStyle = PAL.accent; c.fillRect(xa, top - 28, xb - xa, 3); }
     }
     for (let s = 1; s <= 6; s++) {
       c.strokeStyle = PAL['line-2']; c.lineWidth = 1 + (s - 1) * 0.35;
@@ -1244,18 +1313,20 @@ const Player = {
       }
     }
     const cx = (nowX + W) / 2;
-    const banner = (title, sub) => {
+    // cy: centro del aviso. En reposo va abajo, para que se vean las primeras notas.
+    const banner = (title, sub, low) => {
       c.textAlign = 'center';
       c.font = `700 17px ${DISP}`; const w1 = c.measureText(title).width; c.font = `500 12.5px ${FONT}`; const w2 = sub ? c.measureText(sub).width : 0;
-      const bw = Math.min(W - 24, Math.max(w1, w2) + 44), bh = sub ? 62 : 44, bx = clamp(cx, bw / 2 + 12, W - bw / 2 - 12);
-      c.fillStyle = this.hexA(PAL.surface, 0.94); c.beginPath(); c.roundRect(bx - bw / 2, H / 2 - bh / 2, bw, bh, 18); c.fill();
-      c.fillStyle = PAL.text; c.font = `700 17px ${DISP}`; c.fillText(title, bx, H / 2 + (sub ? -4 : 6));
-      if (sub) { c.fillStyle = PAL.muted; c.font = `500 12.5px ${FONT}`; c.fillText(sub, bx, H / 2 + 17); }
+      const bw = Math.min(W - 24, Math.max(w1, w2) + 44), bh = sub ? 62 : 44, bx = clamp(cx, bw / 2 + 12, W - bw / 2 - 12), cy = low ? H - bh / 2 - 26 : H / 2;
+      c.fillStyle = this.hexA(PAL.surface, 0.94); c.beginPath(); c.roundRect(bx - bw / 2, cy - bh / 2, bw, bh, 18); c.fill();
+      c.fillStyle = PAL.text; c.font = `700 17px ${DISP}`; c.fillText(title, bx, cy + (sub ? -4 : 6));
+      if (sub) { c.fillStyle = PAL.muted; c.font = `500 12.5px ${FONT}`; c.fillText(sub, bx, cy + 17); }
     };
-    if (this.status === 'playing' && beat < this.firstT()) {
-      const n = Math.ceil(this.firstT() - beat), k = this.firstT() - beat - (n - 1);
+    const go = this.loop && beat < this.loop.a ? this.loop.a : this.firstT(); // dónde acaba la cuenta atrás
+    if (this.status === 'playing' && beat < go && go - beat <= 8) {
+      const n = Math.ceil(go - beat), k = go - beat - (n - 1);
       c.textAlign = 'center'; c.fillStyle = PAL.text; c.globalAlpha = 0.4 + 0.6 * k; c.font = `800 ${Math.round(56 + 24 * k)}px ${DISP}`; c.fillText(n, cx, H / 2 + 22); c.globalAlpha = 1;
-    } else if (this.status === 'idle' || this.status === 'done') banner('Toca aquí para empezar', 'Desliza a los lados para moverte por la canción');
+    } else if (this.status === 'idle' || this.status === 'done') banner('Toca aquí para empezar', W < 640 ? '' : 'Desliza a los lados para moverte por la canción', true);
     else if (this.status === 'paused' && !this.scrubbing && !this.drag) banner('En pausa', 'Toca para seguir o desliza para moverte');
   },
   // Bola que salta de nota en nota y cae justo cuando hay que tocar
@@ -1350,9 +1421,10 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $$('.modal
 const VIEWS = ['afinador', 'aprender', 'canciones', 'ajustes'];
 function route() {
   const [v, ...rest] = (location.hash || '').slice(1).split('/');
-  const view = v === 'acordes' ? 'aprender' : VIEWS.includes(v) ? v : 'afinador';
+  // sin dirección: la última pestaña que se usó (la primera vez, Aprender)
+  const view = v === 'acordes' ? 'aprender' : VIEWS.includes(v) ? v : VIEWS.includes(store.get('view', '')) ? store.get('view', '') : 'aprender';
   const prev = state.view;
-  state.view = view;
+  state.view = view; store.set('view', view);
   $$('section[data-view]').forEach((s) => { s.hidden = s.dataset.view !== view; });
   $$('[data-tab]').forEach((a) => (a.dataset.tab === view ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
   if (view !== Player.host) Player.pause();
