@@ -147,5 +147,56 @@ check(bc.built.levels.arp.length > 0 && bc.built.levels.arp.filter((e) => !e.als
   && bc.built.levels.hard.length > bc.built.levels.easy.length && bc.built.lyrics.length >= 8 && bc.nTab === 3 && bc.chordList.includes('Bm7b5'), 'canción construida');
 console.log(`Cifrado: ${pc.parts.length} partes · ${bc.chordList.join(' ')} · ${bc.built.levels.hard.length} rasgueos`);
 
+// ---------- Oído nuevo: ataques por espectro y nota que de verdad se pulsa ----------
+{
+  const L = require('../src/listen.js');
+  const mix = (dur, notes, noise = 0.0008) => {
+    const x = new Float32Array(Math.floor(sr * dur));
+    for (let i = 0; i < x.length; i++) x[i] = (Math.random() * 2 - 1) * noise;
+    for (const [midi, t, g, len] of notes) { const k = D.ksRender(D.midiToFreq(midi), sr, len || 2.4); const o = Math.floor(t * sr); for (let i = 0; i < k.length && o + i < x.length; i++) x[o + i] += k[i] * g; }
+    return x;
+  };
+  const listen = (x, each) => {
+    const H = new L.Hearing(sr, { gate: 0.004 }), hop = 800, seen = new Map();
+    for (let p = 0; p < x.length; p += hop) { H.feed(x.subarray(p, Math.min(x.length, p + hop))); const f = H.frame(0.004, false); for (const a of f.attacks) seen.set(a.id, a); if (each) each(H, f, (p + hop) / sr); }
+    return [...seen.values()];
+  };
+  const near = (as, t) => as.find((a) => Math.abs(a.pos / sr - t) < 0.03);
+  // Sol al aire, luego Si mientras Sol sigue sonando, y después Sol otra vez (dos veces seguidas)
+  let as = listen(mix(4, [[55, 0.5, 0.5], [59, 1.2, 0.25], [55, 2.2, 0.4], [55, 2.45, 0.4]]));
+  check(as.length === 4, `cuatro ataques, ni uno más (${as.length})`);
+  const a1 = near(as, 0.5), a2 = near(as, 1.2), a3 = near(as, 2.2), a4 = near(as, 2.45);
+  check(a1 && a2 && a3 && a4, 'cada ataque en su sitio');
+  check(as.every((a) => [0.5, 1.2, 2.2, 2.45].some((t) => Math.abs(a.pos / sr - t) < 0.008)), 'fecha del ataque con menos de 8 ms de error');
+  check(a2 && L.attackHas(a2, 59) && !L.attackHas(a2, 55), 'al pulsar Si, el Sol que sigue sonando NO cuenta como tocado');
+  check(a3 && L.attackHas(a3, 55) && !L.attackHas(a3, 59), 'Sol pulsado de nuevo sí cuenta, y el Si que sonaba no');
+  check(a4 && L.attackHas(a4, 55), 'la misma nota repetida a los 250 ms se oye como otro ataque');
+  // nota suave debajo de una que suena fuerte: el volumen total casi no sube, pero el espectro sí cambia
+  as = listen(mix(3, [[40, 0.5, 0.8], [67, 1.1, 0.08]]));
+  const soft = near(as, 1.1);
+  check(soft && L.attackHas(soft, 67) && !L.attackHas(soft, 40), 'nota suave bajo una fuerte: se oye y se identifica');
+  // un golpe sin nota (ruido corto) mientras suena la nota esperada no la da por tocada
+  { const x = mix(3, [[57, 0.4, 0.5]]); const o = Math.floor(1.3 * sr); for (let i = 0; i < 400; i++) x[o + i] += (Math.random() * 2 - 1) * 0.25 * (1 - i / 400);
+    as = listen(x); const hitA = near(as, 1.3); check(!hitA || !L.attackHas(hitA, 57), 'un golpe sobre la guitarra no cuenta como la nota que estaba sonando'); }
+  // ligado: nunca se dispara con una nota que solo sigue sonando; sí cuando la nota aparece sin golpe
+  { let fired = 0; listen(mix(4, [[57, 0.4, 0.5]]), (H, f, t) => { if (t > 0.9 && L.softOnset(H.ear, 57, f.stable)) fired++; });
+    check(fired === 0, `nota que sigue sonando: el detector de ligados no se dispara (${fired})`);
+    const x = mix(3, [[57, 0.4, 0.4, 0.9]]); const k = D.ksRender(D.midiToFreq(59), sr, 2), o = Math.floor(1.3 * sr); for (let i = 0; i < k.length && o + i < x.length; i++) x[o + i] += k[i] * 0.3 * Math.min(1, i / (0.03 * sr));
+    let got = 0; listen(x, (H, f, t) => { if (t > 1.3 && t < 1.6 && L.softOnset(H.ear, 59, f.stable)) got++; });
+    check(got > 0, 'nota ligada (entra sin golpe): se reconoce'); }
+  // clic del metrónomo por el altavoz: con su banda fuera, no es un ataque
+  { const x = mix(3, []); for (const t of [0.8, 1.6, 2.4]) { const o = Math.floor(t * sr); for (let i = 0; i < 0.06 * sr; i++) { const tt = i / sr, env = tt < 0.004 ? tt / 0.004 : Math.exp(-(tt - 0.004) / 0.008); x[o + i] += 0.2 * env * Math.sin(2 * Math.PI * 2100 * tt); } }
+    const H = new L.Hearing(sr, { gate: 0.004 }); let n = 0;
+    for (let p = 0; p < x.length; p += 800) { H.ear.notchUntil = H.ear.n + sr; H.feed(x.subarray(p, p + 800)); n += H.frame(0.004, false).onset ? 1 : 0; }
+    check(n === 0, `el clic del metrónomo no cuenta como ataque (${n})`); }
+  // acorde: la ventana empieza en el ataque, así que no oye el acorde anterior
+  { const N = (id) => D.chordNotes(CHORDS[id]), lib = Object.keys(CHORDS).map((id) => [id, N(id)]);
+    const strum = (id, t) => N(id).sort((a, b) => b.string - a.string).map((n, i) => [n.midi, t + i * 0.012, 0.3, 1.2]);
+    const x = mix(3, [...strum('Am', 0.4), ...strum('C', 1.2)]);
+    let ok = null; listen(x, (H, f, t) => { const a = f.attacks.find((q) => Math.abs(q.pos / sr - 1.2) < 0.03); if (a && ok == null && t > 1.2 + 0.2) ok = D.strumOk(H.ear.semisFrom(a.pos), D.chordHypotheses({ notes: N('C') }, lib), D.fewHypotheses(N('C')), N('C')); });
+    check(ok === true, 'cambio de Lam a Do: el Do se reconoce aunque el Lam siga sonando'); }
+  console.log('Oído: ataques por espectro, nota que sigue sonando, ligados, clic y cambio de acorde');
+}
+
 console.log(fails ? `\n${fails} fallos` : '\nTodo OK');
 process.exit(fails ? 1 : 0);

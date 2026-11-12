@@ -268,16 +268,41 @@ const Lesson = {
     Learn.render();
   },
   frameCheck(f) {
-    const ck = this.check, a = f.attack;
-    if (!ck || ck.done || !a || a.used) return;
-    const cur = ck.notes[ck.i], got = attackNotes(a);
-    if (got.some((m) => sameNote(m, cur.midi))) {
-      a.used = true; this.res = { ...this.res, [cur.string]: 'ok' }; ck.i++; ck.kind = ''; ck.msg = ''; ck.sub = '';
-      if (ck.i >= ck.notes.length) { ck.done = true; this.learn(); }
-      this.update(); return;
+    const ck = this.check; if (!ck || ck.done) return;
+    if (ck.pending) {
+      // la cuerda suena con su nota: falta ver si aguanta sonando o se apaga
+      const { a, cur } = ck.pending, other = f.attacks.some((b) => b.pos > a.pos && b.pos < a.pos + 0.3 * Mic.sr);
+      const q = other ? null : noteQuality(Mic.hear.ear, a.pos, cur.midi);
+      if (!other && !q) return;
+      ck.pending = null;
+      const v = q ? pisada(q) : 'ok';
+      if (v === 'ok') {
+        this.res = { ...this.res, [cur.string]: 'ok' }; ck.i++; ck.kind = ''; ck.msg = ''; ck.sub = '';
+        if (ck.i >= ck.notes.length) { ck.done = true; this.learn(); }
+      } else {
+        ck.fails++; ck.kind = 'bad'; this.res = { ...this.res, [cur.string]: 'bad' };
+        ck.msg = v === 'dead' ? `La ${cur.string}ª se apaga enseguida` : `La ${cur.string}ª trastea`;
+        ck.sub = v === 'dead'
+          ? (cur.fret === 0 ? 'Algún dedo la está rozando. Arquéalos un poco más y tócala otra vez.' : `Aprieta más con la punta del dedo ${cur.finger}, justo detrás del traste ${cur.fret}, y tócala otra vez.`)
+          : (cur.fret === 0 ? 'Zumba contra algún traste. Púlsala un poco más suave.' : `Acerca el dedo ${cur.finger} al traste ${cur.fret} y aprieta un poco más.`);
+      }
+      this.update(); if (ck.done) return;
     }
+    for (const a of f.attacks) if (!a.used && a.t0 != null && (a.after || a.settled)) { this.checkAttack(ck, a); if (ck.done || ck.pending) return; }
+  },
+  checkAttack(ck, a) {
+    const cur = ck.notes[ck.i], got = attackNotes(a);
+    // attackHas: la cuerda se ha pulsado de verdad en este ataque (las ya comprobadas siguen sonando y no cuentan)
+    if (attackHas(a, cur.midi)) { a.used = true; ck.pending = { a, cur }; return; }
     if (!a.settled) return;
     a.used = true;
+    // golpe sin nota: la cuerda está tapada del todo
+    if (a.flux == null && a.yin == null && a.strength >= 80) {
+      ck.fails++; ck.kind = 'bad'; this.res = { ...this.res, [cur.string]: 'bad' };
+      ck.msg = `La ${cur.string}ª no llega a sonar`;
+      ck.sub = cur.fret === 0 ? 'Algún dedo la está tapando. Arquéalos un poco más.' : `Aprieta con la punta del dedo ${cur.finger}, justo detrás del traste ${cur.fret}.`;
+      this.update(); return;
+    }
     // las cuerdas ya comprobadas siguen sonando: si lo que se oye es una de ellas, no es un error
     const ringing = ck.notes.slice(0, ck.i).map((n) => n.midi);
     if (got.every((m) => ringing.some((r) => sameNote(m, r)))) return;
@@ -340,7 +365,7 @@ const Drill = {
     if (this.mode === 'tempo') { Learn.autoStart = true; location.hash = `#aprender/ej/${this.ex.id}/tempo`; return; }
     if (!(await micReady())) return;
     Object.assign(this, { st: this.mode === 'crono' ? 'run' : 'count', cdEnd: performance.now() + 3000, t0: null, end: 0, i: 0, errs: 0, score: 0, clean: 0, misses: 0, msg: '', mk: '', flash: null, target: null, check: null, last: 0 });
-    if (this.ex.kind === 'seq') { this.msg = 'El tiempo empieza con la primera nota.'; Mic.attack && (Mic.attack.used = true); }
+    if (this.ex.kind === 'seq') { this.msg = 'El tiempo empieza con la primera nota.'; for (const a of Mic.hear?.attacks || []) a.used = true; }
     if (this.ex.kind === 'find') this.nextTarget();
     Learn.render();
   },
@@ -356,7 +381,7 @@ const Drill = {
   },
   frame(f, now) {
     if (this.st === 'count') {
-      if (f?.attack) f.attack.used = true;
+      for (const a of f?.attacks || []) a.used = true;
       const n = Math.ceil((this.cdEnd - now) / 1000), el = $('#drCount');
       if (el && el.textContent !== String(n)) el.textContent = n > 0 ? n : '';
       if (now >= this.cdEnd) { this.st = 'run'; this.t0 = now; if (this.mode === 'm60') this.end = now + 60000; Learn.render(); }
@@ -377,12 +402,14 @@ const Drill = {
     if (el.textContent !== s) el.textContent = s;
   },
   frameSeq(f, now) {
-    const a = f.attack; if (!a || a.used) return;
+    for (const a of f.attacks) if (!a.used && a.t0 != null && (a.after || a.settled) && this.st === 'run') this.seqAttack(a, now);
+  },
+  seqAttack(a, now) {
     const want = this.seq()[this.i], got = attackNotes(a);
-    if (got.some((m) => sameNote(m, want.midi))) {
-      a.used = true; if (this.t0 == null) this.t0 = now;
+    if (attackHas(a, want.midi)) {
+      a.used = true; if (this.t0 == null) this.t0 = a.t0; // el tiempo empieza en el ataque, no cuando se reconoce
       this.i++; this.say(this.i === 1 ? '¡En marcha!' : '', 'ok');
-      if (this.i >= this.seq().length) { this.finish(now); return; }
+      if (this.i >= this.seq().length) { this.finish(a.t0); return; }
       this.renderStage(); return;
     }
     if (!a.settled) return;
@@ -395,9 +422,9 @@ const Drill = {
     }
   },
   frameFind(f, now) {
-    const a = f.attack; if (!a || a.used) return;
+    const a = f.attack; if (!a || a.used || (!a.after && !a.settled)) return;
     const T = this.target, got = attackNotes(a);
-    if (got.some((m) => sameNote(m, T.midi))) {
+    if (attackHas(a, T.midi)) {
       a.used = true; this.score++; this.flash = { ...T, until: now + 900 };
       if (this.mode === 'n10' && this.score >= 10) { this.finish(now); return; }
       this.nextTarget(); this.say('¡Bien!', 'ok'); this.renderStage(); return;
@@ -412,11 +439,11 @@ const Drill = {
   },
   frameChanges(f, now) {
     const [A, B] = this.pair, want = this.score % 2 === 0 ? A : B, other = want === A ? B : A;
-    if (f.onset && f.attack && !this.check && now - this.last > 250) this.check = { a: f.attack, t0: now, other: null };
+    if (f.onset && f.attack && !this.check && now - this.last > 250) this.check = { a: f.attack, t0: f.attack.t0, other: null };
     const c = this.check; if (!c || now - c.t0 < 110) return;
     const N = (id) => chordNotes(CHORDS[id]);
     const broad = !c.a.fluxVec || singleNoteLikeness(c.a.fluxVec) < 0.62; // no es una sola cuerda
-    const semis = Mic.semis();
+    const semis = Mic.semisFrom(c.a);
     if (c.other == null) c.other = strumOk(semis, hypothesesFor(N(other), other), fewFor(N(other)), N(other));
     if (broad && strumOk(semis, hypothesesFor(N(want), want), fewFor(N(want)), N(want))) {
       this.check = null; c.a.used = true; this.score++; this.clean++; this.last = now; this.say('¡Limpio!', 'ok'); this.renderStage(); return;

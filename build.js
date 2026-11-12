@@ -24,6 +24,7 @@ ${twUtils}
 const scripts = `<script>
 ${src('icons.js')}
 ${src('dsp.js')}
+${src('listen.js')}
 ${src('data.js')}
 ${src('cifrado.js')}
 ${src('app.js')}

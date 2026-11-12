@@ -96,12 +96,14 @@ const AudioEngine = {
     const order = [...notes].sort((a, b) => (dir === 'D' ? b.string - a.string : a.string - b.string));
     order.forEach((n, i) => this.pluck(midiToFreq(n.midi), when + i * (dir === 'D' ? 0.016 : 0.012), dir === 'D' ? 0.3 : 0.22));
   },
-  click(accent) {
-    const ctx = this.ensure(), o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime;
+  // when: segundos desde ahora (el reproductor lo programa por adelantado para que suene justo en el pulso)
+  click(accent, when = 0) {
+    const ctx = this.ensure(), o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + Math.max(0, when);
     o.frequency.value = accent ? 2600 : 2100; // por encima del registro de la guitarra
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(accent ? 0.35 : 0.2, t + 0.002); g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(accent ? 0.35 : 0.2, t + 0.004); g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
     o.connect(g).connect(this.out); o.start(t); o.stop(t + 0.06);
-    Mic.clickUntil = performance.now() + 90;
+    Mic.notch((when + 0.3) * 1000);
+    return o;
   },
   // Tono de prueba: onda triangular. Aunque el altavoz no reproduzca la fundamental, conserva el
   // periodo y el detector mide la nota exacta (probado con altavoces que cortan por debajo de 700 Hz).
@@ -119,15 +121,58 @@ function micKey(label, id) {
   return l || id || 'micro';
 }
 
-/* Micrófono. Cada fotograma devuelve el nivel, la nota estable (YIN) y, si hay un ataque, un objeto
-   "attack" con la nota que lo identifica: la primera lectura estable 30-250 ms después del ataque
-   o la nota que "aparece" en el espectro. Validado con grabaciones reales (GuitarSet): 88 % de notas
-   reconocidas y 0,9 % de notas equivocadas aceptadas. Cada ataque solo puede usarse una vez. */
+/* Micrófono. Un nodo de audio entrega las muestras con su número exacto y el oído (listen.js) las
+   analiza como un flujo continuo. Cada fotograma devuelve el nivel, la nota estable (YIN) y los ataques
+   recientes; cada ataque lleva su fecha exacta (t0), la nota que aparece y el espectro de antes y de
+   después. Validado con grabaciones reales (GuitarSet). Cada ataque solo puede usarse una vez. */
+const TAP_SRC = `registerProcessor('traste-tap', class extends AudioWorkletProcessor {
+  constructor() { super(); this.buf = new Float32Array(512); this.k = 0; this.f0 = 0; }
+  process(inputs) {
+    const ch = inputs[0] && inputs[0][0];
+    if (ch) {
+      if (!this.k) this.f0 = currentFrame;
+      this.buf.set(ch.subarray(0, Math.min(ch.length, 512 - this.k)), this.k); this.k += ch.length;
+      if (this.k >= 512) { this.port.postMessage({ f: this.f0, b: this.buf.slice(0, 512) }); this.k = 0; }
+    }
+    return true;
+  }
+});`;
 const Mic = {
-  on: false, stream: null, source: null, analyser: null, short: null, td: null, fd: null, mags: null, fd2: null, mags2: null, sr: 48000, dec: 2,
+  on: false, stream: null, source: null, node: null, mode: '', hear: null, base: null, sr: 48000,
   deviceId: '', label: '', key: '',
-  ignoreUntil: 0, clickUntil: 0, hist: [], lastOnset: 0, prevRound: null, stableCount: 0, specHist: [], flux: null, attack: null, seq: 0,
+  ignoreUntil: 0, lastOnset: 0, attack: null, clockOff: null, late: 0,
   ignoreFor(ms) { this.ignoreUntil = Math.max(this.ignoreUntil, performance.now() + ms); },
+  // nodo que entrega el audio en bloques numerados: AudioWorklet y, si no se puede, ScriptProcessor
+  async tap(ctx) {
+    if (this.node) return this.node;
+    const mute = ctx.createGain(); mute.gain.value = 0; mute.connect(ctx.destination);
+    try {
+      if (!ctx.audioWorklet || !window.AudioWorkletNode) throw new Error('sin AudioWorklet');
+      const url = URL.createObjectURL(new Blob([TAP_SRC], { type: 'application/javascript' }));
+      try { await ctx.audioWorklet.addModule(url); } finally { URL.revokeObjectURL(url); }
+      const n = new AudioWorkletNode(ctx, 'traste-tap', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 1, channelCountMode: 'explicit' });
+      n.port.onmessage = (e) => this.feed(e.data.f, e.data.b);
+      n.connect(mute); this.node = n; this.mode = 'worklet';
+    } catch (err) {
+      this.tapError = String(err?.message || err);
+      // playbackTime es el reloj de audio del bloque, así que la fecha no depende de cuándo llega el aviso
+      const n = ctx.createScriptProcessor(1024, 1, 1);
+      n.onaudioprocess = (e) => this.feed(Math.round(e.playbackTime * ctx.sampleRate), e.inputBuffer.getChannelData(0));
+      n.connect(mute); this.node = n; this.mode = 'script';
+    }
+    return this.node;
+  },
+  feed(f, b) {
+    if (!this.on || !this.hear) return;
+    const ear = this.hear.ear;
+    if (this.base == null) this.base = f - ear.n;
+    // bloques perdidos: se rellenan con silencio para no descuadrar el reloj. Con ScriptProcessor la fecha
+    // de cada bloque baila unas muestras, así que solo se corrige si el desvío pasa de 30 ms.
+    const gap = f - (this.base + ear.n), tol = this.mode === 'worklet' ? 0 : 0.03 * this.sr;
+    if (gap > tol && gap < this.sr) this.hear.feed(new Float32Array(gap));
+    else if (gap < -tol || gap >= this.sr) this.base = f - ear.n;
+    this.hear.feed(b);
+  },
   async start(deviceId) {
     if (this.on && !deviceId) return;
     if (!navigator.mediaDevices?.getUserMedia) { const e = new Error('Este navegador no permite usar el micrófono aquí.'); e.name = 'Unsupported'; throw e; }
@@ -143,18 +188,13 @@ const Mic = {
     const track = stream.getAudioTracks()[0], st = track.getSettings?.() || {};
     this.deviceId = st.deviceId || ''; this.label = track.label || 'Micrófono'; this.key = micKey(track.label, st.deviceId);
     if (deviceId) store.set('micDevice', deviceId);
+    this.sr = ctx.sampleRate;
+    if (!this.hear) this.hear = new Hearing(this.sr);
+    const node = await this.tap(ctx);
     this.source = ctx.createMediaStreamSource(stream);
-    if (!this.analyser) {
-      const an = ctx.createAnalyser(); an.fftSize = 16384; an.smoothingTimeConstant = 0;
-      const mute = ctx.createGain(); mute.gain.value = 0; an.connect(mute).connect(ctx.destination);
-      this.analyser = an; this.td = new Float32Array(an.fftSize); this.fd = new Float32Array(an.frequencyBinCount); this.mags = new Float32Array(an.frequencyBinCount);
-      const sh = ctx.createAnalyser(); sh.fftSize = 4096; sh.smoothingTimeConstant = 0; sh.connect(mute);
-      this.short = sh; this.fd2 = new Float32Array(sh.frequencyBinCount); this.mags2 = new Float32Array(sh.frequencyBinCount);
-    }
-    this.source.connect(this.analyser); this.source.connect(this.short);
-    this.sr = ctx.sampleRate; this.dec = Math.max(1, Math.round(this.sr / 24000));
+    this.source.connect(node);
     track.addEventListener('ended', () => { this.stop(); toast('Se ha desconectado el micrófono.'); });
-    this.hist = []; this.specHist = []; this.flux = null; this.attack = null; this.on = true;
+    this.hear.reset(); this.attack = null; this.on = true;
     onMicChange();
   },
   stop(silent) {
@@ -163,60 +203,32 @@ const Mic = {
     this.on = false; this.source = null;
     if (!silent) onMicChange();
   },
-  gate() { return Cal.running ? 0.0012 : state.cals[this.key]?.gate ?? 0.006; },
-  latency() { return state.cals[this.key]?.latency ?? 0.12; },
+  gate() { return Cal.running ? Cal.gateNow ?? 0.0012 : state.cals[this.key]?.gate ?? 0.006; },
+  // retardo entre que tocas y la fecha que el oído le pone al ataque (se mide al calibrar tocando con el clic)
+  latency() { const c = state.cals[this.key]; return c?.sync ?? (c?.latency ?? 0.12) / 2; },
+  // el altavoz tarda en sonar: lo que diga el navegador o, si no lo dice, la mitad de la ida y vuelta medida
+  outLatency() { const c = AudioEngine.ctx, v = (c?.outputLatency || 0) + (c?.baseLatency || 0); return v > 0.001 ? Math.min(v, 0.5) : (state.cals[this.key]?.latency ?? 0.12) / 2; },
+  // mientras suena el clic por el altavoz, el oído deja fuera su banda de frecuencias
+  notch(ms) { if (this.hear) { const ear = this.hear.ear; ear.notchUntil = Math.max(ear.notchUntil, ear.n + Math.round(ms * this.sr / 1000)); } },
+  // fecha (performance.now, en ms) de una muestra del micrófono
+  perfOf(pos) { return ((this.base + pos) / this.sr + this.clockOff) * 1000; },
   analyze(now) {
-    this.analyser.getFloatTimeDomainData(this.td);
-    const N = this.td.length, level = rms(this.td.subarray(N - 1024));
+    // reloj: la diferencia más pequeña que se ve entre performance.now y el reloj de audio es la real
+    const d = now / 1000 - AudioEngine.ctx.currentTime;
+    if (this.clockOff == null || d < this.clockOff) { this.clockOff = d; this.late = 0; }
+    else if (d > this.clockOff + 0.03) { if (++this.late > 20) { this.clockOff = d; this.late = 0; } } else { this.late = 0; this.clockOff += 2e-6; }
     const ignoring = now < this.ignoreUntil;
-    let pitch = null;
-    if (!ignoring && level > this.gate()) {
-      const { buf, f } = decimate(this.td.subarray(N - 4096), this.dec);
-      const r = yin(buf, this.sr / f);
-      if (r && r.prob >= 0.9 && r.freq > 70 && r.freq < 1400) pitch = r;
-    }
-    const prevMin = this.hist.length ? Math.min(...this.hist) : level;
-    this.hist.push(level); if (this.hist.length > 7) this.hist.shift();
-    let onset = false;
-    if (!ignoring && now > this.clickUntil && level > this.gate() * 1.4 && level > prevMin * 1.5 && now - this.lastOnset > 160) { onset = true; this.lastOnset = now; }
-    const midi = pitch ? freqToMidi(pitch.freq) : null;
-    const rd = midi == null ? null : Math.round(midi);
-    if (rd != null && rd === this.prevRound && Math.abs(midi - rd) < 0.4) this.stableCount++; else this.stableCount = rd == null ? 0 : 1;
-    this.prevRound = rd;
-    const stable = this.stableCount >= 2 ? rd : null;
-    // ataque: espectro antes / 90 ms después, y primera lectura estable
-    const spec = this.shortSemis();
-    this.specHist.push({ t: now, spec }); while (this.specHist.length > 6) this.specHist.shift();
-    if (onset) {
-      const before = [...this.specHist].reverse().find((h) => h.t <= now - 30);
-      this.flux = before ? { t0: now, before: before.spec } : null;
-      this.attack = { id: ++this.seq, t0: now, yin: null, flux: null, fluxVec: null, used: false, settled: false };
-    }
-    const a = this.attack;
-    if (a && !ignoring) {
-      if (stable != null && a.yin == null && now - a.t0 >= 30 && now - a.t0 <= 250) a.yin = stable;
-      if (this.flux && now - this.flux.t0 >= 90) {
-        const b = this.flux.before; this.flux = null;
-        a.fluxVec = spec.map((v, i) => Math.max(0, v - b[i] * 1.1));
-        a.flux = newNote(a.fluxVec);
-      }
-      a.settled = now - a.t0 > 260;
-    }
-    return { now, level, pitch, midi, onset, ignoring, stable, attack: a && now - a.t0 < 800 ? a : null };
+    const f = this.hear.frame(this.gate(), ignoring);
+    f.now = now;
+    if (this.base != null) for (const a of f.attacks) if (a.t0 == null) a.t0 = this.perfOf(a.pos);
+    if (f.onset && f.attack?.t0 != null) this.lastOnset = f.attack.t0;
+    if (f.attack && (f.attack.t0 == null || now - f.attack.t0 > 800)) f.attack = null;
+    this.attack = f.attack;
+    return f;
   },
-  shortSemis() {
-    this.short.getFloatFrequencyData(this.fd2);
-    for (let i = 0; i < this.fd2.length; i++) this.mags2[i] = Math.pow(10, this.fd2[i] / 20);
-    return semitoneEnergies(this.mags2, this.sr, this.short.fftSize, V_LO, V_HI);
-  },
-  semis() {
-    this.analyser.getFloatFrequencyData(this.fd);
-    for (let i = 0; i < this.fd.length; i++) this.mags[i] = Math.pow(10, this.fd[i] / 20);
-    return semitoneEnergies(this.mags, this.sr, this.analyser.fftSize, V_LO, V_HI);
-  },
+  // lo que suena desde el ataque (los acordes se analizan sin lo que sonaba antes)
+  semisFrom(a) { return this.hear.ear.semisFrom(a.pos); },
 };
-const attackNotes = (a) => [a.yin, a.flux].filter((x) => x != null);
-const sameNote = (m, want) => m === want || Math.abs(m - want) === 12;
 
 async function ensureMic() {
   if (Mic.on) return true;
@@ -274,7 +286,7 @@ const MicCard = {
       const cal = state.cals[Mic.key];
       const name = `<b class="mc-name">${esc(devLabel(Mic.label))}</b>`;
       const status = cal
-        ? `<span class="mc-st ok">${icon('checkbox-circle-fill')}Calibrado ${timeAgo(cal.at)} · ${cal.noise > 0.02 ? 'sala ruidosa' : 'sala tranquila'}${cal.toneOk ? '' : ' · no oyó el tono de prueba'}</span>`
+        ? `<span class="mc-st ok">${icon('checkbox-circle-fill')}Calibrado ${timeAgo(cal.at)} · ${cal.noise > 0.02 ? 'sala ruidosa' : 'sala tranquila'}${cal.toneOk ? '' : ' · no oyó el tono de prueba'}${cal.sync == null ? ' · ritmo sin ajustar' : ''}</span>`
         : `<span class="mc-st warn">${icon('error-warning-line')}Sin calibrar, puede confundir el ruido con notas</span>`;
       const gate = cal ? dbPct(cal.gate) : dbPct(Mic.gate());
       el.innerHTML = `
@@ -312,9 +324,9 @@ const devLabel = (l) => (l || 'Micrófono').replace(/\s*\([0-9a-f]{4}:[0-9a-f]{4
    Comprobación del micrófono (silencio + tono de prueba), por micrófono
    ============================================================ */
 const Cal = {
-  running: false, phase: 'intro', forced: false, steps: [{ s: '', res: '' }, { s: '', res: '' }], allOk: false, listener: null,
+  running: false, phase: 'intro', forced: false, steps: [{ s: '', res: '' }, { s: '', res: '' }, { s: '', res: '' }], allOk: false, listener: null, gateNow: null,
   skipped: new Set(), aborted: false, abortRes: null, // micros que se han dejado sin calibrar (hasta recargar)
-  needed() { return Mic.on && (this.forced || this.running || this.phase === 'done' || (!state.cals[Mic.key] && !this.skipped.has(Mic.key))); },
+  needed() { return Mic.on && (this.forced || this.running || this.phase === 'done' || (state.cals[Mic.key]?.v !== 2 && !this.skipped.has(Mic.key))); },
   // se muestra en la vista actual: dentro del reproductor si está abierto en ella, si no en su hueco propio
   sync() {
     const sec = $(`section[data-view="${state.view}"]`), pl = $('#player');
@@ -326,6 +338,7 @@ const Cal = {
     const items = [
       ['Silencio', 'No toques nada mientras mido el ruido de la sala.'],
       ['Tono de prueba', 'Sonarán tres notas por el altavoz para ver si el micrófono las oye afinadas.'],
+      ['Toca con el clic', 'Toca una cuerda al aire a la vez que cada clic. Con eso mido el retardo de tu micrófono y el ritmo se puntúa bien.'],
     ];
     let acts = '';
     if (this.phase === 'intro') acts = `<button type="button" class="btn btn-primary btn-lg w-full" data-cal="start">${icon('play-fill')}Comenzar</button>`;
@@ -341,7 +354,7 @@ const Cal = {
       }).join('')}</div>` : ''}
       ${this.phase === 'intro' ? `<div class="vol-note">${icon('volume-up-line')}Sube el volumen y quítate los auriculares.</div>` : ''}
       <div class="cal-list">${items.map(([t, d], i) => `<div class="cal-item" data-s="${this.steps[i].s}"><div class="st">${stIcon(this.steps[i].s, i)}</div><div><b>${t}</b><p>${d}</p>${this.steps[i].res ? `<div class="res">${this.steps[i].res}</div>` : ''}</div></div>`).join('')}</div>
-      ${this.phase === 'run' ? '<div class="bar"><div data-cal-level></div></div>' : ''}
+      ${this.phase === 'run' ? `<div class="bar"><div data-cal-level></div></div>${this.steps[2].s === 'run' ? '<div class="cal-beat" data-cal-beat></div>' : ''}` : ''}
       ${acts}
     </div>`;
   },
@@ -359,9 +372,35 @@ const Cal = {
     });
     return { ok: first != null && errs.length > 3, latency: first != null ? Math.max(0, first - 45) / 1000 : null, err: errs.length ? errs.reduce((a, b) => a + Math.abs(b), 0) / errs.length : null };
   },
+  /* Doce clics (cuatro de aviso y ocho que cuentan). El desfase entre cada clic y tu golpe es el retardo
+     con el que el micrófono te oye, y es justo lo que hay que descontar al puntuar el ritmo. */
+  async clickSync() {
+    const ctx = AudioEngine.ctx, out = Mic.outLatency(), gap = 0.6, n = 12, t0 = ctx.currentTime + 0.6;
+    for (let k = 0; k < n; k++) AudioEngine.click(k % 4 === 0, t0 + k * gap - out - ctx.currentTime);
+    const hits = new Map(); let shown = -1;
+    await this.collect((0.6 + n * gap + 0.35) * 1000, (f, now) => {
+      Mic.notch(300);
+      const t = now / 1000 - Mic.clockOff, k = Math.floor((t - t0) / gap + 1e-3);
+      if (k !== shown && k >= 0 && k < n) {
+        shown = k;
+        $$('[data-cal-beat]').forEach((el) => { el.textContent = k < 4 ? `Prepárate… ${4 - k}` : `Toca · ${k - 3} de 8`; el.classList.remove('hit'); void el.offsetWidth; el.classList.add('hit'); });
+      }
+      for (const a of f.attacks) if (a.t0 != null && !hits.has(a.id)) hits.set(a.id, a.t0 / 1000 - Mic.clockOff);
+    });
+    const offs = [];
+    for (let k = 4; k < n; k++) {
+      let best = null;
+      for (const t of hits.values()) { const d = t - (t0 + k * gap); if (Math.abs(d) < 0.28 && (best == null || Math.abs(d) < Math.abs(best))) best = d; }
+      if (best != null) offs.push(best);
+    }
+    if (offs.length < 5) return null;
+    offs.sort((a, b) => a - b);
+    const med = offs[offs.length >> 1], dev = offs.map((o) => Math.abs(o - med)).sort((a, b) => a - b)[offs.length >> 1];
+    return { sync: clamp(med, -0.08, 0.4), dev, n: offs.length };
+  },
   async run() {
     if (this.running || !(await ensureMic())) return;
-    this.running = true; this.aborted = false; this.phase = 'run'; this.steps = [{ s: 'run', res: '' }, { s: '', res: '' }]; this.sync();
+    this.running = true; this.aborted = false; this.phase = 'run'; this.steps = [{ s: 'run', res: '' }, { s: '', res: '' }, { s: '', res: '' }]; this.gateNow = null; this.sync();
     const key = Mic.key;
     try {
       const lv = []; await this.collect(2000, (f) => lv.push(f.level));
@@ -381,21 +420,30 @@ const Cal = {
       this.setStep(1, toneOk ? 'ok' : 'warn', toneOk
         ? `Oigo ${good.length} de 3 notas afinadas (desvío de ${fmt(err)} cents).`
         : 'No he oído bien las notas. Con auriculares es normal y puedes seguir. Si no los llevas, sube el volumen y repite.');
-      state.cals[key] = { noise, gate: clamp(noise * 3, 0.002, 0.02), latency, toneOk, label: Mic.label, at: Date.now() };
+      // tercer paso: con el umbral de ruido recién medido, tocar con el clic
+      this.setStep(2, 'run');
+      this.gateNow = clamp(noise * 3, 0.002, 0.02);
+      for (const a of Mic.hear.attacks) a.used = true;
+      const cs = await this.clickSync();
+      if (this.aborted) return;
+      this.setStep(2, cs && cs.dev <= 0.045 ? 'ok' : 'warn', !cs ? 'No te he oído tocar con los clics. Usaré un retardo aproximado; repítelo cuando tengas la guitarra a mano.'
+        : cs.dev > 0.045 ? `Retardo de ${Math.round(cs.sync * 1000)} ms, aunque los golpes han salido desiguales. Repítelo si notas que el ritmo se puntúa raro.`
+          : `Retardo de ${Math.round(cs.sync * 1000)} ms, medido con ${cs.n} golpes.`);
+      state.cals[key] = { noise, gate: clamp(noise * 3, 0.002, 0.02), latency, toneOk, sync: cs ? cs.sync : null, v: 2, label: Mic.label, at: Date.now() };
       store.set('cals', state.cals);
-      this.allOk = toneOk && !noisy;
+      this.allOk = toneOk && !noisy && !!cs && cs.dev <= 0.045;
       this.phase = 'done';
       if (this.allOk) setTimeout(() => { if (this.phase === 'done' && this.allOk) this.finish(); }, 1600);
     } finally {
-      this.running = false; this.sync(); MicCard.render();
+      this.running = false; this.gateNow = null; this.sync(); MicCard.render();
     }
   },
-  finish() { this.phase = 'intro'; this.forced = false; this.steps = [{ s: '', res: '' }, { s: '', res: '' }]; this.sync(); MicCard.render(); },
+  finish() { this.phase = 'intro'; this.forced = false; this.steps = [{ s: '', res: '' }, { s: '', res: '' }, { s: '', res: '' }]; this.sync(); MicCard.render(); },
   recheck() { this.forced = true; this.phase = 'intro'; this.sync(); },
   // cerrar (X o Escape): se puede usar la app sin calibrar; el botón del afinador sigue proponiéndolo
   close() {
     if (this.running) { this.aborted = true; this.listener = null; this.abortRes?.(); }
-    if (Mic.on && !state.cals[Mic.key]) this.skipped.add(Mic.key);
+    if (Mic.on && state.cals[Mic.key]?.v !== 2) this.skipped.add(Mic.key);
     this.finish();
   },
   frame(f, now) {
@@ -685,9 +733,10 @@ const LEVELS = { easy: 'Fácil', arp: 'Arpegio', hard: 'Difícil' };
 const LEVEL_HINT = { easy: 'melodía', arp: 'acordes nota a nota', hard: 'acordes' };
 // Velocidades pensadas para aprender: la mitad para descifrar, 3/4 para practicar, la real y un reto
 const SPEEDS = [{ n: 'Muy lento', p: 0.5 }, { n: 'Lento', p: 0.75 }, { n: 'Normal', p: 1 }, { n: 'Rápido', p: 1.2 }];
-// Puntos: perfecto 100, pronto/tarde 50, y la racha multiplica (×2 desde 10, ×3 desde 20, ×4 desde 30).
-// Estrellas por precisión: perfecto cuenta 1, pronto/tarde 0,5 y fallo 0 (40 %, 65 % y 85 %).
-const WIN = { note: 0.25, notePerfect: 0.08, chord: 0.3, chordPerfect: 0.12 };
+// Puntos: perfecto 100 (±55 ms), bien 75 (±110 ms), pronto/tarde 50, y la racha multiplica (×2 desde 10, ×3 desde 20, ×4 desde 30).
+// Estrellas por precisión: perfecto cuenta 1, bien 0,8, pronto/tarde 0,5 y fallo 0 (40 %, 65 % y 85 %).
+const WIN = { note: 0.2, noteGood: 0.11, notePerfect: 0.055, chord: 0.26, chordGood: 0.15, chordPerfect: 0.08 };
+const HIT = { perfect: { pts: 100, w: 1, say: 'Perfecto' }, good: { pts: 75, w: 0.8, say: 'Bien' }, early: { pts: 50, w: 0.5, say: 'Pronto' }, late: { pts: 50, w: 0.5, say: 'Tarde' } };
 const STAR_AT = [0.4, 0.65, 0.85];
 const songChords = (s) => s.chordList || [...new Set(parseChordBars(s.chords, s.bpb, 0).map((c) => c.chord))];
 const starsFor = (acc) => STAR_AT.filter((t) => acc >= t).length;
@@ -751,7 +800,7 @@ const Songs = {
 const Player = {
   song: null, built: null, level: 'easy', events: [], status: 'idle', demo: false, beat: 0, speedIdx: 1, wait: false, metro: false,
   idx: 0, combo: 0, maxCombo: 0, points: 0, check: null, lastHitMidi: null, frozen: false, curIdx: -1, ctx: null, W: 0, H: 0,
-  flash: null, stats: null, drag: null, inertia: null, resumeTimer: 0, scrubbing: false, attackBeats: new Map(), deltas: [],
+  flash: null, stats: null, drag: null, inertia: null, resumeTimer: 0, scrubbing: false, attackBeats: new Map(), deltas: [], clicked: null, clickNodes: [],
   init() {
     this.canvas = $('#hw'); this.ctx = this.canvas.getContext('2d');
     new ResizeObserver(() => this.resize()).observe(this.canvas);
@@ -839,7 +888,7 @@ const Player = {
     clearTimeout(this.resumeTimer); this.inertia = null; this.scrubbing = false;
     this.events = this.built.levels[this.level].map((e) => ({ ...e, st: 0, hitAt: 0, kind: '' }));
     this.showTrack = !this.events.some((e) => e.chord);
-    Object.assign(this, { status: 'idle', demo: false, beat: this.startBeat(), idx: 0, combo: 0, maxCombo: 0, points: 0, check: null, lastHitMidi: null, frozen: false, curIdx: -1, flash: null, deltas: [], stats: { perfect: 0, early: 0, late: 0, miss: 0, wrong: 0 } });
+    Object.assign(this, { status: 'idle', demo: false, beat: this.startBeat(), idx: 0, combo: 0, maxCombo: 0, points: 0, check: null, lastHitMidi: null, frozen: false, curIdx: -1, flash: null, deltas: [], stats: { perfect: 0, good: 0, early: 0, late: 0, miss: 0, wrong: 0, dead: 0, buzz: 0 }, quals: [] });
     this.attackBeats = new Map();
     this.renderHud(); this.renderButtons(); this.renderNow();
   },
@@ -857,7 +906,9 @@ const Player = {
     }
     return this.start(false);
   },
-  pause() { clearTimeout(this.resumeTimer); if (this.status === 'playing') { this.status = 'paused'; this.renderButtons(); } },
+  pause() { clearTimeout(this.resumeTimer); if (this.status === 'playing') { this.status = 'paused'; this.renderButtons(); } this.cancelClicks(); },
+  // quita los clics que estaban programados y aún no han sonado
+  cancelClicks() { for (const [b, o] of this.clickNodes) if (b > this.beat) { try { o.stop(); } catch { /* ya ha sonado */ } } this.clickNodes = []; this.clicked = null; },
   renderButtons() {
     const playing = this.status === 'playing';
     $('#plPlay').innerHTML = icon(playing && !this.demo ? 'pause-fill' : 'play-fill');
@@ -950,6 +1001,7 @@ const Player = {
     const i = this.events.findIndex((e) => e.st === 0);
     this.idx = i < 0 ? this.events.length : i;
     this.beat = b; this.check = null; this.frozen = false; this.combo = 0;
+    this.cancelClicks(); for (const a of Mic.hear?.attacks || []) a.used = true;
     if (this.status === 'idle' || this.status === 'done') { this.status = 'paused'; this.demo = false; this.renderButtons(); }
     this.renderHud(); this.renderNow();
   },
@@ -972,9 +1024,14 @@ const Player = {
       const e = this.events[this.idx];
       if (e && next >= e.t) { next = Math.max(this.beat, e.t); this.frozen = true; }
     }
-    for (let b = Math.floor(this.beat) + 1; b <= next; b++) {
-      if (b < first || this.metro) AudioEngine.click((((b - this.built.pickup) % bpb) + bpb) % bpb === 0);
+    // el clic se programa con antelación, restando lo que tarda el altavoz, para que suene justo en el pulso
+    const out = this.wait ? 0 : Mic.outLatency(), ahead = this.beat + (out + 0.05) * bps;
+    if (this.clicked == null || this.clicked < Math.floor(this.beat) || this.clicked > ahead + 1) this.clicked = Math.floor(this.beat);
+    for (let b = this.clicked + 1; b <= (this.wait ? next : ahead); b++) {
+      this.clicked = b;
+      if (b < first || this.metro) this.clickNodes.push([b, AudioEngine.click((((b - this.built.pickup) % bpb) + bpb) % bpb === 0, (b - this.beat) / bps - out)]);
     }
+    while (this.clickNodes.length && this.clickNodes[0][0] < this.beat - 1) this.clickNodes.shift();
     if (this.demo) {
       Mic.ignoreFor(1500);
       for (const e of this.events) if (e.t > this.beat && e.t <= next) {
@@ -991,72 +1048,94 @@ const Player = {
   },
   say(text, color, big) { this.flash = { text, color, t: performance.now(), big }; },
   /* Juicio. Cada ataque solo puede valer para UNA nota: la primera pendiente cuya ventana lo contiene
-     y cuya altura coincide. Si tocas tarde la primera de dos notas seguidas, cuenta como esa primera
-     (tarde) y la segunda espera su propio ataque. */
+     y que de verdad se ha pulsado en él (attackHas). Una nota que solo sigue sonando no cuenta nunca.
+     El ataque se sitúa en la canción por la fecha de su muestra, no por el fotograma en que se ve. */
   judge(f, now, bps) {
     if (!f) return;
-    const lat = (Mic.latency() / 2) * bps; // retardo de entrada estimado, en tiempos
+    const lat = Mic.latency() * bps; // retardo de entrada, en tiempos
     const winB = (e) => (this.isChord(e) ? WIN.chord : WIN.note) * bps;
-    if (f.onset && f.attack) {
-      this.attackBeats.set(f.attack.id, this.beat);
+    const frozen = this.wait && this.frozen;
+    for (const a of f.attacks) {
+      if (a.t0 == null || this.attackBeats.has(a.id)) continue;
+      const ab = this.beat - ((now - a.t0) / 1000) * bps - lat;
+      this.attackBeats.set(a.id, ab);
       // rasgueos: cada ataque abre un análisis para el primer acorde pendiente en su ventana
-      const ab = this.beat - lat;
-      const e = this.events.slice(this.idx, this.idx + 6).find((x) => x.st === 0 && this.isChord(x) && (this.wait && this.frozen ? x === this.events[this.idx] : Math.abs(ab - x.t) <= winB(x)));
-      if (e) this.check = { a: f.attack, t0: now, beat: this.beat, e };
+      const e = this.events.slice(this.idx, this.idx + 6).find((x) => x.st === 0 && this.isChord(x) && (frozen ? x === this.events[this.idx] : Math.abs(ab - x.t) <= winB(x)));
+      // un rasgueo lento puede dar dos ataques seguidos: se analiza desde el primero
+      if (e && !(this.check && this.check.e === e && a.t0 - this.check.a.t0 < 120)) this.check = { a, e };
     }
-    const analysing = this.check && now - this.check.t0 < 520;
-    // un ataque a tiempo cuya nota aún se está identificando (~90 ms) no puede dar la nota por fallada
-    const fa = f.attack, pendingAb = fa && !fa.used && !fa.settled ? (this.attackBeats.get(fa.id) ?? this.beat) - lat : null;
-    const waiting = (e) => (analysing && this.check.e === e) || (pendingAb != null && !this.isChord(e) && Math.abs(pendingAb - e.t) <= winB(e));
+    const analysing = this.check && now - this.check.a.t0 < 520;
+    // un ataque a tiempo cuya nota aún se está identificando (~100 ms) no puede dar la nota por fallada
+    const pend = f.attacks.filter((a) => !a.used && !a.settled && this.attackBeats.has(a.id));
+    const waiting = (e) => (analysing && this.check.e === e) || (!this.isChord(e) && pend.some((a) => Math.abs(this.attackBeats.get(a.id) - e.t) <= winB(e)));
     if (!this.wait) {
       while (this.events[this.idx] && (this.beat - lat - this.events[this.idx].t) > winB(this.events[this.idx]) && !waiting(this.events[this.idx])) {
         const e = this.events[this.idx]; if (e.st === 0) this.miss(e); this.idx++;
       }
     }
-    if (this.check && now - this.check.t0 >= 110) {
-      const { e, a } = this.check, notes = e.chord ? chordNotes(CHORDS[e.chord]) : e.notes;
-      const broad = !a.fluxVec || singleNoteLikeness(a.fluxVec) < 0.62; // no es una sola cuerda
-      if (e.st === 0 && broad && strumOk(Mic.semis(), hypothesesFor(notes, e.chord), fewFor(notes), notes)) {
-        a.used = true; this.hit(e, this.wait && this.frozen ? e.t : this.check.beat - lat, true); this.check = null;
-      } else if (now - this.check.t0 > 520) this.check = null;
+    if (this.check) {
+      const { e, a } = this.check, age = now - a.t0;
+      if (e.st !== 0 || age > 520) this.check = null;
+      else if (age >= 110) {
+        const notes = e.chord ? chordNotes(CHORDS[e.chord]) : e.notes;
+        const broad = !a.fluxVec || singleNoteLikeness(a.fluxVec) < 0.62; // no es una sola cuerda
+        if (broad && strumOk(Mic.semisFrom(a), hypothesesFor(notes, e.chord), fewFor(notes), notes)) {
+          a.used = true; this.hit(e, frozen ? e.t : this.attackBeats.get(a.id), true); this.check = null;
+        }
+      }
     }
     // notas sueltas
-    const a = f.attack;
-    if (a && !a.used && (a.yin != null || a.flux != null || a.settled)) {
-      const got = attackNotes(a), ab = (this.attackBeats.get(a.id) ?? this.beat) - lat;
-      const cand = this.events.slice(this.idx, this.idx + 6).filter((e) => e.st === 0 && !this.isChord(e) && (this.wait && this.frozen ? e === this.events[this.idx] : Math.abs(ab - e.t) <= winB(e)));
-      const e = cand.find((x) => got.some((m) => sameNote(m, x.notes[0].midi)));
+    for (const a of f.attacks) {
+      if (a.used || !this.attackBeats.has(a.id) || (!a.after && !a.settled)) continue;
+      const ab = this.attackBeats.get(a.id);
+      const cand = this.events.slice(this.idx, this.idx + 6).filter((e) => e.st === 0 && !this.isChord(e) && (frozen ? e === this.events[this.idx] : Math.abs(ab - e.t) <= winB(e)));
+      const e = cand.find((x) => attackHas(a, x.notes[0].midi));
       if (e) {
         a.used = true;
         for (let k = this.idx; this.events[k] !== e; k++) if (this.events[k].st === 0) this.miss(this.events[k]); // te has saltado alguna
-        this.hit(e, this.wait && this.frozen ? e.t : ab, false, e.notes[0].midi);
+        this.hit(e, frozen ? e.t : ab, false, e.notes[0].midi, a);
       } else if (a.settled) {
         a.used = true;
-        if (got.length && cand.length) { this.say(`Eso es ${pcName(got[0])}`, PAL.muted); if (!this.wait) { this.combo = 0; this.stats.wrong++; this.renderHud(); } }
+        // solo se dice "eso es X" si lo confirman los dos detectores
+        if (cand.length && this.check?.a !== a && a.flux != null && a.yin != null && sameNote(a.yin, a.flux)) {
+          this.say(`Eso es ${pcName(a.flux)}`, PAL.muted);
+          if (!this.wait) { this.combo = 0; this.stats.wrong++; this.renderHud(); }
+        }
       }
     }
-    // ligados (sin ataque): la nota estable coincide con la siguiente y es distinta de la anterior
+    // ligados (sin golpe de púa): la nota no sonaba y ahora sí. Lejos de cualquier ataque y distinta de la anterior.
     const e = this.events[this.idx];
-    if (e && e.st === 0 && !this.isChord(e) && f.stable != null && sameNote(f.stable, e.notes[0].midi) && f.stable !== this.lastHitMidi && (!a || a.used) && now - Mic.lastOnset > 300) {
-      const eff = this.wait && this.frozen ? e.t : this.beat - lat;
-      if (Math.abs(eff - e.t) <= winB(e)) this.hit(e, eff, false, f.stable);
+    if (e && e.st === 0 && !this.isChord(e) && f.stable != null && !sameNote(f.stable, this.lastHitMidi ?? -99) && now - Mic.lastOnset > 300) {
+      const eff = frozen ? e.t : this.beat - lat - 0.06 * bps; // la subida se ve unos 60 ms después
+      if (Math.abs(eff - e.t) <= winB(e) && softOnset(Mic.hear.ear, e.notes[0].midi, f.stable)) this.hit(e, eff, false, f.stable);
     }
+    // pisada de las notas acertadas: es un consejo, no quita puntos
+    for (const q of this.quals) {
+      if (f.attacks.some((a) => a.pos > q.a.pos && a.pos < q.a.pos + 0.3 * Mic.sr)) { q.done = true; continue; } // otra nota encima: no se puede medir
+      const m = noteQuality(Mic.hear.ear, q.a.pos, q.midi); if (!m) continue;
+      q.done = true;
+      const v = pisada(m);
+      if (v !== 'ok') { q.e.q = v; this.stats[v]++; this.say(v === 'dead' ? 'Se apaga pronto' : 'Trastea', PAL.warn); }
+    }
+    if (this.quals.length) this.quals = this.quals.filter((q) => !q.done);
   },
-  hit(e, atBeat, strum, midi) {
+  hit(e, atBeat, strum, midi, attack) {
     e.st = 1; e.hitAt = performance.now(); this.lastHitMidi = midi ?? null;
     const i = this.events.indexOf(e); if (i >= this.idx) this.idx = i + 1;
     this.combo++; this.maxCombo = Math.max(this.maxCombo, this.combo);
+    // pisada: se mide si la nota tiene tiempo de sonar (casi medio segundo hasta la siguiente)
+    if (attack && !strum) { const nx = this.events[i + 1]; if (!nx || (nx.t - e.t) / this.bps() >= 0.45) this.quals.push({ e, a: attack, midi: e.notes[0].midi }); }
     if (this.wait) { e.kind = 'perfect'; this.stats.perfect++; this.say('¡Bien!', PAL.ok); this.renderHud(); return; }
     // un rasgueo tarda ~50 ms en recorrer las cuerdas y su ataque se detecta algo más tarde
-    const d = (atBeat - e.t) / this.bps() - (strum ? 0.04 : 0);
+    const d = (atBeat - e.t) / this.bps() - (strum ? 0.02 : 0), ad = Math.abs(d);
     this.deltas.push(d);
-    const perfect = Math.abs(d) <= (strum ? WIN.chordPerfect : WIN.notePerfect);
-    e.kind = perfect ? 'perfect' : d < 0 ? 'early' : 'late';
+    e.kind = ad <= (strum ? WIN.chordPerfect : WIN.notePerfect) ? 'perfect' : ad <= (strum ? WIN.chordGood : WIN.noteGood) ? 'good' : d < 0 ? 'early' : 'late';
+    e.d = d;
     this.stats[e.kind]++;
     const before = this.mult();
-    this.points += (perfect ? 100 : 50) * this.mult();
+    this.points += HIT[e.kind].pts * this.mult();
     if (this.mult() > before) this.say(`¡Racha! ×${this.mult()}`, PAL.accent, true);
-    else this.say(perfect ? 'Perfecto' : d < 0 ? 'Pronto' : 'Tarde', perfect ? PAL.ok : PAL.warn);
+    else this.say(HIT[e.kind].say, e.kind === 'perfect' || e.kind === 'good' ? PAL.ok : PAL.warn);
     this.renderHud();
   },
   miss(e) {
@@ -1080,7 +1159,7 @@ const Player = {
       showResult({ title: 'Práctica completada', text: `Has tocado las ${judged.length} notas. Quita «Esperarme» para tocar a tempo y puntuar.`, actions: acts });
       return;
     }
-    const acc = judged.length ? (st.perfect + 0.5 * (st.early + st.late)) / judged.length : 0;
+    const acc = judged.length ? (st.perfect + HIT.good.w * st.good + 0.5 * (st.early + st.late)) / judged.length : 0;
     const stars = starsFor(acc), key = `${this.song.id}:${this.level}`, prev = state.best[key];
     const record = !prev || this.points > prev.pts;
     state.best[key] = { stars: Math.max(stars, prev?.stars || 0), acc: Math.max(acc, prev?.acc || 0), pts: Math.max(this.points, prev?.pts || 0) };
@@ -1088,9 +1167,11 @@ const Player = {
     const avg = this.deltas.length >= 4 ? this.deltas.reduce((a, b) => a + b, 0) / this.deltas.length : 0;
     showResult({
       stars, title: starsLine(stars),
-      text: Math.abs(avg) >= 0.06 ? (avg < 0 ? 'Sueles adelantarte. Espera a que la bola caiga en la nota.' : 'Sueles ir con retraso. Anticípate un poco.') : stars < 2 ? 'Prueba más lento o activa «Esperarme».' : '',
+      text: [Math.abs(avg) >= 0.045 ? (avg < 0 ? `Sueles adelantarte unos ${Math.round(-avg * 1000)} ms. Espera a que la bola caiga en la nota.` : `Sueles ir unos ${Math.round(avg * 1000)} ms tarde. Anticípate un poco.`) : stars < 2 ? 'Prueba más lento o activa «Esperarme».' : '',
+        st.dead >= 2 ? `${st.dead} notas se apagaron pronto. Mantén el dedo apretado justo detrás del traste hasta la nota siguiente.` : '',
+        st.buzz >= 2 ? `${st.buzz} notas trastearon. Acerca el dedo al traste y aprieta un poco más.` : ''].filter(Boolean).join(' '),
       big: [[`${Math.round(acc * 100)}%`, 'precisión'], [this.points.toLocaleString('es-ES'), record ? 'puntos · récord' : 'puntos'], [this.maxCombo, 'mejor racha']],
-      grid: [['Perfecto', st.perfect, 'var(--ok)'], ['Pronto', st.early, 'var(--warn)'], ['Tarde', st.late, 'var(--warn)'], ['Fallo', st.miss, 'var(--bad)']],
+      grid: [['Perfecto', st.perfect, 'var(--ok)'], ['Bien', st.good, 'var(--ok)'], ['Pronto', st.early, 'var(--warn)'], ['Tarde', st.late, 'var(--warn)'], ['Fallo', st.miss, 'var(--bad)']],
       actions: acts,
     });
   },
@@ -1207,7 +1288,7 @@ const Player = {
     c.font = `750 ${r > 13 ? 14 : 12}px Inter, system-ui, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillText(n.fret, x, y + 0.5); c.textBaseline = 'alphabetic';
   },
-  hitColor(e) { return e.kind === 'perfect' ? PAL.ok : PAL.warn; },
+  hitColor(e) { return e.kind === 'perfect' || e.kind === 'good' ? PAL.ok : PAL.warn; },
   drawHit(c, e, x, y, r, now) {
     if (e.st !== 1) return;
     const k = clamp((now - e.hitAt) / 450, 0, 1), col = this.hitColor(e);
@@ -1321,6 +1402,11 @@ const Settings = {
         <div class="set-row"><div><h3>Tema</h3><p>En automático sigue el de tu dispositivo.</p></div>${seg('theme', [['auto', 'Auto'], ['dark', icon('moon-line') + 'Oscuro'], ['light', icon('sun-line') + 'Claro']], state.theme)}</div>
       </section>
       <section class="set-card">
+        <div class="set-row"><div><h3>Probar la escucha</h3><p>Toca notas sueltas y mira qué oye Traste en cada una: la nota, si suena limpia y cuánto aguanta.</p></div><button type="button" class="btn btn-soft btn-sm" data-diag>${Diag.on ? 'Cerrar' : 'Abrir'}</button></div>
+        ${Diag.on ? `<div class="diag"><div id="diagRows">${Diag.rowsHTML()}</div>
+          <div class="diag-foot"><button type="button" class="btn btn-soft btn-sm" data-diag-save>${icon('download-2-line')}Guardar los últimos 5 segundos</button><span>Un archivo WAV con lo que ha oído el micrófono, por si quieres revisar un caso raro.</span></div></div>` : ''}
+      </section>
+      <section class="set-card">
         <div class="set-row"><div><h3>Tu progreso</h3><p>Acordes aprendidos, récords y práctica de hoy. Solo se guarda en este navegador.</p></div><button type="button" class="btn btn-soft btn-sm" data-reset>${icon('delete-bin-line')}Borrar</button></div>
       </section>
       <p class="set-foot">Traste es gratis y no necesita cuenta. El sonido se analiza en tu navegador y no sale de tu equipo.</p>
@@ -1338,12 +1424,57 @@ const Settings = {
         if (key === 'theme') applyTheme(v);
         refreshAll(); return;
       }
+      if (e.target.closest('[data-diag]')) { Diag.toggle(); return; }
+      if (e.target.closest('[data-diag-save]')) { Diag.save(); return; }
       if (e.target.closest('[data-reset]') && confirm('¿Borrar tus acordes aprendidos, récords y la práctica de hoy? Los ajustes y el micrófono se mantienen.')) {
         state.learned = {}; state.best = {}; state.rec = {};
         for (const k of ['learned', 'best2', 'rec', 'today', 'lesson']) store.set(k, k === 'lesson' ? null : {});
         refreshAll(); toast('Progreso borrado.', 3000, 'check-line');
       }
     });
+  },
+};
+
+/* Probar la escucha: cada nota que tocas, con lo que el oído ha medido en ella */
+const Diag = {
+  on: false, rows: [], seen: new Set(),
+  async toggle() {
+    if (!this.on && !(await ensureMic())) return;
+    this.on = !this.on; this.rows = []; this.seen = new Set((Mic.hear?.attacks || []).map((a) => a.id));
+    Settings.render();
+  },
+  rowsHTML() {
+    if (!this.rows.length) return '<p class="diag-empty">Toca una nota y déjala sonar.</p>';
+    return this.rows.map((r) => `<div class="diag-row"><b>${r.note}</b><span class="tag ${r.v}">${r.label}</span><span>${r.info}</span></div>`).join('');
+  },
+  frame(f) {
+    if (!this.on || !f) return;
+    for (const a of f.attacks) {
+      if (this.seen.has(a.id) || !a.settled) continue;
+      const midi = a.flux ?? a.yin;
+      const other = f.attacks.some((b) => b.pos > a.pos && b.pos < a.pos + 0.3 * Mic.sr);
+      const q = midi == null || other ? null : noteQuality(Mic.hear.ear, a.pos, midi);
+      if (midi != null && !other && !q) continue; // aún midiendo
+      this.seen.add(a.id);
+      const v = midi == null ? 'none' : q ? pisada(q) : 'na';
+      this.rows.unshift({
+        note: midi == null ? '—' : `${pcName(midi)}${octave(midi)}`, v,
+        label: { none: 'sin nota clara', na: 'otra nota encima', ok: 'limpia', dead: 'se apaga', buzz: 'trastea' }[v],
+        info: q ? `cae ${fmt(q.decay, 0)} dB en 160 ms · agudos ${Math.round(q.hf2 * 100)} %` : `fuerza ${Math.round(a.strength)}`,
+      });
+      this.rows.length = Math.min(this.rows.length, 8);
+      const el = $('#diagRows'); if (el) el.innerHTML = this.rowsHTML();
+    }
+  },
+  save() {
+    const ear = Mic.hear?.ear; if (!ear) return;
+    const n = Math.min(ear.n, 5 * ear.sr), x = ear.read(ear.n, n, new Float32Array(n)), b = new DataView(new ArrayBuffer(44 + n * 2));
+    const str = (o, t) => { for (let i = 0; i < t.length; i++) b.setUint8(o + i, t.charCodeAt(i)); };
+    str(0, 'RIFF'); b.setUint32(4, 36 + n * 2, true); str(8, 'WAVEfmt '); b.setUint32(16, 16, true); b.setUint16(20, 1, true); b.setUint16(22, 1, true);
+    b.setUint32(24, ear.sr, true); b.setUint32(28, ear.sr * 2, true); b.setUint16(32, 2, true); b.setUint16(34, 16, true); str(36, 'data'); b.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) b.setInt16(44 + i * 2, clamp(x[i], -1, 1) * 32767, true);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([b], { type: 'audio/wav' })); a.download = 'traste-muestra.wav'; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   },
 };
 
@@ -1357,6 +1488,7 @@ function loop(t) {
     if (state.view === 'afinador') Tuner.frame(f, dt, t);
     else if (state.view === Player.host && !$('#player').hidden) Player.frame(f, dt, t);
     else if (state.view === 'aprender') Learn.frame(f, dt, t);
+    else if (state.view === 'ajustes') Diag.frame(f);
   } catch (err) { console.error(err); }
   requestAnimationFrame(loop);
 }

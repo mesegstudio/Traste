@@ -684,3 +684,18 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- calibración: pulso del clic ---------- */
+.cal-beat { margin: 10px 0 2px; text-align: center; font-weight: 700; font-size: 15px; padding: 10px; border-radius: 12px; background: var(--surface-2); }
+.cal-beat.hit { animation: calBeat .28s ease-out; }
+@keyframes calBeat { 0% { background: var(--accent); color: var(--accent-ink); transform: scale(1.03); } 100% { background: var(--surface-2); transform: scale(1); } }
+/* ---------- ajustes: probar la escucha ---------- */
+.diag { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px; }
+.diag-row { display: grid; grid-template-columns: 56px auto 1fr; gap: 10px; align-items: center; padding: 6px 0; font-size: 13.5px; color: var(--muted); }
+.diag-row b { color: var(--text); font-weight: 700; }
+.diag-row .tag { justify-self: start; padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; background: var(--surface-2); color: var(--muted); }
+.diag-row .tag.ok { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+.diag-row .tag.dead, .diag-row .tag.buzz { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
+.diag-empty { color: var(--muted); font-size: 13.5px; padding: 6px 0; }
+.diag-foot { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-top: 10px; font-size: 12.5px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .cal-beat.hit { animation: none; } }
