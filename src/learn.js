@@ -28,6 +28,12 @@ function spider(pos, order, back) {
 }
 const upDown = (pts, finger) => { const up = pts.map(([s, f]) => nt(s, f, finger(f))); return up.concat(up.slice(0, -1).reverse()); };
 const STRUM8 = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5].map((t, i) => [t, i % 2 ? 'U' : 'D']);
+// el mismo dibujo en cada cuerda, de la 6ª a la 1ª: pat = [[traste desde pos, dedo, ligada?]]
+const perString = (pos, pat, strings = [6, 5, 4, 3, 2, 1]) => strings.flatMap((s) => pat.map(([k, f, sl]) => ({ ...nt(s, pos + k, f), ...(sl ? { slur: true } : {}) })));
+const rep = (n, fn) => Array.from({ length: n }, (_, i) => fn(i));
+// arpegio p-i-m-a sobre la forma de un acorde: su bajo y las cuerdas 3ª, 2ª y 1ª
+const pima = (id) => { const ns = chordNotes(CHORDS[id]), bass = ns.reduce((a, b) => (b.string > a.string ? b : a)); return [bass, ...[3, 2, 1].map((st) => ns.find((n) => n.string === st))].map((n) => ({ ...n })); };
+const C_MAJOR = [[5, 3], [4, 0], [4, 2], [4, 3], [3, 0], [3, 2], [2, 0], [2, 1]].map(([st, f]) => nt(st, f, f));
 
 const EXERCISES = [
   // ---- Punteo: dedos ----
@@ -43,6 +49,37 @@ const EXERCISES = [
   { id: 'spider1423', track: 'punteo', group: 'Fuerza y agilidad', lvl: 3, kind: 'seq', icon: 'hand', title: 'Araña 1-4-2-3', sub: 'Estiramiento y control del meñique',
     why: 'Saltas del índice al meñique, lo que estira la mano, y luego vuelven el medio y el anular. Se toca entre los trastes 3 y 6.',
     notes: spider(3, [0, 3, 1, 2], true), bpm: 80, view: [2, 7] },
+  { id: 'alt1', track: 'punteo', group: 'Fuerza y agilidad', lvl: 1, kind: 'seq', icon: 'rhythm-line', title: 'Púa alterna', sub: 'Abajo y arriba en cada cuerda al aire', step: 0.5,
+    why: 'Cuatro golpes en cada cuerda, abajo-arriba-abajo-arriba, sin pisar nada. El movimiento es pequeño y sale de la muñeca. Los golpes hacia arriba tienen que sonar igual de fuertes que los de abajo.',
+    notes: [6, 5, 4, 3, 2, 1, 2, 3, 4, 5, 6].flatMap((st) => rep(4, () => nt(st, 0, 0))), bpm: 60, view: [0, 3] },
+  { id: 'pivot', track: 'punteo', group: 'Fuerza y agilidad', lvl: 1, kind: 'seq', icon: 'hand', title: 'Índice fijo', sub: '1-2, 1-3 y 1-4 sin levantar el índice',
+    why: 'El índice se queda apoyado en el traste 5 mientras los otros dedos van y vuelven. Así cada dedo aprende a moverse sin arrastrar a los demás.',
+    notes: perString(5, [[0, 1], [1, 2], [0, 1], [2, 3], [0, 1], [3, 4]]), bpm: 60, view: [4, 9] },
+  { id: 'weak', track: 'punteo', group: 'Fuerza y agilidad', lvl: 2, kind: 'seq', icon: 'hand', title: 'Anular y meñique', sub: 'Los dos dedos más flojos, solos',
+    why: 'El anular y el meñique comparten tendón y por eso les cuesta moverse por separado. Alterna los trastes 7 y 8 en cada cuerda, despacio y con la punta del dedo.',
+    notes: perString(5, [[2, 3], [3, 4], [2, 3], [3, 4]]), bpm: 60, view: [4, 9] },
+  { id: 'skip', track: 'punteo', group: 'Fuerza y agilidad', lvl: 2, kind: 'seq', icon: 'hand', title: 'Saltos de cuerda', sub: 'De la 6ª a la 4ª, de la 5ª a la 3ª…',
+    why: 'En las melodías las notas no siempre están en la cuerda de al lado. Aquí la mano derecha aprende a saltarse una cuerda sin mirar.',
+    notes: [6, 4, 5, 3, 4, 2, 3, 1].flatMap((st) => [nt(st, 5, 1), nt(st, 7, 3)]), bpm: 60, view: [4, 9] },
+  { id: 'hammer', track: 'punteo', group: 'Fuerza y agilidad', lvl: 2, kind: 'seq', icon: 'hand', title: 'Martillos', sub: 'La segunda nota suena sin pulsarla', modes: ['tempo'],
+    why: 'Pulsa el traste 5 y deja caer otro dedo con decisión, sin volver a pulsar con la mano derecha. Es el ejercicio que más fuerza da a los dedos. La nota ligada tiene que oírse igual que la primera.',
+    notes: perString(5, [[0, 1], [1, 2, true], [0, 1], [2, 3, true], [0, 1], [3, 4, true]]), bpm: 56, view: [4, 9] },
+  { id: 'alt2', track: 'punteo', group: 'Fuerza y agilidad', lvl: 2, kind: 'seq', icon: 'rhythm-line', title: 'Araña con púa alterna', sub: 'Dos notas por pulso, abajo y arriba', step: 0.5,
+    why: 'La araña de siempre, ahora con dos notas en cada pulso y alternando la púa. Cuando cambias de cuerda la púa sigue alternando, no vuelvas a empezar hacia abajo.',
+    notes: spider(5, [0, 1, 2, 3], true), bpm: 56, view: [4, 9] },
+  { id: 'stretch', track: 'punteo', group: 'Fuerza y agilidad', lvl: 3, kind: 'seq', icon: 'hand', title: 'Estiramiento 1-2-4', sub: 'Trastes 1, 3 y 5, donde más hay que abrir',
+    why: 'Índice en el traste 1, medio en el 3 y meñique en el 5. Los trastes aquí están muy separados, así que baja el pulgar por detrás del mástil para que la mano abra. Si notas tensión en la muñeca, para.',
+    notes: perString(1, [[0, 1], [2, 2], [4, 4]]), bpm: 60, view: [0, 6] },
+  { id: 'pull', track: 'punteo', group: 'Fuerza y agilidad', lvl: 3, kind: 'seq', icon: 'hand', title: 'Tirones', sub: 'Del dedo de arriba al índice, sin pulsar', modes: ['tempo'],
+    why: 'Con el índice puesto en el traste 5, pulsa la nota de otro dedo y retíralo tirando un poco de la cuerda hacia abajo, como un pellizco. Suena la nota del índice.',
+    notes: perString(5, [[1, 2], [0, 1, true], [2, 3], [0, 1, true], [3, 4], [0, 1, true]]), bpm: 56, view: [4, 9] },
+  { id: 'barre', track: 'punteo', group: 'Fuerza y agilidad', lvl: 3, kind: 'seq', icon: 'hand', title: 'Fuerza de cejilla', sub: 'De dos cuerdas a seis con el índice tumbado', modes: ['tempo'],
+    why: 'Tumba el índice sobre el traste 5 y toca las cuerdas de una en una, primero dos, luego tres, hasta las seis. Usa el canto del dedo y aprieta con el pulgar por detrás. Si alguna cuerda se apaga, Traste te avisa.',
+    notes: [2, 3, 4, 5, 6].flatMap((top) => rep(top, (i) => nt(top - i, 5, 1))), bpm: 50, view: [3, 8] },
+  // ---- Punteo: mano derecha ----
+  { id: 'pima', track: 'punteo', group: 'Con los dedos', lvl: 2, kind: 'seq', icon: 'hand', title: 'Arpegio p-i-m-a', sub: 'Lam, Do, Sol y Mim, nota a nota', step: 0.5,
+    why: 'Pon el acorde entero y toca el bajo con el pulgar y después las cuerdas 3ª, 2ª y 1ª con índice, medio y anular. Dos veces cada acorde. La mano se queda quieta y solo se mueven los dedos.',
+    notes: ['Am', 'C', 'G', 'Em'].flatMap((c) => [...pima(c), ...pima(c)]), bpm: 60, view: [0, 4] },
   // ---- Punteo: notas del mástil ----
   { id: 'open', track: 'punteo', group: 'Notas del mástil', lvl: 1, kind: 'seq', icon: 'music-line', title: 'Las cuerdas al aire', sub: 'Mi La Re Sol Si Mi, ida y vuelta',
     why: 'Antes de pisar nada, aprende cómo se llama y cómo suena cada cuerda. Tócalas al aire de una en una, de la 6ª (la más gruesa) a la 1ª y vuelta.',
@@ -65,6 +102,9 @@ const EXERCISES = [
   { id: 'gmaj', track: 'punteo', group: 'Escalas', lvl: 3, kind: 'seq', icon: 'music-line', title: 'Escala de Sol mayor', sub: 'Dos octavas en posición abierta',
     why: 'De la 6ª a la 1ª cuerda y vuelta, un dedo por traste. El Fa# de la 4ª cuerda va con el meñique.',
     notes: upDown([[6, 3], [5, 0], [5, 2], [5, 3], [4, 0], [4, 2], [4, 4], [3, 0], [3, 2], [2, 0], [2, 1], [2, 3], [1, 0], [1, 2], [1, 3]], (f) => f), bpm: 80, view: [0, 4] },
+  { id: 'scale3', track: 'punteo', group: 'Escalas', lvl: 3, kind: 'seq', icon: 'music-line', title: 'Do mayor de tres en tres', sub: 'Do Re Mi, Re Mi Fa, Mi Fa Sol…', step: 0.5,
+    why: 'La misma escala tocada en grupos de tres notas, empezando cada vez una nota más arriba. Así suenan muchas melodías, y obliga a los dedos a conocer la escala de verdad.',
+    notes: [0, 1, 2, 3, 4, 5].flatMap((i) => [C_MAJOR[i], C_MAJOR[i + 1], C_MAJOR[i + 2]]).concat([7, 6, 5, 4, 3, 2].flatMap((i) => [C_MAJOR[i], C_MAJOR[i - 1], C_MAJOR[i - 2]])).map((n) => ({ ...n })), bpm: 60, view: [0, 4] },
   // ---- Acordes: cambios y ritmo ----
   { id: 'changes', track: 'acordes', group: 'Practica', lvl: 1, kind: 'changes', icon: 'timer-line', title: 'Cambios de un minuto', sub: 'Cuenta cuántas veces cambias entre dos acordes',
     why: 'Elige dos acordes y alterna entre ellos durante un minuto, con un rasgueo en cada uno. Es el ejercicio con el que más rápido mejoran los cambios. Intenta superar tu récord cada día.' },
@@ -77,8 +117,17 @@ const EXERCISES = [
   { id: 'strumPop', track: 'acordes', group: 'Ritmo', lvl: 3, kind: 'rhythm', icon: 'pulse-line', title: 'El rasgueo más usado', sub: '↓ ↓↑ ↑↓↑ con Sol, Mim, Do y Re',
     why: 'Abajo, abajo-arriba, arriba-abajo-arriba, contando «1, 2 y, y 4 y». En el tiempo 3 el brazo baja igual pero sin tocar las cuerdas, y así no pierdes el pulso.',
     pattern: STRUM_PATTERNS[4], chords: ['G', 'G', 'Em', 'Em', 'C', 'C', 'D', 'D'], bpm: 75 },
+  { id: 'chg2', track: 'acordes', group: 'Ritmo', lvl: 2, kind: 'rhythm', icon: 'timer-flash-line', title: 'Cambios cada dos tiempos', sub: 'Sol, Do, Sol y Re, con dos golpes en cada uno', beats: 2,
+    why: 'El acorde cambia a mitad de compás. Solo tienes dos golpes para llegar, así que mueve los dedos mientras suena el segundo. La mano del rasgueo no espera.',
+    pattern: [[0, 'D'], [1, 'D']], chords: ['G', 'C', 'G', 'D', 'G', 'C', 'G', 'D', 'G', 'C', 'G', 'D'], bpm: 60 },
+  { id: 'chg1', track: 'acordes', group: 'Ritmo', lvl: 3, kind: 'rhythm', icon: 'timer-flash-line', title: 'Un acorde por tiempo', sub: 'Mim y Lam, cambiando en cada pulso', beats: 1,
+    why: 'Un golpe y cambias. Aquí no da tiempo a colocar los dedos de uno en uno, y tienen que caer todos a la vez. Empieza muy despacio.',
+    pattern: [[0, 'D']], chords: rep(16, (i) => (i % 2 ? 'Am' : 'Em')), bpm: 50 },
 ];
 const EXI = Object.fromEntries(EXERCISES.map((e) => [e.id, e]));
+// velocidad limpia: la más alta a la que el ejercicio ha salido con un 85 % o más a velocidad normal
+const cleanBpm = (ex) => state.rec['bpm:' + ex.id]?.v || 0;
+const targetBpm = (ex) => { const c = cleanBpm(ex); return c ? Math.min(c + 5, 208) : ex.bpm; };
 
 // Parejas de acordes para los cambios, de más fácil a más difícil
 const PAIRS = [null,
@@ -92,20 +141,45 @@ function exerciseSong(ex) {
   const ev = [];
   let total;
   if (ex.kind === 'rhythm') {
-    ex.chords.forEach((c, bar) => ex.pattern.forEach(([off, dir]) => ev.push({ t: bar * 4 + off, dur: 0.5, chord: c, dir, notes: chordNotes(CHORDS[c], dir), first: off === 0 && (bar === 0 || ex.chords[bar - 1] !== c) })));
-    total = ex.chords.length * 4;
+    const B = ex.beats || 4; // tiempos que dura cada acorde
+    ex.chords.forEach((c, bar) => ex.pattern.forEach(([off, dir]) => ev.push({ t: bar * B + off, dur: 0.5, chord: c, dir, notes: chordNotes(CHORDS[c], dir), first: off === 0 && (bar === 0 || ex.chords[bar - 1] !== c) })));
+    total = ex.chords.length * B;
     ev.forEach((e, i) => { e.dur = Math.min(1, (ev[i + 1]?.t ?? total) - e.t); });
   } else {
-    ex.notes.forEach((n, i) => ev.push({ t: i, dur: 1, notes: [{ ...n }] }));
-    total = ex.notes.length;
+    const st = ex.step || 1; // tiempos entre notas (0,5 son corcheas)
+    ex.notes.forEach((n, i) => ev.push({ t: i * st, dur: st, notes: [{ ...n }] }));
+    total = ex.notes.length * st;
   }
-  return { id: 'ex:' + ex.id, title: ex.title, origin: ex.sub, bpm: ex.bpm, bpb: 4, exercise: ex, built: { total, pickup: 0, chordTrack: [], levels: { easy: ev } } };
+  const bpm = targetBpm(ex);
+  return { id: 'ex:' + ex.id, title: ex.title, origin: `${ex.sub} · meta ${bpm} ppm`, bpm, bpb: 4, exercise: ex, built: { total, pickup: 0, chordTrack: [], levels: { easy: ev } } };
 }
 
 /* ---------- Práctica de hoy ---------- */
 const dayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 const dayNum = () => Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
 function todayDone() { const t = store.get('today', {}); return t && t.d === dayKey() ? t.done || [] : []; }
+
+/* Racha: días seguidos con algo hecho */
+function streak() {
+  const st = store.get('streak', { last: 0, n: 0, best: 0 }), d = dayNum();
+  return { ...st, n: st.last >= d - 1 ? st.n : 0, today: st.last === d };
+}
+function bumpStreak() {
+  const st = store.get('streak', { last: 0, n: 0, best: 0 }), d = dayNum();
+  if (st.last === d) return;
+  const n = st.last === d - 1 ? st.n + 1 : 1;
+  store.set('streak', { last: d, n, best: Math.max(st.best || 0, n) });
+}
+
+// de una lista de ejercicios, el que peor llevas (menos estrellas); si empatan, va rotando con los días
+function weakest(ids) {
+  const d = dayNum();
+  return ids.map((id, i) => ({ id, s: bestStars(EXI[id]), r: (i + d) % ids.length })).sort((a, b) => a.s - b.s || a.r - b.r)[0].id;
+}
+const WARM = [null, ['spider5', 'alt1', 'pivot'], ['spider1', 'spider1324', 'weak', 'skip', 'hammer', 'alt2', 'pima'], ['spider1423', 'stretch', 'pull', 'barre', 'scale3', 'hammer']];
+const RHYTHM = [null, ['strum4'], ['strum8', 'chg2'], ['strumPop', 'chg1', 'chg2']];
+const NOTES = [null, ['open', 'find6'], ['find5', 'find65', 'cmaj', 'penta'], ['findall', 'gmaj', 'penta', 'scale3']];
+const EARS = [null, ['high', 'string', 'mm'], ['mm', 'chord'], ['chord', 'mm']];
 
 function routine(level) {
   const d = dayNum(), pick = (arr) => arr[d % arr.length];
@@ -114,19 +188,25 @@ function routine(level) {
   const learned = CHORD_ORDER.filter((x) => state.learned[x]);
   const steps = [];
   const ex = (kicker, id, min) => { const e = EXI[id]; steps.push({ key: 'ex:' + id, kicker, icon: e.icon, title: e.title, sub: e.sub, min, hash: '#aprender/ej/' + id }); };
-  ex('Calienta', ['', 'spider5', pick(['spider1', 'spider1324']), pick(['spider1423', 'spider1324'])][level], 3);
+  steps.push({ key: 'tune', kicker: 'Antes de nada', icon: 'dashboard-3-line', title: 'Afina la guitarra', sub: 'Las seis cuerdas, una a una', min: 2, hash: '#afinador' });
+  ex('Calienta', weakest(WARM[level]), 3);
+  // una clase corta que aún no hayas leído
+  const cl = CLASSES.find((c) => c.lvl <= level && !classRead(c.id));
+  if (cl) steps.push({ key: 'class:' + cl.id, kicker: 'Clase', icon: 'book-2-line', title: cl.title, sub: cl.sub, min: cl.min, hash: '#aprender/clase/' + cl.id });
   if (newChord) steps.push({ key: 'lesson:' + newChord, kicker: 'Acorde nuevo', icon: 'hand', title: `${chordLabel(newChord)} · ${chordLongName(newChord)}`, sub: 'Colócalo, compruébalo cuerda a cuerda y practica el cambio', min: 5, hash: '#aprender/acorde/' + enc(newChord) });
   else if (learned.length >= 2) steps.push({ key: 'review', kicker: 'Repaso', icon: 'shuffle-line', title: 'Repaso de memoria', sub: 'Un acorde que ya sabes, sin mirar el diagrama', min: 3, hash: '#aprender/repaso' });
-  const known = PAIRS[level].filter(([a, b]) => state.learned[a] && state.learned[b]);
-  const pr = known.length ? pick(known) : PAIRS[level][0];
+  // el cambio que peor llevas entre los acordes que sabes
+  const known = PAIRS.slice(1, level + 1).flat().filter(([a, b]) => state.learned[a] && state.learned[b]);
+  const pr = known.length ? known.map((q, i) => ({ q, v: state.rec['changes:' + pairKey(q)]?.v ?? -1, r: (i + d) % known.length })).sort((a, b) => a.v - b.v || a.r - b.r)[0].q : PAIRS[level][0];
   steps.push({ key: 'chg:' + pairKey(pr), kicker: 'Cambios', icon: 'timer-line', title: `${chordLabel(pr[0])} ↔ ${chordLabel(pr[1])} en un minuto`, sub: 'Alterna con un rasgueo en cada uno', min: 2, hash: `#aprender/cambios/${enc(pr[0])}~${enc(pr[1])}` });
-  ex('Ritmo', ['', 'strum4', 'strum8', 'strumPop'][level], 3);
-  ex('Notas', ['', pick(['open', 'find6']), pick(['find5', 'find65', 'find6']), 'findall'][level], 3);
-  if (level > 1) ex('Escala', level === 2 ? pick(['cmaj', 'penta']) : pick(['gmaj', 'penta']), 3);
+  ex('Ritmo', weakest(RHYTHM[level]), 3);
+  // un día notas y escalas, y al siguiente oído
+  if (d % 2) { const g = EARI[pick(EARS[level])]; steps.push({ key: 'ear:' + g.id, kicker: 'Oído', icon: 'headphone-line', title: g.title, sub: g.sub, min: 2, hash: '#aprender/oido/' + g.id }); }
+  else ex(level === 1 ? 'Notas' : 'Mástil', weakest(NOTES[level]), 3);
   // una canción para terminar
   const fits = (s) => songChords(s).every((c) => state.learned[c]);
-  let lvl = level === 1 ? 'easy' : 'hard', cand = SONGS.filter((s) => (level === 1 ? s.stars === 1 : lvl === 'hard' ? fits(s) : true));
-  if (!cand.length) { lvl = 'easy'; cand = SONGS.filter((s) => s.stars <= level); }
+  let lvl = level === 1 ? 'easy' : 'hard', cand = SONGS.filter((s) => !s.user && (level === 1 ? s.stars === 1 : lvl === 'hard' ? fits(s) : true));
+  if (!cand.length) { lvl = 'easy'; cand = SONGS.filter((s) => !s.user && s.stars <= level); }
   const song = pick(cand);
   steps.push({ key: `song:${song.id}:${lvl}`, kicker: 'Canción', icon: 'music-2-line', title: song.title, sub: lvl === 'easy' ? 'En Fácil, la melodía nota a nota' : 'En Difícil, con acordes y rasgueo', min: 4, song, lvl });
   return steps;
@@ -320,14 +400,14 @@ const Lesson = {
    Ejercicios con micrófono: contrarreloj, 60 segundos, 10 notas y cambios de un minuto
    ============================================================ */
 const MODES = {
-  seq: [['crono', 'timer-flash-line', 'Contrarreloj'], ['tempo', 'pulse-line', 'Con metrónomo']],
+  seq: [['tempo', 'pulse-line', 'Con metrónomo'], ['crono', 'timer-flash-line', 'Contrarreloj']],
   find: [['m60', 'timer-line', '60 segundos'], ['n10', 'timer-flash-line', '10 notas']],
   changes: [['m60', 'timer-line', '1 minuto']],
   rhythm: [['tempo', 'pulse-line', 'Con metrónomo']],
 };
 const modeHelp = (kind, mode) => ({
   crono: 'Toca la secuencia lo más rápido que puedas. El tiempo empieza con la primera nota y cada nota equivocada suma 1 segundo.',
-  tempo: kind === 'rhythm' ? 'Rasguea con el clic y cada golpe contará como Perfecto, Pronto o Tarde. Si va muy rápido, baja la velocidad en las opciones.' : 'Las notas avanzan solas con el clic y se puntúan como en las canciones. Si va muy rápido, baja la velocidad en las opciones.',
+  tempo: kind === 'rhythm' ? 'Rasguea con el clic. Si te sale limpio, la próxima vez irá 5 pulsos más rápido.' : 'Las notas avanzan con el clic. Si te sale limpio, la próxima vez irá 5 pulsos más rápido.',
   m60: kind === 'changes' ? 'Un rasgueo en cada acorde durante un minuto. Cuento los cambios y te digo cuáles suenan limpios.' : 'Acierta todas las notas que puedas en un minuto.',
   n10: 'Encuentra 10 notas lo más rápido posible.',
 }[mode]);
@@ -344,8 +424,9 @@ function recordOf(ex, mode) {
   if (ex.kind === 'changes') return null;
   const r = state.rec[`${ex.id}:${mode}`]; return r ? { stars: r.stars, text: fmtRec(ex.kind, mode, r.v) } : null;
 }
+const modesOf = (ex) => MODES[ex.kind].filter(([m]) => !ex.modes || ex.modes.includes(m));
 function bestStars(ex) {
-  return Math.max(0, ...MODES[ex.kind].map(([m]) => recordOf(ex, m)?.stars || 0));
+  return Math.max(0, ...modesOf(ex).map(([m]) => recordOf(ex, m)?.stars || 0));
 }
 
 const Drill = {
@@ -353,7 +434,7 @@ const Drill = {
   open(ex, o = {}) {
     this.stop();
     this.ex = ex; this.back = o.back || (Learn.inRoutine ? '#aprender' : '#aprender/' + ex.track);
-    const modes = MODES[ex.kind], saved = store.get('mode:' + ex.id, modes[0][0]);
+    const modes = modesOf(ex), saved = store.get('mode:' + ex.id, modes[0][0]);
     this.mode = modes.some((m) => m[0] === saved) ? saved : modes[0][0];
     if (ex.kind === 'changes') this.pair = o.pair || store.get('pair', null) || this.defaultPair();
   },
@@ -481,7 +562,7 @@ const Drill = {
   // ---------- dibujo ----------
   html() {
     const ex = this.ex, run = this.st !== 'idle';
-    const modes = MODES[ex.kind];
+    const modes = modesOf(ex);
     const title = ex.kind === 'changes' ? `${chordLabel(this.pair[0])} ↔ ${chordLabel(this.pair[1])}` : ex.title;
     return `<div class="screen drill" data-kind="${ex.kind}">
       <div class="scr-top">
@@ -546,7 +627,7 @@ const Drill = {
       return `<div class="chg-pair">${card(A, 0)}<span class="chg-arrow">${icon('shuffle-line')}</span>${card(B, 1)}</div>${count}`;
     }
     // ritmo: el patrón de un compás (se repite), los acordes por compás y sus formas
-    const cells = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5].map((t, k) => {
+    const cells = rep((ex.beats || 4) * 2, (k) => k / 2).map((t, k) => {
       const p = ex.pattern.find(([o]) => o === t);
       return `<span class="${p ? p[1] : 'rest'}"><i>${p ? icon(p[1] === 'D' ? 'arrow-down-line' : 'arrow-up-line') : '·'}</i><em>${k % 2 ? 'y' : k / 2 + 1}</em></span>`;
     }).join('');
@@ -582,6 +663,9 @@ const Learn = {
       const st = e.target.closest('[data-today]');
       if (st) { const s = this.steps().find((x) => x.key === st.dataset.today); if (s) this.goStep(s); return; }
       if (e.target.closest('[data-today-go]')) { const s = this.steps().find((x) => !todayDone().includes(x.key)) || this.steps()[0]; this.goStep(s); return; }
+      if (e.target.closest('[data-welcome]')) { store.set('welcomed', true); if (e.target.closest('[data-welcome]').dataset.welcome === 'tune') { this.goStep(this.steps()[0]); } else this.render(); return; }
+      if (this.scr === 'class') { Classes.onClick(e); return; }
+      if (this.scr === 'ear') { const q = e.target.closest('[data-ear]'); if (q) EarGame.onClick(q); return; }
       const b = e.target.closest('[data-act]');
       if (b && this.scr === 'lesson') { Lesson.onClick(b); return; }
       if (this.scr === 'drill') { const d = e.target.closest('[data-dr],[data-mode]'); if (d) Drill.onClick(d); }
@@ -598,7 +682,19 @@ const Learn = {
   markDone(key) {
     const done = todayDone();
     if (!done.includes(key)) { done.push(key); store.set('today', { d: dayKey(), done }); }
-    // un acorde aprendido también cuenta como el "acorde nuevo" de hoy
+    bumpStreak();
+  },
+  // un ejercicio con metrónomo terminado: apunta la velocidad limpia y dice qué toca la próxima vez
+  exResult(ex, acc, speed, bpm) {
+    const prev = cleanBpm(ex);
+    if (acc >= 0.85 && speed >= 1) {
+      const v = Math.round(bpm * speed);
+      if (v > prev) { state.rec['bpm:' + ex.id] = { v }; store.set('rec', state.rec); }
+      return `Te ha salido limpio a ${v} ppm. La próxima vez irá a ${Math.min(Math.max(v, prev) + 5, 208)}.`;
+    }
+    if (acc >= 0.85) return 'Limpio. Prueba ahora a velocidad normal.';
+    if (acc < 0.6 && speed >= 1) return 'Baja a «Lento» hasta que salga limpio. La velocidad llega sola.';
+    return '';
   },
   // tras terminar algo: si vienes de la práctica de hoy, el botón para seguir
   nextAction(doneKey) {
@@ -609,7 +705,7 @@ const Learn = {
     if (!nx) return { label: '¡Práctica de hoy hecha!', icon: 'check-line', fn: () => { this.inRoutine = false; location.hash = '#aprender'; } };
     return { label: `Seguir con ${nx.kicker.toLowerCase()}`, icon: 'arrow-right-line', fn: () => this.goStep(nx) };
   },
-  leave() { Drill.stop(); Lesson.check = null; if (Player.host === 'aprender') Player.release(); },
+  leave() { Drill.stop(); EarGame.st = 'idle'; Lesson.check = null; if (Player.host === 'aprender') Player.release(); },
   show(parts) {
     const [a, b, c] = parts;
     const was = this.scr;
@@ -617,6 +713,9 @@ const Learn = {
     if (!(a === 'ej' && c === 'tempo') && Player.host === 'aprender') Player.release();
     if (!a) { this.scr = 'home'; }
     else if (a === 'acordes' || a === 'punteo') { this.scr = 'track'; this.track = a; this.inRoutine = false; }
+    else if (a === 'clases' || a === 'oido' && !EARI[b]) { this.scr = 'track'; this.track = a; this.inRoutine = false; }
+    else if (a === 'clase' && CLI[b]) { Classes.open(b); this.scr = 'class'; }
+    else if (a === 'oido') { if (was !== 'ear' || EarGame.g !== EARI[b]) EarGame.open(b); this.scr = 'ear'; }
     else if (a === 'guia') this.scr = 'guide';
     else if (a === 'acorde' && CHORDS[b]) { if (was !== 'lesson' || Lesson.id !== b || Lesson.review) Lesson.open(b, false); else Lesson.check = null; this.scr = 'lesson'; }
     else if (a === 'repaso') { Lesson.open(null, true); this.scr = 'lesson'; }
@@ -641,7 +740,7 @@ const Learn = {
     root.hidden = this.scr === 'player';
     if (this.scr === 'player') return;
     root.innerHTML = this.scr === 'home' ? this.homeHTML() : this.scr === 'track' ? this.trackHTML() : this.scr === 'guide' ? this.guideHTML()
-      : this.scr === 'lesson' ? Lesson.html() : Drill.html();
+      : this.scr === 'class' ? Classes.html() : this.scr === 'ear' ? EarGame.html() : this.scr === 'lesson' ? Lesson.html() : Drill.html();
   },
   frame(f, dt, now) {
     if (this.scr === 'drill') Drill.frame(f, now);
@@ -654,8 +753,15 @@ const Learn = {
     const nLearned = CHORD_ORDER.filter((x) => state.learned[x]).length;
     const nPunteo = EXERCISES.filter((e) => e.track === 'punteo' && bestStars(e) > 0).length, totPunteo = EXERCISES.filter((e) => e.track === 'punteo').length;
     const allDone = nDone === steps.length;
+    const nRead = CLASSES.filter((c) => classRead(c.id)).length, nEar = EAR_GAMES.filter((g) => state.rec['ear:' + g.id]).length, sk = streak();
+    const welcome = store.get('welcomed', false) ? '' : `<section class="card welcome">
+        <h2>Bienvenido a Traste</h2>
+        <p>Traste escucha tu guitarra por el micrófono y te dice si lo que tocas suena bien. Afina, sigue la práctica de hoy y toca una canción al final. No hace falta cuenta y nada sale de tu equipo.</p>
+        <div class="flex flex-wrap gap-2"><button type="button" class="btn btn-primary" data-welcome="tune">${icon('dashboard-3-line')}Afinar la guitarra</button><button type="button" class="btn btn-ghost" data-welcome="ok">Entendido</button></div>
+      </section>`;
     return `<div class="screen"><div class="scr-body scroll"><div class="lh">
-      <h1 class="lh-title">Aprender</h1>
+      <div class="lh-top"><h1 class="lh-title">Aprender</h1>${sk.n ? `<span class="streak ${sk.today ? 'on' : ''}" title="${sk.today ? 'Hoy ya has practicado' : 'Practica hoy para no perder la racha'}. Tu mejor racha: ${sk.best} ${sk.best === 1 ? 'día' : 'días'}">${icon('fire-line')}<b>${sk.n}</b> ${sk.n === 1 ? 'día' : 'días'} seguidos</span>` : ''}</div>
+      ${welcome}
       <div class="lh-grid">
         <section class="card">
           <div class="card-head"><div><h2>${icon('compass-3-line')}¿Qué quieres aprender?</h2><p>Elige y practica a tu aire</p></div></div>
@@ -670,8 +776,17 @@ const Learn = {
             <span class="tr-txt"><b>Punteo</b><span>Dedos ágiles, notas del mástil y escalas</span><span class="tr-meta"><span class="tr-bar"><i style="width:${(nPunteo / totPunteo) * 100}%"></i></span>${nPunteo} de ${totPunteo} ejercicios superados</span></span>
             ${icon('arrow-right-s-line', 'chev')}
           </a>
+          <a class="track" href="#aprender/clases">
+            <span class="tr-ico c3">${icon('book-2-line')}</span>
+            <span class="tr-txt"><b>Clases</b><span>Teoría de acordes, ritmo y técnica, explicado en corto</span><span class="tr-meta"><span class="tr-bar"><i style="width:${(nRead / CLASSES.length) * 100}%"></i></span>${nRead} de ${CLASSES.length} leídas</span></span>
+            ${icon('arrow-right-s-line', 'chev')}
+          </a>
+          <a class="track" href="#aprender/oido">
+            <span class="tr-ico c4">${icon('headphone-line')}</span>
+            <span class="tr-txt"><b>Oído</b><span>Reconocer notas y acordes al escucharlos</span><span class="tr-meta"><span class="tr-bar"><i style="width:${(nEar / EAR_GAMES.length) * 100}%"></i></span>${nEar} de ${EAR_GAMES.length} juegos probados</span></span>
+            ${icon('arrow-right-s-line', 'chev')}
+          </a>
           </div>
-          ${nLearned === 0 ? `<a class="guide-link" href="#aprender/guia">${icon('book-open-line')}<span><b>¿Primera vez con una guitarra?</b> Cómo sujetarla, pisar y leer un diagrama</span>${icon('arrow-right-s-line', 'chev')}</a>` : ''}
         </section>
         <section class="card today">
           <div class="card-head">
@@ -695,12 +810,30 @@ const Learn = {
     return `<a class="ex-row ${e.lvl > lvl ? 'above' : ''}" href="#aprender/ej/${e.id}">
       <span class="ex-ico">${icon(e.icon)}</span>
       <span class="ex-txt"><b>${e.title}</b><span>${e.sub}</span></span>
-      <span class="ex-meta"><span class="lvl-pips" title="Nivel ${LVL[e.lvl].n}">${[1, 2, 3].map((k) => `<i class="${k <= e.lvl ? 'on' : ''}"></i>`).join('')}</span>${st ? miniStars(st) : ''}</span>
+      <span class="ex-meta">${cleanBpm(e) ? `<span class="ex-bpm" title="Tu velocidad limpia">${cleanBpm(e)} ppm</span>` : ''}<span class="lvl-pips" title="Nivel ${LVL[e.lvl].n}">${[1, 2, 3].map((k) => `<i class="${k <= e.lvl ? 'on' : ''}"></i>`).join('')}</span>${st ? miniStars(st) : ''}</span>
       ${icon('arrow-right-s-line', 'chev')}</a>`;
   },
   trackHTML() {
     const chords = this.track === 'acordes';
     let body = '';
+    if (this.track === 'clases' || this.track === 'oido') {
+      const cls = this.track === 'clases', lvl = this.level();
+      if (cls) body = CLASS_GROUPS.map((g) => { const list = CLASSES.filter((c) => c.group === g); return `<section class="trk-sec"><h2 class="trk-h">${g}<span>${list.filter((c) => classRead(c.id)).length}/${list.length}</span></h2><div class="ex-list">${list.map((c) => `<a class="ex-row ${c.lvl > lvl ? 'above' : ''}" href="#aprender/clase/${c.id}">
+          <span class="ex-ico">${icon(classRead(c.id) ? 'check-line' : 'book-2-line')}</span>
+          <span class="ex-txt"><b>${c.title}</b><span>${c.sub}</span></span>
+          <span class="ex-meta"><span class="ex-bpm">${c.min} min</span></span>${icon('arrow-right-s-line', 'chev')}</a>`).join('')}</div></section>`; }).join('');
+      else body = `<section class="trk-sec"><div class="ex-list">${EAR_GAMES.map((g) => { const r = state.rec['ear:' + g.id]; return `<a class="ex-row" href="#aprender/oido/${g.id}">
+          <span class="ex-ico">${icon(g.icon)}</span>
+          <span class="ex-txt"><b>${g.title}</b><span>${g.sub}</span></span>
+          <span class="ex-meta">${r ? `<span class="ex-bpm">${r.v}/10</span>${miniStars(r.stars)}` : ''}</span>${icon('arrow-right-s-line', 'chev')}</a>`; }).join('')}</div></section>`;
+      return `<div class="screen">
+        <div class="scr-top">
+          <a class="btn btn-soft btn-icon" href="#aprender" aria-label="Volver">${icon('arrow-left-line')}</a>
+          <div class="scr-title"><h1>${cls ? 'Clases' : 'Oído'}</h1><p>${cls ? 'Dos o tres minutos cada una, con ejemplos que puedes escuchar' : 'La app toca y tú eliges. No hace falta micrófono'}</p></div>
+        </div>
+        <div class="scr-body scroll"><div class="trk">${body}</div></div>
+      </div>`;
+    }
     if (chords) {
       const next = CHORD_ORDER.find((x) => !state.learned[x]);
       const nL = CHORD_ORDER.filter((x) => state.learned[x]).length;

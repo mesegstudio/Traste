@@ -29,6 +29,7 @@ ${src('data.js')}
 ${src('cifrado.js')}
 ${src('app.js')}
 ${src('mysongs.js')}
+${src('classes.js')}
 ${src('learn.js')}
 </script>`;
 const body = src('body.html');

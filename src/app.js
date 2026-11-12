@@ -643,6 +643,7 @@ const STRING_TH = { 6: 4.4, 5: 3.7, 4: 3, 3: 2.4, 2: 1.9, 1: 1.5 };
 const Tuner = {
   mode: 'auto', sel: 6, cur: null, lock: null, done: new Set(), hold: 0, hist: [], shown: 0, target: 0, lastSeen: 0, live: false, cents: 0, level: 0, phase: 0, last: {},
   init() {
+    $('#tnNext').addEventListener('click', () => { Learn.markDone('tune'); $('#tnNext').hidden = true; const nx = Learn.nextAction('tune'); if (nx) nx.fn(); else location.hash = '#aprender'; });
     const ticks = $('#ticks');
     for (let c = -50; c <= 50; c += 5) {
       const d = document.createElement('div');
@@ -658,6 +659,12 @@ const Tuner = {
     $('#tnMode').addEventListener('click', () => { if (this.mode === 'manual') this.setMode('auto'); else toast('Para elegir una cuerda, tócala en el dibujo.', 3500, 'information-line'); });
     $('#tnHint').addEventListener('click', (e) => { if (e.target.closest('[data-tn-reset]')) { this.done.clear(); this.hold = 0; this.renderStrings(); } });
     this.renderStrings();
+  },
+  // las seis afinadas: cuenta como el primer paso de la práctica de hoy
+  allTuned() {
+    Learn.markDone('tune');
+    const nx = Learn.nextAction('tune');
+    if (nx) showResult({ title: 'Guitarra afinada', text: 'Las seis cuerdas están en su sitio.', actions: [{ ...nx, kind: 'primary' }] });
   },
   setMode(m) {
     this.mode = m; this.hist = []; this.hold = 0; this.lock = null;
@@ -698,7 +705,7 @@ const Tuner = {
           this.lastSeen = now; this.live = true;
           if (Math.abs(c) <= 5) {
             this.hold += dt;
-            if (this.hold >= 1 && !this.done.has(s)) { this.done.add(s); this.renderStrings(); }
+            if (this.hold >= 1 && !this.done.has(s)) { this.done.add(s); this.renderStrings(); if (this.done.size === 6) this.allTuned(); }
           } else this.hold = Math.max(0, this.hold - dt * 2);
         }
       }
@@ -872,7 +879,7 @@ const Player = {
     $('#songList').hidden = host === 'canciones';
     $('#player').hidden = false; this.showFingers(false); this.showOpts(false);
     this.loop = null; this.renderLoop();
-    this.setSpeed(store.get('speed', 1));
+    this.setSpeed(ex ? store.get('exSpeed', 2) : store.get('speed', 1)); // los ejercicios ya traen su velocidad ajustada: van en Normal
     this.setLevel(ex ? 'easy' : store.get('lvl:' + song.id, 'easy'));
     this.resize(); Cal.sync();
   },
@@ -926,7 +933,7 @@ const Player = {
     this.say(msg, acc >= 0.9 ? PAL.ok : PAL.muted, true);
   },
   setSpeed(i) {
-    this.speedIdx = clamp(i, 0, 3); store.set('speed', this.speedIdx);
+    this.speedIdx = clamp(i, 0, 3); if (this.song) store.set(this.song.exercise ? 'exSpeed' : 'speed', this.speedIdx);
     const sp = $('#plSpeed'); sp.value = this.speedIdx; sp.setAttribute('aria-valuetext', SPEEDS[this.speedIdx].n);
     $$('#plSpeedLabels span').forEach((s) => s.classList.toggle('on', +s.dataset.i === this.speedIdx));
     this.renderChip();
@@ -1010,7 +1017,7 @@ const Player = {
     if (short) return `${pcName(n.midi)} (${n.string}ª${n.fret ? `, traste ${n.fret}` : ' al aire'})`;
     if (e.of) return `<b>${pcName(n.midi)}</b> · ${n.string}ª cuerda · con la forma de <b>${chordLabel(e.of)}</b>`;
     const dot = n.fret ? `<span class="inline-block w-2.5 h-2.5 rounded-full align-middle mr-1" style="background:${fingerVar(n.finger)}"></span>` : '';
-    return `<b>${pcName(n.midi)}</b> · ${n.string}ª cuerda ${n.fret ? `· traste ${n.fret} · ${dot}dedo ${n.finger}` : 'al aire'}`;
+    return `<b>${pcName(n.midi)}</b> · ${n.string}ª cuerda ${n.fret ? `· traste ${n.fret} · ${dot}dedo ${n.finger}` : 'al aire'}${n.slur ? ' · <b>ligada</b>, sin pulsar' : ''}`;
   },
   // ---------- tocar / arrastrar ----------
   ppb() { return this.W < 640 ? 70 : 116; },
@@ -1229,6 +1236,7 @@ const Player = {
       stars, title: starsLine(stars),
       text: [Math.abs(avg) >= 0.045 ? (avg < 0 ? `Sueles adelantarte unos ${Math.round(-avg * 1000)} ms. Espera a que la bola caiga en la nota.` : `Sueles ir unos ${Math.round(avg * 1000)} ms tarde. Anticípate un poco.`) : stars < 2 ? 'Prueba más lento o activa «Esperarme».' : '',
         worst && !ex && st.miss < judged.length * 0.8 ? `Donde más fallas es en los compases ${worst.k + 1} y ${worst.k + 2}.` : '',
+        ex ? Learn.exResult(ex, acc, SPEEDS[this.speedIdx].p, this.song.bpm) : '',
         st.dead >= 2 ? `${st.dead} notas se apagaron pronto. Mantén el dedo apretado justo detrás del traste hasta la nota siguiente.` : '',
         st.buzz >= 2 ? `${st.buzz} notas trastearon. Acerca el dedo al traste y aprieta un poco más.` : ''].filter(Boolean).join(' '),
       big: [[`${Math.round(acc * 100)}%`, 'precisión'], [this.points.toLocaleString('es-ES'), record ? 'puntos · récord' : 'puntos'], [this.maxCombo, 'mejor racha']],
@@ -1432,6 +1440,7 @@ function route() {
   if (view !== 'aprender' || prev !== 'aprender') Learn.leave();
   if (view === 'aprender') Learn.show(rest.map(decodeURIComponent));
   if (view === 'ajustes') Settings.render();
+  if (view === 'afinador') $('#tnNext').hidden = !Learn.inRoutine || todayDone().includes('tune');
   Cal.sync();
   if (view === Player.host) requestAnimationFrame(() => Player.resize());
 }
