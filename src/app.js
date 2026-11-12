@@ -12,7 +12,7 @@ const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 
 const store = {
   get(k, d) { try { const v = localStorage.getItem('traste:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
-  set(k, v) { try { localStorage.setItem('traste:' + k, JSON.stringify(v)); } catch { /* sin almacenamiento */ } },
+  set(k, v) { try { localStorage.setItem('traste:' + k, JSON.stringify(v)); return true; } catch { return false; /* sin almacenamiento o lleno */ } },
 };
 
 const state = {
@@ -1234,7 +1234,7 @@ const Player = {
     if (worst && !ex && st.miss < judged.length * 0.8) acts.splice(1, 0, { label: `Repetir los compases ${worst.k + 1} y ${worst.k + 2}`, icon: 'repeat-line', fn: () => { this.loop = { a: pk + worst.k * bpb, b: pk + (worst.k + 2) * bpb, n: 2, pass: 0 }; this.renderLoop(); this.renderChip(); this.start(false); } });
     showResult({
       stars, title: starsLine(stars),
-      text: [Math.abs(avg) >= 0.045 ? (avg < 0 ? `Sueles adelantarte unos ${Math.round(-avg * 1000)} ms. Espera a que la bola caiga en la nota.` : `Sueles ir unos ${Math.round(avg * 1000)} ms tarde. Anticípate un poco.`) : stars < 2 ? 'Prueba más lento o activa «Esperarme».' : '',
+      text: [Math.abs(avg) >= 0.045 ? (avg < 0 ? `Sueles adelantarte unos ${Math.round(-avg * 1000)} ms. Espera a que la bola caiga en la nota.` : `Sueles ir unos ${Math.round(avg * 1000)} ms tarde. Anticípate un poco.`) : stars < 2 && !ex ? 'Prueba más lento o activa «Esperarme».' : '',
         worst && !ex && st.miss < judged.length * 0.8 ? `Donde más fallas es en los compases ${worst.k + 1} y ${worst.k + 2}.` : '',
         ex ? Learn.exResult(ex, acc, SPEEDS[this.speedIdx].p, this.song.bpm) : '',
         st.dead >= 2 ? `${st.dead} notas se apagaron pronto. Mantén el dedo apretado justo detrás del traste hasta la nota siguiente.` : '',

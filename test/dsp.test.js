@@ -198,5 +198,19 @@ console.log(`Cifrado: ${pc.parts.length} partes · ${bc.chordList.join(' ')} · 
   console.log('Oído: ataques por espectro, nota que sigue sonando, ligados, clic y cambio de acorde');
 }
 
+// ---------- Archivos de tablatura: orden de los compases con repeticiones y casillas ----------
+{
+  const T = require('../src/tabfile.js');
+  const mb = (o = {}) => ({ isRepeatStart: false, isRepeatEnd: false, repeatCount: 0, alternateEndings: 0, ...o });
+  const ord = (bars) => T.barOrder(bars).join(' ');
+  check(ord([mb(), mb(), mb()]) === '0 1 2', 'sin repeticiones');
+  check(ord([mb(), mb({ isRepeatStart: true }), mb({ isRepeatEnd: true, repeatCount: 2 }), mb()]) === '0 1 2 1 2 3', 'repetición simple');
+  check(ord([mb({ isRepeatStart: true }), mb({ alternateEndings: 1, isRepeatEnd: true, repeatCount: 2 }), mb({ alternateEndings: 2 }), mb()]) === '0 1 0 2 3', 'casillas de 1ª y 2ª vez');
+  check(ord([mb({ isRepeatEnd: true, repeatCount: 3 }), mb()]) === '0 0 0 1', 'tres veces desde el principio');
+  const ev = [{ t: 0, dur: 1, notes: [{ string: 5, fret: 3, finger: 3, midi: 48 }] }, { t: 1, dur: 0.5, notes: [{ string: 4, fret: 2, finger: 2, midi: 52, slur: true }] }];
+  check(JSON.stringify(T.unpackEvents(T.packEvents(ev))) === JSON.stringify(ev), 'las notas de un archivo se guardan y se recuperan iguales');
+  console.log('Archivos de tablatura: repeticiones y casillas');
+}
+
 console.log(fails ? `\n${fails} fallos` : '\nTodo OK');
 process.exit(fails ? 1 : 0);

@@ -763,3 +763,13 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 /* en una columna (móvil), la práctica de hoy va antes que los caminos */
 .lh-grid > .today { order: -1; }
 @media (min-width: 880px), (min-aspect-ratio: 5/4) and (min-width: 640px) { .lh-grid > .today { order: 0; } }
+
+/* ---------- añadir canción: archivo de tablatura ---------- */
+.imp-or { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 12.5px; color: var(--muted); }
+.imp-file { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 18px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
+.imp-file > .ri { width: 26px; height: 26px; color: var(--accent); flex: none; }
+.imp-file > div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.imp-file b { font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.imp-file span { font-size: 12.5px; color: var(--muted); }
+.imp-track { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; color: var(--muted); }
+.imp-track select { flex: 1; min-width: 0; height: 40px; padding: 0 12px; border: 0; border-radius: 12px; background: var(--surface-2); color: var(--text); font: 500 14px var(--font); }

@@ -778,6 +778,16 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 .lh-grid > .today { order: -1; }
 @media (min-width: 880px), (min-aspect-ratio: 5/4) and (min-width: 640px) { .lh-grid > .today { order: 0; } }
 
+/* ---------- añadir canción: archivo de tablatura ---------- */
+.imp-or { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 12.5px; color: var(--muted); }
+.imp-file { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 18px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
+.imp-file > .ri { width: 26px; height: 26px; color: var(--accent); flex: none; }
+.imp-file > div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.imp-file b { font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.imp-file span { font-size: 12.5px; color: var(--muted); }
+.imp-track { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; color: var(--muted); }
+.imp-track select { flex: 1; min-width: 0; height: 40px; padding: 0 12px; border: 0; border-radius: 12px; background: var(--surface-2); color: var(--text); font: 500 14px var(--font); }
+
 .visible{visibility:visible}.mb-3{margin-bottom:.75rem}.mr-1{margin-right:.25rem}.mt-1{margin-top:.25rem}.inline-block{display:inline-block}.flex{display:flex}.\!grid{display:grid!important}.grid{display:grid}.hidden{display:none}.h-2\.5{height:.625rem}.w-2\.5{width:.625rem}.w-full{width:100%}.min-w-0{min-width:0}.flex-1{flex:1 1 0%}.transform{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.resize{resize:both}.flex-col{flex-direction:column}.items-center{align-items:center}.gap-2{gap:.5rem}.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rounded-full{border-radius:9999px}.align-middle{vertical-align:middle}.text-sm{font-size:.875rem;line-height:1.25rem}.font-medium{font-weight:500}.opacity-60{opacity:.6}.ring{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}@media (min-width:640px){.sm\:inline{display:inline}}
 </style>
 <link rel="manifest" href="manifest.webmanifest">
@@ -1692,6 +1702,71 @@ const SONGS = [
              B3 B3:0.5 C4:0.5 B3:0.5 A3:0.5 | G3 E3 D3:0.5 D3:0.5 | E3 A3 F#3 | G3:3`,
     chords: `G | C | A7 | D | B7 | Em | C D | G`,
   },
+  {
+    id: 'romance', cat: 'clasica', title: 'Romance anónimo', origin: 'Anónimo, s. XIX', bpm: 84, bpb: 3, stars: 2,
+    melody: `B3 B3 B3 | B3 A3 G3 | G3 F#3 E3 | E3 G3 B3 | E4 E4 E4 | E4 D4 C4 | C4 B3 A3 | A3 B3 C4 |
+             B3 C4 B3 | D#4 C4 B3 | B3 A3 G3 | G3 F#3 E3 | F#3 F#3 F#3 | F#3 G3 F#3 | E3 E3 E3 | E3:3`,
+    chords: `Em | Em | Em | Em | Em | Em | Am | Am | B7 | B7 | Em | Em | B7 | B7 | Em | Em`,
+  },
+  {
+    id: 'cucaracha', cat: 'tradicional', title: 'La cucaracha', origin: 'Tradicional mexicana', bpm: 104, bpb: 4, pickup: 2, stars: 2,
+    melody: `R:0.5 G3:0.5 G3:0.5 G3:0.5 | C4:1.5 E4 G3:0.5 G3:0.5 G3:0.5 | C4:1.5 E4 C4:0.5 C4:0.5 B3:0.5 |
+             B3:0.5 A3:0.5 A3:0.5 G3 G3:0.5 G3:0.5 G3:0.5 | B3:1.5 D4 G3:0.5 G3:0.5 G3:0.5 |
+             B3:1.5 D4 G4:0.5 A4:0.5 G4:0.5 | F4:0.5 E4:0.5 D4:0.5 C4:2.5`,
+    chords: `C | C | G7 | G7 | G7 | C`,
+  },
+  {
+    id: 'susanna', cat: 'tradicional', title: 'Oh! Susanna', origin: 'S. Foster, 1848', bpm: 112, bpb: 4, pickup: 1, stars: 2,
+    melody: `G3:0.5 A3:0.5 | B3 D4 D4:1.5 E4:0.5 | D4 B3 G3:1.5 A3:0.5 | B3 B3 A3 G3 | A3:3 G3:0.5 A3:0.5 |
+             B3 D4 D4:1.5 E4:0.5 | D4 B3 G3:1.5 A3:0.5 | B3 B3 A3 A3 | G3:4 |
+             C4:2 C4:2 | E4 E4:2 E4 | D4 D4 B3 G3 | A3:3 G3:0.5 A3:0.5 |
+             B3 D4 D4:1.5 E4:0.5 | D4 B3 G3:1.5 A3:0.5 | B3 B3 A3 A3 | G3:4`,
+    chords: `G | G | G | D | G | G | G D | G | C | G | G | D | G | G | G D | G`,
+  },
+  {
+    id: 'clementine', cat: 'tradicional', title: 'Clementine', origin: 'Tradicional (EE. UU., 1884)', bpm: 108, bpb: 3, pickup: 1, stars: 1,
+    melody: `G3:0.5 G3:0.5 | G3 D3 B3:0.5 B3:0.5 | B3 G3 G3:0.5 B3:0.5 | D4 D4 C4:0.5 B3:0.5 | A3:2 A3:0.5 B3:0.5 |
+             C4 C4 B3:0.5 A3:0.5 | B3 G3 G3:0.5 B3:0.5 | A3 D3 F#3:0.5 A3:0.5 | G3:2 G3:0.5 G3:0.5 |
+             G3 D3 B3:0.5 B3:0.5 | B3 G3 G3:0.5 B3:0.5 | D4 D4 C4:0.5 B3:0.5 | A3:2 A3:0.5 B3:0.5 |
+             C4 C4 B3:0.5 A3:0.5 | B3 G3 G3:0.5 B3:0.5 | A3 D3 F#3:0.5 A3:0.5 | G3:3`,
+    chords: `G | G | G | D7 | D7 | G | D7 | G | G | G | G | D7 | D7 | G | D7 | G`,
+  },
+  {
+    id: 'amazing', cat: 'tradicional', title: 'Amazing Grace', origin: 'Himno tradicional, 1779', bpm: 84, bpb: 3, pickup: 1, stars: 1,
+    melody: `D3 | G3:2 B3:0.5 G3:0.5 | B3:2 A3 | G3:2 E3 | D3:2 D3 | G3:2 B3:0.5 G3:0.5 | B3:2 A3 | D4:3 | D4:2 B3 |
+             D4:2 B3:0.5 G3:0.5 | B3:2 A3 | G3:2 E3 | D3:2 D3 | G3:2 B3:0.5 G3:0.5 | B3:2 A3 | G3:3 | G3:3`,
+    chords: `G | G | C | G | G | G | D | D | G | G | C | G | Em | D | G | G`,
+  },
+  {
+    id: 'bourree', cat: 'clasica', title: 'Bourrée en Mi menor', origin: 'J. S. Bach, c. 1712', bpm: 84, bpb: 4, pickup: 1, stars: 3, strum: 'bar',
+    melody: `E4:0.5 F#4:0.5 | G4 F#4:0.5 E4:0.5 D#4 E4:0.5 F#4:0.5 | B3 C#4:0.5 D#4:0.5 E4 D4:0.5 C4:0.5 |
+             B3 A3:0.5 G3:0.5 F#3 G3:0.5 A3:0.5 | B3:0.5 A3:0.5 G3:0.5 F#3:0.5 E3 E4:0.5 F#4:0.5 |
+             G4 F#4:0.5 E4:0.5 D#4 E4:0.5 F#4:0.5 | B3 C#4:0.5 D#4:0.5 E4 D4:0.5 C4:0.5 |
+             B3 A3:0.5 G3:0.5 F#3 G3:0.5 A3:0.5 | B3:0.5 A3:0.5 G3:0.5 F#3:0.5 E3:2`,
+    chords: `Em B7 | B7 Em | Em B7 | B7 Em | Em B7 | B7 Em | Em B7 | B7 Em`,
+  },
+  {
+    id: 'sakura', cat: 'tradicional', title: 'Sakura', origin: 'Tradicional japonesa', bpm: 76, bpb: 4, stars: 1,
+    melody: `A3 A3 B3:2 | A3 A3 B3:2 | A3 B3 C4 B3 | A3 B3:0.5 A3:0.5 F3:2 | E3 C3 E3 F3 | E3 E3:0.5 C3:0.5 B2:2 |
+             A3 B3 C4 B3 | A3 B3:0.5 A3:0.5 F3:2 | E3 C3 E3 F3 | E3 E3:0.5 C3:0.5 B2:2 |
+             A3 A3 B3:2 | A3 A3 B3:2 | E3 F3 B3:0.5 A3:0.5 F3 | E3:4`,
+    chords: `Am | Am | Am | Dm | Am | E | Am | Dm | Am | E | Am | Am | Dm | E`,
+  },
+  {
+    id: 'yankee', cat: 'tradicional', title: 'Yankee Doodle', origin: 'Tradicional (EE. UU., s. XVIII)', bpm: 116, bpb: 4, stars: 1,
+    melody: `G3 G3 A3 B3 | G3 B3 A3 D3 | G3 G3 A3 B3 | G3:2 F#3:2 | G3 G3 A3 B3 | C4 B3 A3 G3 | F#3 D3 E3 F#3 | G3:2 G3:2 |
+             E3:1.5 F#3:0.5 E3 D3 | E3 F#3 G3:2 | D3:1.5 E3:0.5 D3 C3 | B2:2 D3:2 |
+             E3:1.5 F#3:0.5 E3 D3 | E3 F#3 G3 E3 | D3 G3 F#3 A3 | G3:2 G3:2`,
+    chords: `G | G D | G | G D | G | C | D | G | C | G | D7 | G | C | G | D | G`,
+  },
+  {
+    id: 'cuna', cat: 'clasica', title: 'Canción de cuna', origin: 'J. Brahms, 1868', bpm: 80, bpb: 3, pickup: 1, stars: 2,
+    melody: `B3:0.5 B3:0.5 | D4:2 B3:0.5 B3:0.5 | D4:2 B3:0.5 D4:0.5 | G4 F#4:1.5 E4:0.5 | E4 D4 A3:0.5 B3:0.5 |
+             C4 A3 A3:0.5 B3:0.5 | C4:2 A3:0.5 C4:0.5 | F#4:0.5 E4:0.5 D4 F#4 | G4:2 G3:0.5 G3:0.5 |
+             G4:2 E4:0.5 C4:0.5 | D4:2 B3:0.5 G3:0.5 | C4 D4 E4 | D4:2 G3:0.5 G3:0.5 |
+             G4:2 E4:0.5 C4:0.5 | D4:2 B3:0.5 G3:0.5 | C4 B3 A3 | G3:3`,
+    chords: `G | G | D7 | D7 | D7 | D7 | D7 | G | C | G | D7 | G | C | G | D7 | G`,
+  },
 ];
 
 // Categorías del catálogo (en el orden en que se muestran)
@@ -2000,6 +2075,84 @@ function buildCifrado(parsed, { barsPerLine = 2, getChord }) {
 
 if (typeof module !== 'undefined') module.exports = { parseChordName, makeChord, parseCifrado, buildCifrado, isTabLine, parseTabBlock };
 
+/* ============================================================
+   Abrir archivos de tablatura: Guitar Pro (.gp, .gp3, .gp4, .gp5, .gpx) y MusicXML.
+   A diferencia de una tablatura pegada como texto, el archivo trae el tempo y la duración exacta de
+   cada nota. Los lee alphaTab (código abierto, MPL-2.0), que se descarga solo la primera vez que se
+   abre un archivo. La canción se guarda en este navegador, como las demás canciones tuyas.
+   ============================================================ */
+const ALPHATAB_URL = 'https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.8.4/dist/alphaTab.min.js';
+
+// orden en que se tocan los compases, con repeticiones y casillas de 1ª y 2ª vez
+function barOrder(mbs) {
+  const out = []; let i = 0, start = 0, pass = 1, guard = 0;
+  while (i < mbs.length && guard++ < 4000) {
+    const mb = mbs[i];
+    if (mb.isRepeatStart && start !== i) { start = i; pass = 1; }
+    if (mb.alternateEndings && !(mb.alternateEndings & (1 << (pass - 1)))) { i++; continue; } // casilla de otra vuelta
+    out.push(i);
+    if (mb.isRepeatEnd && pass < mb.repeatCount) { pass++; i = start; continue; }
+    if (mb.isRepeatEnd || (mb.alternateEndings && !mbs[i + 1]?.alternateEndings)) { pass = 1; start = i + 1; }
+    i++;
+  }
+  return out;
+}
+
+// pistas de guitarra de seis cuerdas que tiene el archivo
+function scoreTracks(score) {
+  return score.tracks.map((tr, i) => {
+    const st = tr.staves[0], tuning = st && (st.tuning || st.stringTuning?.tunings || []);
+    let n = 0; if (st) for (const bar of st.bars) for (const b of bar.voices[0]?.beats || []) if (!b.isRest) n += b.notes.length ? 1 : 0;
+    return { i, name: tr.name || `Pista ${i + 1}`, ok: !!st && !st.isPercussion && tuning.length === 6, beats: n, standard: tuning.length === 6 && tuning.join() === '64,59,55,50,45,40', tuning };
+  });
+}
+
+/* Partitura de alphaTab → eventos de Traste. Los tiempos van en negras (960 ticks). Las notas ligadas
+   a la anterior no se vuelven a tocar y los martillos y tirones se marcan como ligados. */
+function scoreToSong(score, trackIndex) {
+  const mbs = score.masterBars, staff = score.tracks[trackIndex].staves[0], order = barOrder(mbs), ev = [];
+  let t0 = 0;
+  for (const bi of order) {
+    const mb = mbs[bi], bar = staff.bars[bi], len = mb.calculateDuration() / 960;
+    const beats = bar?.voices[0]?.beats || [];
+    const frets = beats.flatMap((b) => b.notes.map((n) => n.fret)).filter((f) => f > 0), base = frets.length ? Math.min(...frets) : 1;
+    for (const b of beats) {
+      if (b.isRest || b.graceType) continue;
+      const notes = b.notes.filter((n) => !n.isTieDestination && !n.isDead).map((n) => {
+        const lf = n.leftHandFinger, finger = n.fret === 0 ? 0 : lf >= 1 && lf <= 4 ? lf : clamp(n.fret - base + 1, 1, 4);
+        return { string: 7 - n.string, fret: n.fret, finger, midi: n.realValue, ...(n.isHammerPullDestination ? { slur: true } : {}) };
+      }).filter((n) => n.string >= 1 && n.string <= 6 && n.midi >= 36 && n.midi <= 96);
+      if (notes.length) ev.push({ t: +(t0 + b.playbackStart / 960).toFixed(4), dur: +Math.max(0.25, b.playbackDuration / 960).toFixed(4), notes: notes.sort((a, z) => z.string - a.string) });
+    }
+    t0 += len;
+  }
+  const first = mbs[0], bpb = Math.max(1, Math.round((first.timeSignatureNumerator * 4) / first.timeSignatureDenominator));
+  return { title: score.title || '', artist: score.artist || '', bpm: Math.round(score.tempo) || 90, bpb, pickup: first.isAnacrusis ? +(first.calculateDuration() / 960).toFixed(4) : 0, total: +t0.toFixed(4), events: ev };
+}
+// para guardar: [t, dur, [[cuerda, traste, dedo, midi, ligada]]]
+const packEvents = (ev) => ev.map((e) => [e.t, e.dur, e.notes.map((n) => [n.string, n.fret, n.finger, n.midi, n.slur ? 1 : 0])]);
+const unpackEvents = (p) => p.map(([t, dur, ns]) => ({ t, dur, notes: ns.map(([string, fret, finger, midi, slur]) => ({ string, fret, finger, midi, ...(slur ? { slur: true } : {}) })) }));
+
+const TabFile = {
+  lib: null,
+  load() {
+    if (window.alphaTab) return Promise.resolve(window.alphaTab);
+    return this.lib || (this.lib = new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = ALPHATAB_URL;
+      s.onload = () => (window.alphaTab ? res(window.alphaTab) : rej(new Error('lector')));
+      s.onerror = () => { this.lib = null; rej(new Error('red')); };
+      document.head.appendChild(s);
+    }));
+  },
+  async read(file) {
+    const at = await this.load();
+    const settings = new at.Settings();
+    return at.importer.ScoreLoader.loadScoreFromBytes(new Uint8Array(await file.arrayBuffer()), settings);
+  },
+};
+
+if (typeof module !== 'undefined') { globalThis.clamp = (v, a, b) => Math.max(a, Math.min(b, v)); module.exports = { barOrder, scoreTracks, scoreToSong, packEvents, unpackEvents }; }
+
 'use strict';
 /* ============================================================
    Traste — aplicación (afinador, aprender, canciones, ajustes)
@@ -2014,7 +2167,7 @@ const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 
 const store = {
   get(k, d) { try { const v = localStorage.getItem('traste:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
-  set(k, v) { try { localStorage.setItem('traste:' + k, JSON.stringify(v)); } catch { /* sin almacenamiento */ } },
+  set(k, v) { try { localStorage.setItem('traste:' + k, JSON.stringify(v)); return true; } catch { return false; /* sin almacenamiento o lleno */ } },
 };
 
 const state = {
@@ -3236,7 +3389,7 @@ const Player = {
     if (worst && !ex && st.miss < judged.length * 0.8) acts.splice(1, 0, { label: `Repetir los compases ${worst.k + 1} y ${worst.k + 2}`, icon: 'repeat-line', fn: () => { this.loop = { a: pk + worst.k * bpb, b: pk + (worst.k + 2) * bpb, n: 2, pass: 0 }; this.renderLoop(); this.renderChip(); this.start(false); } });
     showResult({
       stars, title: starsLine(stars),
-      text: [Math.abs(avg) >= 0.045 ? (avg < 0 ? `Sueles adelantarte unos ${Math.round(-avg * 1000)} ms. Espera a que la bola caiga en la nota.` : `Sueles ir unos ${Math.round(avg * 1000)} ms tarde. Anticípate un poco.`) : stars < 2 ? 'Prueba más lento o activa «Esperarme».' : '',
+      text: [Math.abs(avg) >= 0.045 ? (avg < 0 ? `Sueles adelantarte unos ${Math.round(-avg * 1000)} ms. Espera a que la bola caiga en la nota.` : `Sueles ir unos ${Math.round(avg * 1000)} ms tarde. Anticípate un poco.`) : stars < 2 && !ex ? 'Prueba más lento o activa «Esperarme».' : '',
         worst && !ex && st.miss < judged.length * 0.8 ? `Donde más fallas es en los compases ${worst.k + 1} y ${worst.k + 2}.` : '',
         ex ? Learn.exResult(ex, acc, SPEEDS[this.speedIdx].p, this.song.bpm) : '',
         st.dead >= 2 ? `${st.dead} notas se apagaron pronto. Mantén el dedo apretado justo detrás del traste hasta la nota siguiente.` : '',
@@ -3622,7 +3775,16 @@ const MySongs = {
     if (chords.some((id) => CHORDS[id]?.barre && id !== 'F_easy')) return 3;
     return chords.every((id) => BASIC_CHORDS.has(id)) ? 1 : 2;
   },
+  // dificultad de una tablatura de archivo: por notas por segundo
+  tabStars(e) { const nps = e.ev.length / Math.max(1, (e.total / (+e.bpm || 90)) * 60); return nps < 1.6 ? 1 : nps < 3.2 ? 2 : 3; },
   register(e) {
+    if (e.kind === 'tab') { // viene de un archivo de Guitar Pro o MusicXML: ya trae cada nota con su tiempo
+      const song = { id: e.id, user: true, title: e.title || 'Sin título', origin: e.artist || 'Añadida por ti', bpm: +e.bpm || 90, bpb: e.bpb || 4, cat: 'mias',
+        stars: this.tabStars(e), chordList: [], built: { total: e.total, pickup: e.pickup || 0, chordTrack: [], levels: { easy: unpackEvents(e.ev) } }, levelHints: { easy: 'tablatura' } };
+      const k = SONGS.findIndex((x) => x.id === e.id);
+      if (k >= 0) SONGS[k] = song; else SONGS.unshift(song);
+      return song;
+    }
     const r = this.compile(e);
     const song = { id: e.id, user: true, title: e.title || 'Sin título', origin: e.artist || 'Añadida por ti', bpm: +e.bpm || 90, bpb: 4, cat: 'mias',
       stars: this.difficulty(r.chordList, r.nTab), chordList: r.chordList, built: r.built,
@@ -3637,9 +3799,10 @@ const MySongs = {
     this.editing = e ? e.id : null;
     this.fromPlayer = !$('#player').hidden;
     this.draft = e ? { ...e } : { title: '', artist: '', text: '', bpm: 90, bars: '2' };
+    this.score = null; this.tracks = [];
     Player.pause(); $('#player').hidden = true; $('#songList').hidden = true; $('#songImport').hidden = false;
     this.render(); $('#impSave').disabled = !this.lastOk;
-    if (!e) $('#impText').focus();
+    if (!e) $('#impText')?.focus();
   },
   close(song) {
     $('#songImport').hidden = true;
@@ -3648,11 +3811,11 @@ const MySongs = {
     Player.song = null; $('#songList').hidden = false; Songs.render();
   },
   render() {
-    const d = this.draft;
+    const d = this.draft, tab = d.kind === 'tab';
     $('#songImport').innerHTML = `<div class="screen">
       <div class="scr-top">
         <button type="button" class="btn btn-soft btn-icon" data-imp="back" aria-label="Volver">${icon('arrow-left-line')}</button>
-        <div class="scr-title"><h1>${this.editing ? 'Editar canción' : 'Añadir canción'}</h1><p>Pega los acordes con la letra, tal cual los copias de La Cuerda o Ultimate Guitar</p></div>
+        <div class="scr-title"><h1>${this.editing ? 'Editar canción' : 'Añadir canción'}</h1><p>${tab ? 'Tablatura leída de un archivo, con su tempo y su ritmo' : 'Pega los acordes con la letra o abre un archivo de Guitar Pro'}</p></div>
         <button type="button" class="btn btn-primary" data-imp="save" id="impSave">${icon('check-line')}Guardar</button>
       </div>
       <div class="scr-body scroll"><div class="imp-grid">
@@ -3661,13 +3824,15 @@ const MySongs = {
             <input type="text" id="impTitle" placeholder="Título" value="${esc(d.title)}" aria-label="Título">
             <input type="text" id="impArtist" placeholder="Artista (opcional)" value="${esc(d.artist)}" aria-label="Artista">
           </div>
-          <textarea id="impText" spellcheck="false" placeholder="Pega aquí la canción con sus acordes.&#10;&#10;     Am            G&#10;Primera línea de la letra&#10;     F             E&#10;Segunda línea de la letra">${esc(d.text)}</textarea>
+          ${tab ? `<div class="imp-file">${icon('file-music-line')}<div><b>${esc(d.file || 'Tablatura de archivo')}</b><span>${d.ev.length} golpes · ${d.bpb}/4</span></div>${this.editing ? '' : `<button type="button" class="btn btn-ghost btn-sm" data-imp="unfile">Quitar</button>`}</div>
+          ${this.tracks.filter((t) => t.ok).length > 1 ? `<label class="imp-track"><span>Pista</span><select id="impTrack">${this.tracks.filter((t) => t.ok).map((t) => `<option value="${t.i}" ${t.i === d.track ? 'selected' : ''}>${esc(t.name)} · ${t.beats} golpes</option>`).join('')}</select></label>` : ''}` : `<textarea id="impText" spellcheck="false" placeholder="Pega aquí la canción con sus acordes.&#10;&#10;     Am            G&#10;Primera línea de la letra&#10;     F             E&#10;Segunda línea de la letra">${esc(d.text)}</textarea>
+          <div class="imp-or"><button type="button" class="btn btn-soft btn-sm" data-imp="file">${icon('upload-2-line')}Abrir un archivo de Guitar Pro o MusicXML</button><span>Trae el tempo y el ritmo exactos.</span><input type="file" id="impFile" accept=".gp,.gp3,.gp4,.gp5,.gpx,.xml,.musicxml,.mxl" hidden></div>`}
           <div class="imp-opts">
             <div class="imp-opt"><span>Velocidad</span>
               <div class="stepper-num"><button type="button" class="btn btn-soft btn-icon btn-sm" data-imp="bpm-" aria-label="Más lenta">−</button><b class="num" id="impBpm">${d.bpm}</b><span class="muted">ppm</span><button type="button" class="btn btn-soft btn-icon btn-sm" data-imp="bpm+" aria-label="Más rápida">+</button></div>
-              <button type="button" class="btn btn-ghost btn-sm" data-imp="tap" title="Toca al ritmo de la canción">${icon('pulse-line')}Marcar el pulso</button></div>
-            <div class="imp-opt"><span>Cada línea de letra</span>
-              <div class="seg" role="group">${LINE_LEN.map(([v, n]) => `<button type="button" data-imp-bars="${v}" aria-pressed="${String(d.bars) === v}" title="${v} ${v === '1' ? 'compás' : 'compases'}">${n}</button>`).join('')}</div></div>
+              ${tab ? '' : `<button type="button" class="btn btn-ghost btn-sm" data-imp="tap" title="Toca al ritmo de la canción">${icon('pulse-line')}Marcar el pulso</button>`}</div>
+            ${tab ? '' : `<div class="imp-opt"><span>Cada línea de letra</span>
+              <div class="seg" role="group">${LINE_LEN.map(([v, n]) => `<button type="button" data-imp-bars="${v}" aria-pressed="${String(d.bars) === v}" title="${v} ${v === '1' ? 'compás' : 'compases'}">${n}</button>`).join('')}</div></div>`}
           </div>
           <p class="imp-note">${icon('information-line')}Se guarda solo en este navegador. Para uso personal.</p>
           ${this.editing ? `<button type="button" class="link-btn imp-del" data-imp="delete">${icon('delete-bin-line')}Borrar esta canción</button>` : ''}
@@ -3678,6 +3843,19 @@ const MySongs = {
   },
   previewHTML() {
     const d = this.draft; this.lastOk = false;
+    if (d.kind === 'tab') {
+      this.lastOk = d.ev.length > 0;
+      const mins = d.total / d.bpm, stars = this.tabStars(d), tr = this.tracks.find((t) => t.i === d.track);
+      return `<div class="imp-sum">
+          <div><b class="num">${d.ev.length}</b><span>golpes</span></div>
+          <div><b class="num">${Math.round(d.total / d.bpb)}</b><span>compases</span></div>
+          <div><b class="num">${Math.floor(mins)}:${String(Math.round((mins % 1) * 60)).padStart(2, '0')}</b><span>minutos</span></div>
+          <div><span class="dots">${[1, 2, 3].map((k) => `<i class="${k <= stars ? 'on' : ''}"></i>`).join('')}</span><span>${['', 'fácil', 'media', 'difícil'][stars]}</span></div>
+        </div>
+        <p class="imp-warn">${icon('information-line')}El archivo trae la velocidad y la duración de cada nota, así que no hay que ajustar nada. Las repeticiones ya están desplegadas.</p>
+        ${tr && !tr.standard ? `<p class="imp-warn">${icon('error-warning-line')}Esta pista usa otra afinación (${tr.tuning.slice().reverse().map((m) => pcName(m)).join(' ')}). Afina así la guitarra para que las notas coincidan.</p>` : ''}
+        ${d.ev.some((e) => e[2].some((n) => n[4])) ? `<p class="imp-warn">${icon('information-line')}Los martillos y tirones se tocan como notas ligadas, sin volver a pulsar.</p>` : ''}`;
+    }
     if (!d.text.trim()) return `<div class="imp-empty">${icon('music-2-line')}<b>Aquí verás lo que entiende Traste</b>
       <ol><li>Abre la canción en La Cuerda, Ultimate Guitar o Cifra Club.</li><li>Selecciona desde el primer acorde hasta el final y cópialo. Si copias la página entera no pasa nada, me quedo con lo que sirve.</li><li>Pégalo a la izquierda.</li></ol></div>`;
     let r;
@@ -3713,13 +3891,33 @@ const MySongs = {
     AudioEngine.click(this.taps.length === 1);
     if (this.taps.length >= 4) { const g = this.taps.slice(1).map((t, i) => t - this.taps[i]).sort((a, b) => a - b); this.setBpm(60000 / g[g.length >> 1]); }
   },
+  // archivo elegido: se lee con alphaTab y se queda con la primera pista de guitarra
+  async openFile(file) {
+    if (!file) return;
+    toast('Leyendo el archivo…', 2500, 'file-music-line');
+    try {
+      this.score = await TabFile.read(file); this.tracks = scoreTracks(this.score);
+      const tr = this.tracks.filter((t) => t.ok).sort((a, b) => b.beats - a.beats)[0];
+      if (!tr || !tr.beats) { toast('Ese archivo no tiene ninguna pista de guitarra de seis cuerdas.'); return; }
+      this.setTrack(tr.i, file.name);
+    } catch (err) {
+      console.error(err);
+      toast(err.message === 'red' ? 'No he podido descargar el lector de archivos. Comprueba la conexión y vuelve a intentarlo.' : 'No he podido leer ese archivo. Vale Guitar Pro (.gp, .gp3, .gp4, .gp5, .gpx) y MusicXML.');
+    }
+  },
+  setTrack(i, fileName) {
+    const r = scoreToSong(this.score, i), d = this.draft;
+    this.draft = { kind: 'tab', title: d.title || r.title, artist: d.artist || r.artist, bpm: clamp(r.bpm, 40, 220), bpb: r.bpb, pickup: r.pickup, total: r.total, ev: packEvents(r.events), track: i, file: fileName || d.file, text: '' };
+    this.render(); $('#impSave').disabled = !this.lastOk;
+  },
   save() {
     const d = this.draft;
-    if (!d.text.trim() || !this.lastOk) return;
-    const e = { id: this.editing || 'u' + Date.now().toString(36), title: d.title.trim() || 'Sin título', artist: d.artist.trim(), text: d.text, bpm: d.bpm, bars: d.bars };
+    if ((d.kind !== 'tab' && !d.text.trim()) || !this.lastOk) return;
+    const base = { id: this.editing || 'u' + Date.now().toString(36), title: d.title.trim() || 'Sin título', artist: d.artist.trim(), bpm: d.bpm };
+    const e = d.kind === 'tab' ? { ...base, kind: 'tab', bpb: d.bpb, pickup: d.pickup, total: d.total, ev: d.ev, file: d.file } : { ...base, text: d.text, bars: d.bars };
     const i = this.list.findIndex((x) => x.id === e.id);
     if (i >= 0) this.list[i] = e; else this.list.unshift(e);
-    store.set('mysongs', this.list);
+    if (!store.set('mysongs', this.list)) { this.list = this.list.filter((x) => x !== e); toast('No queda sitio en este navegador para guardar la canción. Borra alguna de las tuyas.'); return; }
     const song = this.register(e);
     Songs.cat = 'all'; Songs.render();
     toast(this.editing ? 'Canción guardada.' : 'Canción añadida a tu lista.', 3000, 'check-line');
@@ -3738,6 +3936,10 @@ const MySongs = {
       if (e.target.id === 'impTitle') this.draft.title = e.target.value;
       if (e.target.id === 'impArtist') this.draft.artist = e.target.value;
     });
+    root.addEventListener('change', (e) => {
+      if (e.target.id === 'impFile') this.openFile(e.target.files[0]);
+      if (e.target.id === 'impTrack') this.setTrack(+e.target.value);
+    });
     root.addEventListener('click', (e) => {
       const b = e.target.closest('[data-imp],[data-imp-bars]'); if (!b) return;
       if (b.dataset.impBars) { this.draft.bars = b.dataset.impBars; $$('[data-imp-bars]', root).forEach((x) => x.setAttribute('aria-pressed', String(x === b))); this.refresh(); return; }
@@ -3748,6 +3950,8 @@ const MySongs = {
       if (a === 'bpm-') this.setBpm(this.draft.bpm - 5);
       if (a === 'bpm+') this.setBpm(this.draft.bpm + 5);
       if (a === 'tap') this.tap();
+      if (a === 'file') $('#impFile').click();
+      if (a === 'unfile') { this.draft = { title: this.draft.title, artist: this.draft.artist, text: '', bpm: 90, bars: '2' }; this.score = null; this.tracks = []; this.render(); $('#impSave').disabled = true; }
     });
     $('#songAdd').addEventListener('click', () => this.open());
     $('#plEdit').addEventListener('click', () => this.open(Player.song?.id));

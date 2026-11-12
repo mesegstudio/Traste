@@ -27,6 +27,7 @@ ${src('dsp.js')}
 ${src('listen.js')}
 ${src('data.js')}
 ${src('cifrado.js')}
+${src('tabfile.js')}
 ${src('app.js')}
 ${src('mysongs.js')}
 ${src('classes.js')}

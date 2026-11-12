@@ -31,7 +31,16 @@ const MySongs = {
     if (chords.some((id) => CHORDS[id]?.barre && id !== 'F_easy')) return 3;
     return chords.every((id) => BASIC_CHORDS.has(id)) ? 1 : 2;
   },
+  // dificultad de una tablatura de archivo: por notas por segundo
+  tabStars(e) { const nps = e.ev.length / Math.max(1, (e.total / (+e.bpm || 90)) * 60); return nps < 1.6 ? 1 : nps < 3.2 ? 2 : 3; },
   register(e) {
+    if (e.kind === 'tab') { // viene de un archivo de Guitar Pro o MusicXML: ya trae cada nota con su tiempo
+      const song = { id: e.id, user: true, title: e.title || 'Sin título', origin: e.artist || 'Añadida por ti', bpm: +e.bpm || 90, bpb: e.bpb || 4, cat: 'mias',
+        stars: this.tabStars(e), chordList: [], built: { total: e.total, pickup: e.pickup || 0, chordTrack: [], levels: { easy: unpackEvents(e.ev) } }, levelHints: { easy: 'tablatura' } };
+      const k = SONGS.findIndex((x) => x.id === e.id);
+      if (k >= 0) SONGS[k] = song; else SONGS.unshift(song);
+      return song;
+    }
     const r = this.compile(e);
     const song = { id: e.id, user: true, title: e.title || 'Sin título', origin: e.artist || 'Añadida por ti', bpm: +e.bpm || 90, bpb: 4, cat: 'mias',
       stars: this.difficulty(r.chordList, r.nTab), chordList: r.chordList, built: r.built,
@@ -46,9 +55,10 @@ const MySongs = {
     this.editing = e ? e.id : null;
     this.fromPlayer = !$('#player').hidden;
     this.draft = e ? { ...e } : { title: '', artist: '', text: '', bpm: 90, bars: '2' };
+    this.score = null; this.tracks = [];
     Player.pause(); $('#player').hidden = true; $('#songList').hidden = true; $('#songImport').hidden = false;
     this.render(); $('#impSave').disabled = !this.lastOk;
-    if (!e) $('#impText').focus();
+    if (!e) $('#impText')?.focus();
   },
   close(song) {
     $('#songImport').hidden = true;
@@ -57,11 +67,11 @@ const MySongs = {
     Player.song = null; $('#songList').hidden = false; Songs.render();
   },
   render() {
-    const d = this.draft;
+    const d = this.draft, tab = d.kind === 'tab';
     $('#songImport').innerHTML = `<div class="screen">
       <div class="scr-top">
         <button type="button" class="btn btn-soft btn-icon" data-imp="back" aria-label="Volver">${icon('arrow-left-line')}</button>
-        <div class="scr-title"><h1>${this.editing ? 'Editar canción' : 'Añadir canción'}</h1><p>Pega los acordes con la letra, tal cual los copias de La Cuerda o Ultimate Guitar</p></div>
+        <div class="scr-title"><h1>${this.editing ? 'Editar canción' : 'Añadir canción'}</h1><p>${tab ? 'Tablatura leída de un archivo, con su tempo y su ritmo' : 'Pega los acordes con la letra o abre un archivo de Guitar Pro'}</p></div>
         <button type="button" class="btn btn-primary" data-imp="save" id="impSave">${icon('check-line')}Guardar</button>
       </div>
       <div class="scr-body scroll"><div class="imp-grid">
@@ -70,13 +80,15 @@ const MySongs = {
             <input type="text" id="impTitle" placeholder="Título" value="${esc(d.title)}" aria-label="Título">
             <input type="text" id="impArtist" placeholder="Artista (opcional)" value="${esc(d.artist)}" aria-label="Artista">
           </div>
-          <textarea id="impText" spellcheck="false" placeholder="Pega aquí la canción con sus acordes.&#10;&#10;     Am            G&#10;Primera línea de la letra&#10;     F             E&#10;Segunda línea de la letra">${esc(d.text)}</textarea>
+          ${tab ? `<div class="imp-file">${icon('file-music-line')}<div><b>${esc(d.file || 'Tablatura de archivo')}</b><span>${d.ev.length} golpes · ${d.bpb}/4</span></div>${this.editing ? '' : `<button type="button" class="btn btn-ghost btn-sm" data-imp="unfile">Quitar</button>`}</div>
+          ${this.tracks.filter((t) => t.ok).length > 1 ? `<label class="imp-track"><span>Pista</span><select id="impTrack">${this.tracks.filter((t) => t.ok).map((t) => `<option value="${t.i}" ${t.i === d.track ? 'selected' : ''}>${esc(t.name)} · ${t.beats} golpes</option>`).join('')}</select></label>` : ''}` : `<textarea id="impText" spellcheck="false" placeholder="Pega aquí la canción con sus acordes.&#10;&#10;     Am            G&#10;Primera línea de la letra&#10;     F             E&#10;Segunda línea de la letra">${esc(d.text)}</textarea>
+          <div class="imp-or"><button type="button" class="btn btn-soft btn-sm" data-imp="file">${icon('upload-2-line')}Abrir un archivo de Guitar Pro o MusicXML</button><span>Trae el tempo y el ritmo exactos.</span><input type="file" id="impFile" accept=".gp,.gp3,.gp4,.gp5,.gpx,.xml,.musicxml,.mxl" hidden></div>`}
           <div class="imp-opts">
             <div class="imp-opt"><span>Velocidad</span>
               <div class="stepper-num"><button type="button" class="btn btn-soft btn-icon btn-sm" data-imp="bpm-" aria-label="Más lenta">−</button><b class="num" id="impBpm">${d.bpm}</b><span class="muted">ppm</span><button type="button" class="btn btn-soft btn-icon btn-sm" data-imp="bpm+" aria-label="Más rápida">+</button></div>
-              <button type="button" class="btn btn-ghost btn-sm" data-imp="tap" title="Toca al ritmo de la canción">${icon('pulse-line')}Marcar el pulso</button></div>
-            <div class="imp-opt"><span>Cada línea de letra</span>
-              <div class="seg" role="group">${LINE_LEN.map(([v, n]) => `<button type="button" data-imp-bars="${v}" aria-pressed="${String(d.bars) === v}" title="${v} ${v === '1' ? 'compás' : 'compases'}">${n}</button>`).join('')}</div></div>
+              ${tab ? '' : `<button type="button" class="btn btn-ghost btn-sm" data-imp="tap" title="Toca al ritmo de la canción">${icon('pulse-line')}Marcar el pulso</button>`}</div>
+            ${tab ? '' : `<div class="imp-opt"><span>Cada línea de letra</span>
+              <div class="seg" role="group">${LINE_LEN.map(([v, n]) => `<button type="button" data-imp-bars="${v}" aria-pressed="${String(d.bars) === v}" title="${v} ${v === '1' ? 'compás' : 'compases'}">${n}</button>`).join('')}</div></div>`}
           </div>
           <p class="imp-note">${icon('information-line')}Se guarda solo en este navegador. Para uso personal.</p>
           ${this.editing ? `<button type="button" class="link-btn imp-del" data-imp="delete">${icon('delete-bin-line')}Borrar esta canción</button>` : ''}
@@ -87,6 +99,19 @@ const MySongs = {
   },
   previewHTML() {
     const d = this.draft; this.lastOk = false;
+    if (d.kind === 'tab') {
+      this.lastOk = d.ev.length > 0;
+      const mins = d.total / d.bpm, stars = this.tabStars(d), tr = this.tracks.find((t) => t.i === d.track);
+      return `<div class="imp-sum">
+          <div><b class="num">${d.ev.length}</b><span>golpes</span></div>
+          <div><b class="num">${Math.round(d.total / d.bpb)}</b><span>compases</span></div>
+          <div><b class="num">${Math.floor(mins)}:${String(Math.round((mins % 1) * 60)).padStart(2, '0')}</b><span>minutos</span></div>
+          <div><span class="dots">${[1, 2, 3].map((k) => `<i class="${k <= stars ? 'on' : ''}"></i>`).join('')}</span><span>${['', 'fácil', 'media', 'difícil'][stars]}</span></div>
+        </div>
+        <p class="imp-warn">${icon('information-line')}El archivo trae la velocidad y la duración de cada nota, así que no hay que ajustar nada. Las repeticiones ya están desplegadas.</p>
+        ${tr && !tr.standard ? `<p class="imp-warn">${icon('error-warning-line')}Esta pista usa otra afinación (${tr.tuning.slice().reverse().map((m) => pcName(m)).join(' ')}). Afina así la guitarra para que las notas coincidan.</p>` : ''}
+        ${d.ev.some((e) => e[2].some((n) => n[4])) ? `<p class="imp-warn">${icon('information-line')}Los martillos y tirones se tocan como notas ligadas, sin volver a pulsar.</p>` : ''}`;
+    }
     if (!d.text.trim()) return `<div class="imp-empty">${icon('music-2-line')}<b>Aquí verás lo que entiende Traste</b>
       <ol><li>Abre la canción en La Cuerda, Ultimate Guitar o Cifra Club.</li><li>Selecciona desde el primer acorde hasta el final y cópialo. Si copias la página entera no pasa nada, me quedo con lo que sirve.</li><li>Pégalo a la izquierda.</li></ol></div>`;
     let r;
@@ -122,13 +147,33 @@ const MySongs = {
     AudioEngine.click(this.taps.length === 1);
     if (this.taps.length >= 4) { const g = this.taps.slice(1).map((t, i) => t - this.taps[i]).sort((a, b) => a - b); this.setBpm(60000 / g[g.length >> 1]); }
   },
+  // archivo elegido: se lee con alphaTab y se queda con la primera pista de guitarra
+  async openFile(file) {
+    if (!file) return;
+    toast('Leyendo el archivo…', 2500, 'file-music-line');
+    try {
+      this.score = await TabFile.read(file); this.tracks = scoreTracks(this.score);
+      const tr = this.tracks.filter((t) => t.ok).sort((a, b) => b.beats - a.beats)[0];
+      if (!tr || !tr.beats) { toast('Ese archivo no tiene ninguna pista de guitarra de seis cuerdas.'); return; }
+      this.setTrack(tr.i, file.name);
+    } catch (err) {
+      console.error(err);
+      toast(err.message === 'red' ? 'No he podido descargar el lector de archivos. Comprueba la conexión y vuelve a intentarlo.' : 'No he podido leer ese archivo. Vale Guitar Pro (.gp, .gp3, .gp4, .gp5, .gpx) y MusicXML.');
+    }
+  },
+  setTrack(i, fileName) {
+    const r = scoreToSong(this.score, i), d = this.draft;
+    this.draft = { kind: 'tab', title: d.title || r.title, artist: d.artist || r.artist, bpm: clamp(r.bpm, 40, 220), bpb: r.bpb, pickup: r.pickup, total: r.total, ev: packEvents(r.events), track: i, file: fileName || d.file, text: '' };
+    this.render(); $('#impSave').disabled = !this.lastOk;
+  },
   save() {
     const d = this.draft;
-    if (!d.text.trim() || !this.lastOk) return;
-    const e = { id: this.editing || 'u' + Date.now().toString(36), title: d.title.trim() || 'Sin título', artist: d.artist.trim(), text: d.text, bpm: d.bpm, bars: d.bars };
+    if ((d.kind !== 'tab' && !d.text.trim()) || !this.lastOk) return;
+    const base = { id: this.editing || 'u' + Date.now().toString(36), title: d.title.trim() || 'Sin título', artist: d.artist.trim(), bpm: d.bpm };
+    const e = d.kind === 'tab' ? { ...base, kind: 'tab', bpb: d.bpb, pickup: d.pickup, total: d.total, ev: d.ev, file: d.file } : { ...base, text: d.text, bars: d.bars };
     const i = this.list.findIndex((x) => x.id === e.id);
     if (i >= 0) this.list[i] = e; else this.list.unshift(e);
-    store.set('mysongs', this.list);
+    if (!store.set('mysongs', this.list)) { this.list = this.list.filter((x) => x !== e); toast('No queda sitio en este navegador para guardar la canción. Borra alguna de las tuyas.'); return; }
     const song = this.register(e);
     Songs.cat = 'all'; Songs.render();
     toast(this.editing ? 'Canción guardada.' : 'Canción añadida a tu lista.', 3000, 'check-line');
@@ -147,6 +192,10 @@ const MySongs = {
       if (e.target.id === 'impTitle') this.draft.title = e.target.value;
       if (e.target.id === 'impArtist') this.draft.artist = e.target.value;
     });
+    root.addEventListener('change', (e) => {
+      if (e.target.id === 'impFile') this.openFile(e.target.files[0]);
+      if (e.target.id === 'impTrack') this.setTrack(+e.target.value);
+    });
     root.addEventListener('click', (e) => {
       const b = e.target.closest('[data-imp],[data-imp-bars]'); if (!b) return;
       if (b.dataset.impBars) { this.draft.bars = b.dataset.impBars; $$('[data-imp-bars]', root).forEach((x) => x.setAttribute('aria-pressed', String(x === b))); this.refresh(); return; }
@@ -157,6 +206,8 @@ const MySongs = {
       if (a === 'bpm-') this.setBpm(this.draft.bpm - 5);
       if (a === 'bpm+') this.setBpm(this.draft.bpm + 5);
       if (a === 'tap') this.tap();
+      if (a === 'file') $('#impFile').click();
+      if (a === 'unfile') { this.draft = { title: this.draft.title, artist: this.draft.artist, text: '', bpm: 90, bars: '2' }; this.score = null; this.tracks = []; this.render(); $('#impSave').disabled = true; }
     });
     $('#songAdd').addEventListener('click', () => this.open());
     $('#plEdit').addEventListener('click', () => this.open(Player.song?.id));

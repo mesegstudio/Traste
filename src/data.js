@@ -153,6 +153,71 @@ const SONGS = [
              B3 B3:0.5 C4:0.5 B3:0.5 A3:0.5 | G3 E3 D3:0.5 D3:0.5 | E3 A3 F#3 | G3:3`,
     chords: `G | C | A7 | D | B7 | Em | C D | G`,
   },
+  {
+    id: 'romance', cat: 'clasica', title: 'Romance anónimo', origin: 'Anónimo, s. XIX', bpm: 84, bpb: 3, stars: 2,
+    melody: `B3 B3 B3 | B3 A3 G3 | G3 F#3 E3 | E3 G3 B3 | E4 E4 E4 | E4 D4 C4 | C4 B3 A3 | A3 B3 C4 |
+             B3 C4 B3 | D#4 C4 B3 | B3 A3 G3 | G3 F#3 E3 | F#3 F#3 F#3 | F#3 G3 F#3 | E3 E3 E3 | E3:3`,
+    chords: `Em | Em | Em | Em | Em | Em | Am | Am | B7 | B7 | Em | Em | B7 | B7 | Em | Em`,
+  },
+  {
+    id: 'cucaracha', cat: 'tradicional', title: 'La cucaracha', origin: 'Tradicional mexicana', bpm: 104, bpb: 4, pickup: 2, stars: 2,
+    melody: `R:0.5 G3:0.5 G3:0.5 G3:0.5 | C4:1.5 E4 G3:0.5 G3:0.5 G3:0.5 | C4:1.5 E4 C4:0.5 C4:0.5 B3:0.5 |
+             B3:0.5 A3:0.5 A3:0.5 G3 G3:0.5 G3:0.5 G3:0.5 | B3:1.5 D4 G3:0.5 G3:0.5 G3:0.5 |
+             B3:1.5 D4 G4:0.5 A4:0.5 G4:0.5 | F4:0.5 E4:0.5 D4:0.5 C4:2.5`,
+    chords: `C | C | G7 | G7 | G7 | C`,
+  },
+  {
+    id: 'susanna', cat: 'tradicional', title: 'Oh! Susanna', origin: 'S. Foster, 1848', bpm: 112, bpb: 4, pickup: 1, stars: 2,
+    melody: `G3:0.5 A3:0.5 | B3 D4 D4:1.5 E4:0.5 | D4 B3 G3:1.5 A3:0.5 | B3 B3 A3 G3 | A3:3 G3:0.5 A3:0.5 |
+             B3 D4 D4:1.5 E4:0.5 | D4 B3 G3:1.5 A3:0.5 | B3 B3 A3 A3 | G3:4 |
+             C4:2 C4:2 | E4 E4:2 E4 | D4 D4 B3 G3 | A3:3 G3:0.5 A3:0.5 |
+             B3 D4 D4:1.5 E4:0.5 | D4 B3 G3:1.5 A3:0.5 | B3 B3 A3 A3 | G3:4`,
+    chords: `G | G | G | D | G | G | G D | G | C | G | G | D | G | G | G D | G`,
+  },
+  {
+    id: 'clementine', cat: 'tradicional', title: 'Clementine', origin: 'Tradicional (EE. UU., 1884)', bpm: 108, bpb: 3, pickup: 1, stars: 1,
+    melody: `G3:0.5 G3:0.5 | G3 D3 B3:0.5 B3:0.5 | B3 G3 G3:0.5 B3:0.5 | D4 D4 C4:0.5 B3:0.5 | A3:2 A3:0.5 B3:0.5 |
+             C4 C4 B3:0.5 A3:0.5 | B3 G3 G3:0.5 B3:0.5 | A3 D3 F#3:0.5 A3:0.5 | G3:2 G3:0.5 G3:0.5 |
+             G3 D3 B3:0.5 B3:0.5 | B3 G3 G3:0.5 B3:0.5 | D4 D4 C4:0.5 B3:0.5 | A3:2 A3:0.5 B3:0.5 |
+             C4 C4 B3:0.5 A3:0.5 | B3 G3 G3:0.5 B3:0.5 | A3 D3 F#3:0.5 A3:0.5 | G3:3`,
+    chords: `G | G | G | D7 | D7 | G | D7 | G | G | G | G | D7 | D7 | G | D7 | G`,
+  },
+  {
+    id: 'amazing', cat: 'tradicional', title: 'Amazing Grace', origin: 'Himno tradicional, 1779', bpm: 84, bpb: 3, pickup: 1, stars: 1,
+    melody: `D3 | G3:2 B3:0.5 G3:0.5 | B3:2 A3 | G3:2 E3 | D3:2 D3 | G3:2 B3:0.5 G3:0.5 | B3:2 A3 | D4:3 | D4:2 B3 |
+             D4:2 B3:0.5 G3:0.5 | B3:2 A3 | G3:2 E3 | D3:2 D3 | G3:2 B3:0.5 G3:0.5 | B3:2 A3 | G3:3 | G3:3`,
+    chords: `G | G | C | G | G | G | D | D | G | G | C | G | Em | D | G | G`,
+  },
+  {
+    id: 'bourree', cat: 'clasica', title: 'Bourrée en Mi menor', origin: 'J. S. Bach, c. 1712', bpm: 84, bpb: 4, pickup: 1, stars: 3, strum: 'bar',
+    melody: `E4:0.5 F#4:0.5 | G4 F#4:0.5 E4:0.5 D#4 E4:0.5 F#4:0.5 | B3 C#4:0.5 D#4:0.5 E4 D4:0.5 C4:0.5 |
+             B3 A3:0.5 G3:0.5 F#3 G3:0.5 A3:0.5 | B3:0.5 A3:0.5 G3:0.5 F#3:0.5 E3 E4:0.5 F#4:0.5 |
+             G4 F#4:0.5 E4:0.5 D#4 E4:0.5 F#4:0.5 | B3 C#4:0.5 D#4:0.5 E4 D4:0.5 C4:0.5 |
+             B3 A3:0.5 G3:0.5 F#3 G3:0.5 A3:0.5 | B3:0.5 A3:0.5 G3:0.5 F#3:0.5 E3:2`,
+    chords: `Em B7 | B7 Em | Em B7 | B7 Em | Em B7 | B7 Em | Em B7 | B7 Em`,
+  },
+  {
+    id: 'sakura', cat: 'tradicional', title: 'Sakura', origin: 'Tradicional japonesa', bpm: 76, bpb: 4, stars: 1,
+    melody: `A3 A3 B3:2 | A3 A3 B3:2 | A3 B3 C4 B3 | A3 B3:0.5 A3:0.5 F3:2 | E3 C3 E3 F3 | E3 E3:0.5 C3:0.5 B2:2 |
+             A3 B3 C4 B3 | A3 B3:0.5 A3:0.5 F3:2 | E3 C3 E3 F3 | E3 E3:0.5 C3:0.5 B2:2 |
+             A3 A3 B3:2 | A3 A3 B3:2 | E3 F3 B3:0.5 A3:0.5 F3 | E3:4`,
+    chords: `Am | Am | Am | Dm | Am | E | Am | Dm | Am | E | Am | Am | Dm | E`,
+  },
+  {
+    id: 'yankee', cat: 'tradicional', title: 'Yankee Doodle', origin: 'Tradicional (EE. UU., s. XVIII)', bpm: 116, bpb: 4, stars: 1,
+    melody: `G3 G3 A3 B3 | G3 B3 A3 D3 | G3 G3 A3 B3 | G3:2 F#3:2 | G3 G3 A3 B3 | C4 B3 A3 G3 | F#3 D3 E3 F#3 | G3:2 G3:2 |
+             E3:1.5 F#3:0.5 E3 D3 | E3 F#3 G3:2 | D3:1.5 E3:0.5 D3 C3 | B2:2 D3:2 |
+             E3:1.5 F#3:0.5 E3 D3 | E3 F#3 G3 E3 | D3 G3 F#3 A3 | G3:2 G3:2`,
+    chords: `G | G D | G | G D | G | C | D | G | C | G | D7 | G | C | G | D | G`,
+  },
+  {
+    id: 'cuna', cat: 'clasica', title: 'Canción de cuna', origin: 'J. Brahms, 1868', bpm: 80, bpb: 3, pickup: 1, stars: 2,
+    melody: `B3:0.5 B3:0.5 | D4:2 B3:0.5 B3:0.5 | D4:2 B3:0.5 D4:0.5 | G4 F#4:1.5 E4:0.5 | E4 D4 A3:0.5 B3:0.5 |
+             C4 A3 A3:0.5 B3:0.5 | C4:2 A3:0.5 C4:0.5 | F#4:0.5 E4:0.5 D4 F#4 | G4:2 G3:0.5 G3:0.5 |
+             G4:2 E4:0.5 C4:0.5 | D4:2 B3:0.5 G3:0.5 | C4 D4 E4 | D4:2 G3:0.5 G3:0.5 |
+             G4:2 E4:0.5 C4:0.5 | D4:2 B3:0.5 G3:0.5 | C4 B3 A3 | G3:3`,
+    chords: `G | G | D7 | D7 | D7 | D7 | D7 | G | C | G | D7 | G | C | G | D7 | G`,
+  },
 ];
 
 // Categorías del catálogo (en el orden en que se muestran)
