@@ -3637,7 +3637,7 @@ const Settings = {
       <section class="set-card">
         <div class="set-row"><div><h3>Probar la escucha</h3><p>Toca notas sueltas y mira qué oye Traste en cada una: la nota, si suena limpia y cuánto aguanta.</p></div><button type="button" class="btn btn-soft btn-sm" data-diag>${Diag.on ? 'Cerrar' : 'Abrir'}</button></div>
         ${Diag.on ? `<div class="diag"><div id="diagRows">${Diag.rowsHTML()}</div>
-          <div class="diag-foot"><button type="button" class="btn btn-soft btn-sm" data-diag-save>${icon('download-2-line')}Guardar los últimos 5 segundos</button><span>Un archivo WAV con lo que ha oído el micrófono, por si quieres revisar un caso raro.</span></div></div>` : ''}
+          ${window.self !== window.top ? '' : `<div class="diag-foot"><button type="button" class="btn btn-soft btn-sm" data-diag-save>${icon('download-2-line')}Guardar los últimos 5 segundos</button><span>Un archivo WAV con lo que ha oído el micrófono, por si quieres revisar un caso raro.</span></div>`}</div>` : ''}
       </section>
       <section class="set-card">
         <div class="set-row"><div><h3>Tu progreso</h3><p>Acordes aprendidos, récords y práctica de hoy. Solo se guarda en este navegador.</p></div><button type="button" class="btn btn-soft btn-sm" data-reset>${icon('delete-bin-line')}Borrar</button></div>
