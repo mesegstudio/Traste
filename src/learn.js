@@ -805,27 +805,29 @@ const Learn = {
       </div>
     </div></div></div>`;
   },
-  exRow(e) {
-    const lvl = this.level(), st = bestStars(e);
-    return `<a class="ex-row ${e.lvl > lvl ? 'above' : ''}" href="#aprender/ej/${e.id}">
-      <span class="ex-ico">${icon(e.icon)}</span>
-      <span class="ex-txt"><b>${e.title}</b><span>${e.sub}</span></span>
-      <span class="ex-meta">${cleanBpm(e) ? `<span class="ex-bpm" title="Tu velocidad limpia">${cleanBpm(e)} ppm</span>` : ''}<span class="lvl-pips" title="Nivel ${LVL[e.lvl].n}">${[1, 2, 3].map((k) => `<i class="${k <= e.lvl ? 'on' : ''}"></i>`).join('')}</span>${st ? miniStars(st) : ''}</span>
+  /* Fila de lista. A la derecha, siempre en las mismas columnas, van el récord (una etiqueta sobre las
+     estrellas) y una marca fija (el nivel o los minutos), para que todas las filas queden alineadas. */
+  row({ href, cls = '', ico, title, sub, label = '', stars = 0, mark = '', attrs = '' }) {
+    return `<a class="ex-row ${cls}" href="${href}" ${attrs}>
+      <span class="ex-ico">${icon(ico)}</span>
+      <span class="ex-txt"><b>${title}</b><span>${sub}</span></span>
+      <span class="ex-rec">${label ? `<em>${label}</em>` : ''}${stars ? miniStars(stars) : ''}</span>
+      <span class="ex-mark">${mark}</span>
       ${icon('arrow-right-s-line', 'chev')}</a>`;
+  },
+  exRow(e) {
+    const bpm = cleanBpm(e), ch = e.kind === 'changes' ? null : 1;
+    return this.row({ href: '#aprender/ej/' + e.id, cls: e.lvl > this.level() ? 'above' : '', ico: e.icon, title: e.title, sub: e.sub,
+      label: bpm ? `${bpm} ppm` : '', stars: bestStars(e),
+      mark: ch ? `<span class="lvl-pips" title="Nivel ${LVL[e.lvl].n}">${[1, 2, 3].map((k) => `<i class="${k <= e.lvl ? 'on' : ''}"></i>`).join('')}</span>` : '' });
   },
   trackHTML() {
     const chords = this.track === 'acordes';
     let body = '';
     if (this.track === 'clases' || this.track === 'oido') {
       const cls = this.track === 'clases', lvl = this.level();
-      if (cls) body = CLASS_GROUPS.map((g) => { const list = CLASSES.filter((c) => c.group === g); return `<section class="trk-sec"><h2 class="trk-h">${g}<span>${list.filter((c) => classRead(c.id)).length}/${list.length}</span></h2><div class="ex-list">${list.map((c) => `<a class="ex-row ${c.lvl > lvl ? 'above' : ''}" href="#aprender/clase/${c.id}">
-          <span class="ex-ico">${icon(classRead(c.id) ? 'check-line' : 'book-2-line')}</span>
-          <span class="ex-txt"><b>${c.title}</b><span>${c.sub}</span></span>
-          <span class="ex-meta"><span class="ex-bpm">${c.min} min</span></span>${icon('arrow-right-s-line', 'chev')}</a>`).join('')}</div></section>`; }).join('');
-      else body = `<section class="trk-sec"><div class="ex-list">${EAR_GAMES.map((g) => { const r = state.rec['ear:' + g.id]; return `<a class="ex-row" href="#aprender/oido/${g.id}">
-          <span class="ex-ico">${icon(g.icon)}</span>
-          <span class="ex-txt"><b>${g.title}</b><span>${g.sub}</span></span>
-          <span class="ex-meta">${r ? `<span class="ex-bpm">${r.v}/10</span>${miniStars(r.stars)}` : ''}</span>${icon('arrow-right-s-line', 'chev')}</a>`; }).join('')}</div></section>`;
+      if (cls) body = CLASS_GROUPS.map((g) => { const list = CLASSES.filter((c) => c.group === g); return `<section class="trk-sec"><h2 class="trk-h">${g}<span>${list.filter((c) => classRead(c.id)).length}/${list.length}</span></h2><div class="ex-list">${list.map((c) => this.row({ href: '#aprender/clase/' + c.id, cls: 'mins ' + (c.lvl > lvl ? 'above' : ''), ico: classRead(c.id) ? 'check-line' : 'book-2-line', title: c.title, sub: c.sub, mark: `${c.min} min` })).join('')}</div></section>`; }).join('');
+      else body = `<section class="trk-sec"><div class="ex-list">${EAR_GAMES.map((g) => { const r = state.rec['ear:' + g.id]; return this.row({ href: '#aprender/oido/' + g.id, cls: 'nomark', ico: g.icon, title: g.title, sub: g.sub, label: r ? `${r.v}/10` : '', stars: r?.stars || 0 }); }).join('')}</div></section>`;
       return `<div class="screen">
         <div class="scr-top">
           <a class="btn btn-soft btn-icon" href="#aprender" aria-label="Volver">${icon('arrow-left-line')}</a>
@@ -839,17 +841,17 @@ const Learn = {
       const nL = CHORD_ORDER.filter((x) => state.learned[x]).length;
       body += `<a class="guide-link" href="#aprender/guia">${icon('book-open-line')}<span><b>Primeros pasos</b> Cómo sujetar la guitarra, pisar y leer un diagrama</span>${icon('arrow-right-s-line', 'chev')}</a>`;
       body += CHORD_GROUPS.map((g) => `<section class="trk-sec"><h2 class="trk-h">${g.name}<span>${g.ids.filter((x) => state.learned[x]).length}/${g.ids.length}</span></h2>
-        <div class="ctiles">${g.ids.map((id) => `<a class="ctile ${state.learned[id] ? 'learned' : ''} ${id === next ? 'next' : ''}" href="#aprender/acorde/${enc(id)}" title="${chordLongName(id)}">
+        <div class="ctiles">${g.ids.map((id) => `<a class="ctile ${state.learned[id] ? 'learned' : ''} ${id === next ? 'next' : ''} ${chordLabel(id).length > 6 ? 'long' : ''}" href="#aprender/acorde/${enc(id)}" title="${chordLongName(id)}">
           <b>${chordLabel(id)}</b><span>${id === next ? 'siguiente' : CHORDS[id].variant ? 'fácil' : SUFFIX_NAME[chordParts(id).suffix] ?? chordParts(id).suffix}</span>${state.learned[id] ? icon('check-line', 'ck') : ''}</a>`).join('')}</div></section>`).join('');
       body += `<section class="trk-sec"><h2 class="trk-h">Practica</h2><div class="ex-list">
         ${this.exRow(EXI.changes)}
-        <a class="ex-row ${nL < 2 ? 'off' : ''}" href="${nL < 2 ? '#aprender/acordes' : '#aprender/repaso'}" ${nL < 2 ? 'aria-disabled="true"' : ''}><span class="ex-ico">${icon('shuffle-line')}</span><span class="ex-txt"><b>Repaso de memoria</b><span>${nL < 2 ? 'Aprende dos acordes para desbloquearlo' : 'Un acorde que ya sabes, sin mirar el diagrama'}</span></span><span class="ex-meta"></span>${icon('arrow-right-s-line', 'chev')}</a>
+        <a class="ex-row ${nL < 2 ? 'off' : ''}" href="${nL < 2 ? '#aprender/acordes' : '#aprender/repaso'}" ${nL < 2 ? 'aria-disabled="true"' : ''}><span class="ex-ico">${icon('shuffle-line')}</span><span class="ex-txt"><b>Repaso de memoria</b><span>${nL < 2 ? 'Aprende dos acordes para desbloquearlo' : 'Un acorde que ya sabes, sin mirar el diagrama'}</span></span><span class="ex-rec"></span><span class="ex-mark"></span>${icon('arrow-right-s-line', 'chev')}</a>
       </div></section>`;
       body += `<section class="trk-sec"><h2 class="trk-h">Ritmo</h2><div class="ex-list">${EXERCISES.filter((e) => e.group === 'Ritmo').map((e) => this.exRow(e)).join('')}</div></section>`;
     } else {
       const groups = [...new Set(EXERCISES.filter((e) => e.track === 'punteo').map((e) => e.group))];
       body += groups.map((g) => `<section class="trk-sec"><h2 class="trk-h">${g}</h2><div class="ex-list">${EXERCISES.filter((e) => e.group === g).map((e) => this.exRow(e)).join('')}</div></section>`).join('');
-      body += `<section class="trk-sec"><h2 class="trk-h">Melodías</h2><div class="ex-list"><a class="ex-row" href="#canciones"><span class="ex-ico">${icon('music-2-line')}</span><span class="ex-txt"><b>Canciones en nivel Fácil</b><span>La melodía nota a nota, con la bola que marca el ritmo</span></span><span class="ex-meta"></span>${icon('arrow-right-s-line', 'chev')}</a></div></section>`;
+      body += `<section class="trk-sec"><h2 class="trk-h">Melodías</h2><div class="ex-list"><a class="ex-row" href="#canciones"><span class="ex-ico">${icon('music-2-line')}</span><span class="ex-txt"><b>Canciones en nivel Fácil</b><span>La melodía nota a nota, con la bola que marca el ritmo</span></span><span class="ex-rec"></span><span class="ex-mark"></span>${icon('arrow-right-s-line', 'chev')}</a></div></section>`;
     }
     return `<div class="screen">
       <div class="scr-top">

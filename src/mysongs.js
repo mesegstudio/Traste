@@ -55,7 +55,7 @@ const MySongs = {
     this.editing = e ? e.id : null;
     this.fromPlayer = !$('#player').hidden;
     this.draft = e ? { ...e } : { title: '', artist: '', text: '', bpm: 90, bars: '2' };
-    this.score = null; this.tracks = [];
+    this.score = null; this.tracks = []; this.mode = this.draft.kind === 'tab' ? 'file' : 'text';
     Player.pause(); $('#player').hidden = true; $('#songList').hidden = true; $('#songImport').hidden = false;
     this.render(); $('#impSave').disabled = !this.lastOk;
     if (!e) $('#impText')?.focus();
@@ -67,29 +67,36 @@ const MySongs = {
     Player.song = null; $('#songList').hidden = false; Songs.render();
   },
   render() {
-    const d = this.draft, tab = d.kind === 'tab';
+    const d = this.draft, tab = d.kind === 'tab', file = this.mode === 'file';
     $('#songImport').innerHTML = `<div class="screen">
       <div class="scr-top">
         <button type="button" class="btn btn-soft btn-icon" data-imp="back" aria-label="Volver">${icon('arrow-left-line')}</button>
-        <div class="scr-title"><h1>${this.editing ? 'Editar canción' : 'Añadir canción'}</h1><p>${tab ? 'Tablatura leída de un archivo, con su tempo y su ritmo' : 'Pega los acordes con la letra o abre un archivo de Guitar Pro'}</p></div>
+        <div class="scr-title"><h1>${this.editing ? 'Editar canción' : 'Añadir canción'}</h1><p>${this.editing ? (tab ? 'Tablatura leída de un archivo' : 'Acordes y letra pegados') : 'Hay dos maneras: pegar el texto de una web de acordes o abrir un archivo de tablatura'}</p></div>
         <button type="button" class="btn btn-primary" data-imp="save" id="impSave">${icon('check-line')}Guardar</button>
       </div>
       <div class="scr-body scroll"><div class="imp-grid">
         <div class="imp-left">
+          ${this.editing ? '' : `<div class="seg imp-mode" role="group" aria-label="Cómo añadirla">
+            <button type="button" data-imp-mode="text" aria-pressed="${!file}">${icon('edit-line')}Pegar acordes o tablatura</button>
+            <button type="button" data-imp-mode="file" aria-pressed="${file}">${icon('file-music-line')}Abrir un archivo</button></div>`}
           <div class="imp-fields">
             <input type="text" id="impTitle" placeholder="Título" value="${esc(d.title)}" aria-label="Título">
             <input type="text" id="impArtist" placeholder="Artista (opcional)" value="${esc(d.artist)}" aria-label="Artista">
           </div>
           ${tab ? `<div class="imp-file">${icon('file-music-line')}<div><b>${esc(d.file || 'Tablatura de archivo')}</b><span>${d.ev.length} golpes · ${d.bpb}/4</span></div>${this.editing ? '' : `<button type="button" class="btn btn-ghost btn-sm" data-imp="unfile">Quitar</button>`}</div>
-          ${this.tracks.filter((t) => t.ok).length > 1 ? `<label class="imp-track"><span>Pista</span><select id="impTrack">${this.tracks.filter((t) => t.ok).map((t) => `<option value="${t.i}" ${t.i === d.track ? 'selected' : ''}>${esc(t.name)} · ${t.beats} golpes</option>`).join('')}</select></label>` : ''}` : `<textarea id="impText" spellcheck="false" placeholder="Pega aquí la canción con sus acordes.&#10;&#10;     Am            G&#10;Primera línea de la letra&#10;     F             E&#10;Segunda línea de la letra">${esc(d.text)}</textarea>
-          <div class="imp-or"><button type="button" class="btn btn-soft btn-sm" data-imp="file">${icon('upload-2-line')}Abrir un archivo de Guitar Pro o MusicXML</button><span>Trae el tempo y el ritmo exactos.</span><input type="file" id="impFile" accept=".gp,.gp3,.gp4,.gp5,.gpx,.xml,.musicxml,.mxl" hidden></div>`}
-          <div class="imp-opts">
+          ${this.tracks.filter((t) => t.ok).length > 1 ? `<label class="imp-track"><span>Pista</span><select id="impTrack">${this.tracks.filter((t) => t.ok).map((t) => `<option value="${t.i}" ${t.i === d.track ? 'selected' : ''}>${esc(t.name)} · ${t.beats} golpes</option>`).join('')}</select></label>` : ''}`
+          : file ? `<div class="imp-drop">${icon('file-music-line')}<b>Elige un archivo de Guitar Pro o MusicXML</b>
+            <p>Sirven los que acaban en .gp, .gp3, .gp4, .gp5, .gpx, .musicxml o .xml. Traen cada nota con su duración y la velocidad de la canción, así que no hay que ajustar nada.</p>
+            <button type="button" class="btn btn-primary" data-imp="file">${icon('upload-2-line')}Elegir archivo</button></div>`
+          : `<textarea id="impText" spellcheck="false" placeholder="Pega aquí la canción con sus acordes.&#10;&#10;     Am            G&#10;Primera línea de la letra&#10;     F             E&#10;Segunda línea de la letra">${esc(d.text)}</textarea>`}
+          <input type="file" id="impFile" accept=".gp,.gp3,.gp4,.gp5,.gpx,.xml,.musicxml,.mxl" hidden>
+          ${file && !tab ? '' : `<div class="imp-opts">
             <div class="imp-opt"><span>Velocidad</span>
               <div class="stepper-num"><button type="button" class="btn btn-soft btn-icon btn-sm" data-imp="bpm-" aria-label="Más lenta">−</button><b class="num" id="impBpm">${d.bpm}</b><span class="muted">ppm</span><button type="button" class="btn btn-soft btn-icon btn-sm" data-imp="bpm+" aria-label="Más rápida">+</button></div>
               ${tab ? '' : `<button type="button" class="btn btn-ghost btn-sm" data-imp="tap" title="Toca al ritmo de la canción">${icon('pulse-line')}Marcar el pulso</button>`}</div>
             ${tab ? '' : `<div class="imp-opt"><span>Cada línea de letra</span>
               <div class="seg" role="group">${LINE_LEN.map(([v, n]) => `<button type="button" data-imp-bars="${v}" aria-pressed="${String(d.bars) === v}" title="${v} ${v === '1' ? 'compás' : 'compases'}">${n}</button>`).join('')}</div></div>`}
-          </div>
+          </div>`}
           <p class="imp-note">${icon('information-line')}Se guarda solo en este navegador. Para uso personal.</p>
           ${this.editing ? `<button type="button" class="link-btn imp-del" data-imp="delete">${icon('delete-bin-line')}Borrar esta canción</button>` : ''}
         </div>
@@ -112,8 +119,10 @@ const MySongs = {
         ${tr && !tr.standard ? `<p class="imp-warn">${icon('error-warning-line')}Esta pista usa otra afinación (${tr.tuning.slice().reverse().map((m) => pcName(m)).join(' ')}). Afina así la guitarra para que las notas coincidan.</p>` : ''}
         ${d.ev.some((e) => e[2].some((n) => n[4])) ? `<p class="imp-warn">${icon('information-line')}Los martillos y tirones se tocan como notas ligadas, sin volver a pulsar.</p>` : ''}`;
     }
-    if (!d.text.trim()) return `<div class="imp-empty">${icon('music-2-line')}<b>Aquí verás lo que entiende Traste</b>
-      <ol><li>Abre la canción en La Cuerda, Ultimate Guitar o Cifra Club.</li><li>Selecciona desde el primer acorde hasta el final y cópialo. Si copias la página entera no pasa nada, me quedo con lo que sirve.</li><li>Pégalo a la izquierda.</li></ol></div>`;
+    if (this.mode === 'file') return `<div class="imp-empty">${icon('file-music-line')}<b>Con un archivo de tablatura</b>
+      <ol><li>Consigue el archivo de la canción. Los de Guitar Pro son los más comunes en las webs de tablaturas.</li><li>Pulsa «Elegir archivo» y selecciónalo. Si trae varias pistas, eliges la de guitarra.</li><li>Guarda. La canción aparece en tu lista con su velocidad y su ritmo tal como están escritos.</li></ol></div>`;
+    if (!d.text.trim()) return `<div class="imp-empty">${icon('music-2-line')}<b>Pegando el texto de una web</b>
+      <ol><li>Abre la canción en La Cuerda, Ultimate Guitar o Cifra Club.</li><li>Selecciona desde el primer acorde hasta el final y cópialo. Si copias la página entera no pasa nada, me quedo con lo que sirve.</li><li>Pégalo a la izquierda. Aquí verás los acordes y las partes que he entendido, y eliges la velocidad.</li><li>Guarda. La canción aparece en tu lista.</li></ol></div>`;
     let r;
     try { r = this.compile(d); } catch (err) { console.error(err); return `<div class="imp-empty">${icon('error-warning-line')}<b>No he podido leerlo</b></div>`; }
     this.lastOk = r.chordList.length > 0 || r.nTab > 0;
@@ -164,7 +173,7 @@ const MySongs = {
   setTrack(i, fileName) {
     const r = scoreToSong(this.score, i), d = this.draft;
     this.draft = { kind: 'tab', title: d.title || r.title, artist: d.artist || r.artist, bpm: clamp(r.bpm, 40, 220), bpb: r.bpb, pickup: r.pickup, total: r.total, ev: packEvents(r.events), track: i, file: fileName || d.file, text: '' };
-    this.render(); $('#impSave').disabled = !this.lastOk;
+    this.mode = 'file'; this.render(); $('#impSave').disabled = !this.lastOk;
   },
   save() {
     const d = this.draft;
@@ -197,6 +206,8 @@ const MySongs = {
       if (e.target.id === 'impTrack') this.setTrack(+e.target.value);
     });
     root.addEventListener('click', (e) => {
+      const m = e.target.closest('[data-imp-mode]');
+      if (m) { this.mode = m.dataset.impMode; if (this.mode === 'text' && this.draft.kind === 'tab') { this.draft = { title: this.draft.title, artist: this.draft.artist, text: '', bpm: 90, bars: '2' }; this.score = null; this.tracks = []; } this.render(); $('#impSave').disabled = !this.lastOk; return; }
       const b = e.target.closest('[data-imp],[data-imp-bars]'); if (!b) return;
       if (b.dataset.impBars) { this.draft.bars = b.dataset.impBars; $$('[data-imp-bars]', root).forEach((x) => x.setAttribute('aria-pressed', String(x === b))); this.refresh(); return; }
       const a = b.dataset.imp;

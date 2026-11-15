@@ -355,7 +355,7 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 .ctile.next { box-shadow: inset 0 0 0 2px var(--accent); }
 .ctile.next span { color: var(--accent); font-weight: 650; }
 .ex-list { display: flex; flex-direction: column; gap: 4px; }
-.ex-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto 20px; gap: 14px; align-items: center; padding: 10px 10px 10px 10px; border-radius: 18px; background: var(--surface); color: inherit; text-decoration: none; transition: background .2s; }
+.ex-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) 54px 18px 18px; gap: 12px; min-height: 64px; align-items: center; padding: 10px 10px 10px 10px; border-radius: 18px; background: var(--surface); color: inherit; text-decoration: none; transition: background .2s; }
 .ex-row:hover { background: var(--surface-2); }
 .ex-row.off { opacity: .5; pointer-events: none; }
 .ex-ico { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--surface-2); color: var(--text); }
@@ -364,7 +364,17 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 .ex-txt b { font-weight: 650; font-size: 15px; }
 .ex-txt span { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ex-row.above .ex-txt b { color: var(--muted); }
-.ex-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.ex-rec { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+.ex-rec em { font-style: normal; font-size: 11px; font-weight: 600; line-height: 1.1; color: var(--muted); white-space: nowrap; }
+.ex-mark { justify-self: end; display: inline-flex; align-items: center; font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.ex-row.mins { grid-template-columns: 44px minmax(0, 1fr) 40px 18px; } .ex-row.mins .ex-rec { display: none; }
+.ex-row.nomark { grid-template-columns: 44px minmax(0, 1fr) 54px 18px; } .ex-row.nomark .ex-mark { display: none; }
+.ex-row .chev { width: 18px; height: 18px; }
+@media (max-width: 560px) {
+  .ex-row { grid-template-columns: 44px minmax(0, 1fr) 50px 16px; gap: 10px; }
+  .ex-row.mins { grid-template-columns: 44px minmax(0, 1fr) 38px; } .ex-row.nomark { grid-template-columns: 44px minmax(0, 1fr) 50px; }
+  .ex-row .chev { display: none; }
+}
 .lvl-pips { display: inline-flex; gap: 2px; align-items: flex-end; }
 .lvl-pips i { width: 4px; border-radius: 2px; background: var(--surface-3); }
 .lvl-pips i:nth-child(1) { height: 6px; } .lvl-pips i:nth-child(2) { height: 9px; } .lvl-pips i:nth-child(3) { height: 12px; }
@@ -554,7 +564,7 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 .filters::-webkit-scrollbar { display: none; }
 .song-list { flex: 1; display: grid; gap: 2px 20px; align-content: start; }
 @media (min-width: 900px) { .song-list { grid-template-columns: 1fr 1fr; } }
-.song-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 14px; align-items: center; padding: 12px 14px; border-radius: 18px; cursor: pointer; transition: background .2s; }
+.song-row { display: grid; grid-template-columns: minmax(0, 1fr) 54px 24px; gap: 14px; align-items: center; padding: 12px 14px; border-radius: 18px; cursor: pointer; transition: background .2s; }
 .song-row:hover { background: var(--surface); }
 .song-row h3 { font-family: var(--font); font-size: 15.5px; font-weight: 650; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .song-row .meta { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -724,7 +734,6 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 .loop-ctl .ri { width: 16px; height: 16px; }
 .loop-ctl .loop-unit { font-weight: 500; font-size: 12.5px; }
 .seg.seg-sm button { padding: 5px 10px; font-size: 12.5px; min-width: 30px; }
-.song-row .best:empty { display: none; }
 
 /* ---------- aprender: racha, bienvenida, clases y oído ---------- */
 .lh-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
@@ -738,7 +747,6 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 .card.welcome p { color: var(--muted); font-size: 14.5px; max-width: 62ch; }
 .tr-ico.c3 { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
 .tr-ico.c4 { background: color-mix(in srgb, var(--f1) 16%, transparent); color: var(--f1); }
-.ex-bpm { font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; }
 #tnNext { align-self: center; margin-top: 10px; }
 .cl-body { max-width: 680px; margin: 0 auto; padding: 4px 2px 28px; display: flex; flex-direction: column; gap: 14px; font-size: 15.5px; line-height: 1.6; }
 .cl-body .cl-sub { color: var(--muted); font-size: 15px; margin-top: -4px; }
@@ -780,7 +788,6 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 @media (min-width: 880px), (min-aspect-ratio: 5/4) and (min-width: 640px) { .lh-grid > .today { order: 0; } }
 
 /* ---------- añadir canción: archivo de tablatura ---------- */
-.imp-or { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 12.5px; color: var(--muted); }
 .imp-file { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 18px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
 .imp-file > .ri { width: 26px; height: 26px; color: var(--accent); flex: none; }
 .imp-file > div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -819,6 +826,28 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 .ear-opts.n3 { grid-template-columns: repeat(3, 1fr); }
 /* letra bajo la partitura */
 .now-strip { padding: 4px 6px 2px; }
+
+/* ---------- armonía general ---------- */
+/* las listas empiezan en el mismo borde que la cabecera, no centradas aparte */
+.trk { margin: 0; }
+@media (min-width: 880px) { .cl-body { margin: 0 0 0 52px; } }
+/* acordes de nombre largo en una sola línea */
+.ctile b { white-space: nowrap; }
+.ctile.long b { font-size: 18px; line-height: 1.4; letter-spacing: -0.04em; }
+.song-row .best { min-height: 28px; justify-content: center; }
+
+/* ---------- añadir canción: dos maneras ---------- */
+.imp-mode { align-self: flex-start; max-width: 100%; }
+.imp-mode button { display: inline-flex; align-items: center; gap: 6px; }
+.imp-mode .ri { width: 16px; height: 16px; }
+.imp-drop { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 36px 22px; border-radius: 22px; border: 1.5px dashed var(--line-2); text-align: center; }
+.imp-drop > .ri { width: 34px; height: 34px; color: var(--accent); }
+.imp-drop b { font-weight: 650; font-size: 16px; }
+.imp-drop p { color: var(--muted); font-size: 14px; max-width: 46ch; }
+.imp-empty ol { list-style: decimal; padding-left: 22px; gap: 8px; }
+.imp-empty ol li::marker { color: var(--accent); font-weight: 700; }
+.imp-empty ol li { padding-left: 2px; }
+@media (max-width: 560px) { .imp-mode { align-self: stretch; display: grid; grid-template-columns: 1fr 1fr; } .imp-mode button { justify-content: center; font-size: 13px; padding-inline: 8px; } .imp-mode .ri { display: none; } }
 
 .visible{visibility:visible}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:.75rem}.mt-1{margin-top:.25rem}.mt-5{margin-top:1.25rem}.block{display:block}.flex{display:flex}.\!grid{display:grid!important}.grid{display:grid}.hidden{display:none}.w-full{width:100%}.min-w-0{min-width:0}.flex-1{flex:1 1 0%}.transform{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.resize{resize:both}.flex-wrap{flex-wrap:wrap}.justify-center{justify-content:center}.gap-2{gap:.5rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.text-sm{font-size:.875rem;line-height:1.25rem}.font-medium{font-weight:500}.opacity-60{opacity:.6}.ring{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}@media (min-width:640px){.sm\:inline{display:inline}}
 </style>
@@ -3726,7 +3755,7 @@ const MySongs = {
     this.editing = e ? e.id : null;
     this.fromPlayer = !$('#player').hidden;
     this.draft = e ? { ...e } : { title: '', artist: '', text: '', bpm: 90, bars: '2' };
-    this.score = null; this.tracks = [];
+    this.score = null; this.tracks = []; this.mode = this.draft.kind === 'tab' ? 'file' : 'text';
     Player.pause(); $('#player').hidden = true; $('#songList').hidden = true; $('#songImport').hidden = false;
     this.render(); $('#impSave').disabled = !this.lastOk;
     if (!e) $('#impText')?.focus();
@@ -3738,29 +3767,36 @@ const MySongs = {
     Player.song = null; $('#songList').hidden = false; Songs.render();
   },
   render() {
-    const d = this.draft, tab = d.kind === 'tab';
+    const d = this.draft, tab = d.kind === 'tab', file = this.mode === 'file';
     $('#songImport').innerHTML = `<div class="screen">
       <div class="scr-top">
         <button type="button" class="btn btn-soft btn-icon" data-imp="back" aria-label="Volver">${icon('arrow-left-line')}</button>
-        <div class="scr-title"><h1>${this.editing ? 'Editar canción' : 'Añadir canción'}</h1><p>${tab ? 'Tablatura leída de un archivo, con su tempo y su ritmo' : 'Pega los acordes con la letra o abre un archivo de Guitar Pro'}</p></div>
+        <div class="scr-title"><h1>${this.editing ? 'Editar canción' : 'Añadir canción'}</h1><p>${this.editing ? (tab ? 'Tablatura leída de un archivo' : 'Acordes y letra pegados') : 'Hay dos maneras: pegar el texto de una web de acordes o abrir un archivo de tablatura'}</p></div>
         <button type="button" class="btn btn-primary" data-imp="save" id="impSave">${icon('check-line')}Guardar</button>
       </div>
       <div class="scr-body scroll"><div class="imp-grid">
         <div class="imp-left">
+          ${this.editing ? '' : `<div class="seg imp-mode" role="group" aria-label="Cómo añadirla">
+            <button type="button" data-imp-mode="text" aria-pressed="${!file}">${icon('edit-line')}Pegar acordes o tablatura</button>
+            <button type="button" data-imp-mode="file" aria-pressed="${file}">${icon('file-music-line')}Abrir un archivo</button></div>`}
           <div class="imp-fields">
             <input type="text" id="impTitle" placeholder="Título" value="${esc(d.title)}" aria-label="Título">
             <input type="text" id="impArtist" placeholder="Artista (opcional)" value="${esc(d.artist)}" aria-label="Artista">
           </div>
           ${tab ? `<div class="imp-file">${icon('file-music-line')}<div><b>${esc(d.file || 'Tablatura de archivo')}</b><span>${d.ev.length} golpes · ${d.bpb}/4</span></div>${this.editing ? '' : `<button type="button" class="btn btn-ghost btn-sm" data-imp="unfile">Quitar</button>`}</div>
-          ${this.tracks.filter((t) => t.ok).length > 1 ? `<label class="imp-track"><span>Pista</span><select id="impTrack">${this.tracks.filter((t) => t.ok).map((t) => `<option value="${t.i}" ${t.i === d.track ? 'selected' : ''}>${esc(t.name)} · ${t.beats} golpes</option>`).join('')}</select></label>` : ''}` : `<textarea id="impText" spellcheck="false" placeholder="Pega aquí la canción con sus acordes.&#10;&#10;     Am            G&#10;Primera línea de la letra&#10;     F             E&#10;Segunda línea de la letra">${esc(d.text)}</textarea>
-          <div class="imp-or"><button type="button" class="btn btn-soft btn-sm" data-imp="file">${icon('upload-2-line')}Abrir un archivo de Guitar Pro o MusicXML</button><span>Trae el tempo y el ritmo exactos.</span><input type="file" id="impFile" accept=".gp,.gp3,.gp4,.gp5,.gpx,.xml,.musicxml,.mxl" hidden></div>`}
-          <div class="imp-opts">
+          ${this.tracks.filter((t) => t.ok).length > 1 ? `<label class="imp-track"><span>Pista</span><select id="impTrack">${this.tracks.filter((t) => t.ok).map((t) => `<option value="${t.i}" ${t.i === d.track ? 'selected' : ''}>${esc(t.name)} · ${t.beats} golpes</option>`).join('')}</select></label>` : ''}`
+          : file ? `<div class="imp-drop">${icon('file-music-line')}<b>Elige un archivo de Guitar Pro o MusicXML</b>
+            <p>Sirven los que acaban en .gp, .gp3, .gp4, .gp5, .gpx, .musicxml o .xml. Traen cada nota con su duración y la velocidad de la canción, así que no hay que ajustar nada.</p>
+            <button type="button" class="btn btn-primary" data-imp="file">${icon('upload-2-line')}Elegir archivo</button></div>`
+          : `<textarea id="impText" spellcheck="false" placeholder="Pega aquí la canción con sus acordes.&#10;&#10;     Am            G&#10;Primera línea de la letra&#10;     F             E&#10;Segunda línea de la letra">${esc(d.text)}</textarea>`}
+          <input type="file" id="impFile" accept=".gp,.gp3,.gp4,.gp5,.gpx,.xml,.musicxml,.mxl" hidden>
+          ${file && !tab ? '' : `<div class="imp-opts">
             <div class="imp-opt"><span>Velocidad</span>
               <div class="stepper-num"><button type="button" class="btn btn-soft btn-icon btn-sm" data-imp="bpm-" aria-label="Más lenta">−</button><b class="num" id="impBpm">${d.bpm}</b><span class="muted">ppm</span><button type="button" class="btn btn-soft btn-icon btn-sm" data-imp="bpm+" aria-label="Más rápida">+</button></div>
               ${tab ? '' : `<button type="button" class="btn btn-ghost btn-sm" data-imp="tap" title="Toca al ritmo de la canción">${icon('pulse-line')}Marcar el pulso</button>`}</div>
             ${tab ? '' : `<div class="imp-opt"><span>Cada línea de letra</span>
               <div class="seg" role="group">${LINE_LEN.map(([v, n]) => `<button type="button" data-imp-bars="${v}" aria-pressed="${String(d.bars) === v}" title="${v} ${v === '1' ? 'compás' : 'compases'}">${n}</button>`).join('')}</div></div>`}
-          </div>
+          </div>`}
           <p class="imp-note">${icon('information-line')}Se guarda solo en este navegador. Para uso personal.</p>
           ${this.editing ? `<button type="button" class="link-btn imp-del" data-imp="delete">${icon('delete-bin-line')}Borrar esta canción</button>` : ''}
         </div>
@@ -3783,8 +3819,10 @@ const MySongs = {
         ${tr && !tr.standard ? `<p class="imp-warn">${icon('error-warning-line')}Esta pista usa otra afinación (${tr.tuning.slice().reverse().map((m) => pcName(m)).join(' ')}). Afina así la guitarra para que las notas coincidan.</p>` : ''}
         ${d.ev.some((e) => e[2].some((n) => n[4])) ? `<p class="imp-warn">${icon('information-line')}Los martillos y tirones se tocan como notas ligadas, sin volver a pulsar.</p>` : ''}`;
     }
-    if (!d.text.trim()) return `<div class="imp-empty">${icon('music-2-line')}<b>Aquí verás lo que entiende Traste</b>
-      <ol><li>Abre la canción en La Cuerda, Ultimate Guitar o Cifra Club.</li><li>Selecciona desde el primer acorde hasta el final y cópialo. Si copias la página entera no pasa nada, me quedo con lo que sirve.</li><li>Pégalo a la izquierda.</li></ol></div>`;
+    if (this.mode === 'file') return `<div class="imp-empty">${icon('file-music-line')}<b>Con un archivo de tablatura</b>
+      <ol><li>Consigue el archivo de la canción. Los de Guitar Pro son los más comunes en las webs de tablaturas.</li><li>Pulsa «Elegir archivo» y selecciónalo. Si trae varias pistas, eliges la de guitarra.</li><li>Guarda. La canción aparece en tu lista con su velocidad y su ritmo tal como están escritos.</li></ol></div>`;
+    if (!d.text.trim()) return `<div class="imp-empty">${icon('music-2-line')}<b>Pegando el texto de una web</b>
+      <ol><li>Abre la canción en La Cuerda, Ultimate Guitar o Cifra Club.</li><li>Selecciona desde el primer acorde hasta el final y cópialo. Si copias la página entera no pasa nada, me quedo con lo que sirve.</li><li>Pégalo a la izquierda. Aquí verás los acordes y las partes que he entendido, y eliges la velocidad.</li><li>Guarda. La canción aparece en tu lista.</li></ol></div>`;
     let r;
     try { r = this.compile(d); } catch (err) { console.error(err); return `<div class="imp-empty">${icon('error-warning-line')}<b>No he podido leerlo</b></div>`; }
     this.lastOk = r.chordList.length > 0 || r.nTab > 0;
@@ -3835,7 +3873,7 @@ const MySongs = {
   setTrack(i, fileName) {
     const r = scoreToSong(this.score, i), d = this.draft;
     this.draft = { kind: 'tab', title: d.title || r.title, artist: d.artist || r.artist, bpm: clamp(r.bpm, 40, 220), bpb: r.bpb, pickup: r.pickup, total: r.total, ev: packEvents(r.events), track: i, file: fileName || d.file, text: '' };
-    this.render(); $('#impSave').disabled = !this.lastOk;
+    this.mode = 'file'; this.render(); $('#impSave').disabled = !this.lastOk;
   },
   save() {
     const d = this.draft;
@@ -3868,6 +3906,8 @@ const MySongs = {
       if (e.target.id === 'impTrack') this.setTrack(+e.target.value);
     });
     root.addEventListener('click', (e) => {
+      const m = e.target.closest('[data-imp-mode]');
+      if (m) { this.mode = m.dataset.impMode; if (this.mode === 'text' && this.draft.kind === 'tab') { this.draft = { title: this.draft.title, artist: this.draft.artist, text: '', bpm: 90, bars: '2' }; this.score = null; this.tracks = []; } this.render(); $('#impSave').disabled = !this.lastOk; return; }
       const b = e.target.closest('[data-imp],[data-imp-bars]'); if (!b) return;
       if (b.dataset.impBars) { this.draft.bars = b.dataset.impBars; $$('[data-imp-bars]', root).forEach((x) => x.setAttribute('aria-pressed', String(x === b))); this.refresh(); return; }
       const a = b.dataset.imp;
@@ -5056,27 +5096,29 @@ const Learn = {
       </div>
     </div></div></div>`;
   },
-  exRow(e) {
-    const lvl = this.level(), st = bestStars(e);
-    return `<a class="ex-row ${e.lvl > lvl ? 'above' : ''}" href="#aprender/ej/${e.id}">
-      <span class="ex-ico">${icon(e.icon)}</span>
-      <span class="ex-txt"><b>${e.title}</b><span>${e.sub}</span></span>
-      <span class="ex-meta">${cleanBpm(e) ? `<span class="ex-bpm" title="Tu velocidad limpia">${cleanBpm(e)} ppm</span>` : ''}<span class="lvl-pips" title="Nivel ${LVL[e.lvl].n}">${[1, 2, 3].map((k) => `<i class="${k <= e.lvl ? 'on' : ''}"></i>`).join('')}</span>${st ? miniStars(st) : ''}</span>
+  /* Fila de lista. A la derecha, siempre en las mismas columnas, van el récord (una etiqueta sobre las
+     estrellas) y una marca fija (el nivel o los minutos), para que todas las filas queden alineadas. */
+  row({ href, cls = '', ico, title, sub, label = '', stars = 0, mark = '', attrs = '' }) {
+    return `<a class="ex-row ${cls}" href="${href}" ${attrs}>
+      <span class="ex-ico">${icon(ico)}</span>
+      <span class="ex-txt"><b>${title}</b><span>${sub}</span></span>
+      <span class="ex-rec">${label ? `<em>${label}</em>` : ''}${stars ? miniStars(stars) : ''}</span>
+      <span class="ex-mark">${mark}</span>
       ${icon('arrow-right-s-line', 'chev')}</a>`;
+  },
+  exRow(e) {
+    const bpm = cleanBpm(e), ch = e.kind === 'changes' ? null : 1;
+    return this.row({ href: '#aprender/ej/' + e.id, cls: e.lvl > this.level() ? 'above' : '', ico: e.icon, title: e.title, sub: e.sub,
+      label: bpm ? `${bpm} ppm` : '', stars: bestStars(e),
+      mark: ch ? `<span class="lvl-pips" title="Nivel ${LVL[e.lvl].n}">${[1, 2, 3].map((k) => `<i class="${k <= e.lvl ? 'on' : ''}"></i>`).join('')}</span>` : '' });
   },
   trackHTML() {
     const chords = this.track === 'acordes';
     let body = '';
     if (this.track === 'clases' || this.track === 'oido') {
       const cls = this.track === 'clases', lvl = this.level();
-      if (cls) body = CLASS_GROUPS.map((g) => { const list = CLASSES.filter((c) => c.group === g); return `<section class="trk-sec"><h2 class="trk-h">${g}<span>${list.filter((c) => classRead(c.id)).length}/${list.length}</span></h2><div class="ex-list">${list.map((c) => `<a class="ex-row ${c.lvl > lvl ? 'above' : ''}" href="#aprender/clase/${c.id}">
-          <span class="ex-ico">${icon(classRead(c.id) ? 'check-line' : 'book-2-line')}</span>
-          <span class="ex-txt"><b>${c.title}</b><span>${c.sub}</span></span>
-          <span class="ex-meta"><span class="ex-bpm">${c.min} min</span></span>${icon('arrow-right-s-line', 'chev')}</a>`).join('')}</div></section>`; }).join('');
-      else body = `<section class="trk-sec"><div class="ex-list">${EAR_GAMES.map((g) => { const r = state.rec['ear:' + g.id]; return `<a class="ex-row" href="#aprender/oido/${g.id}">
-          <span class="ex-ico">${icon(g.icon)}</span>
-          <span class="ex-txt"><b>${g.title}</b><span>${g.sub}</span></span>
-          <span class="ex-meta">${r ? `<span class="ex-bpm">${r.v}/10</span>${miniStars(r.stars)}` : ''}</span>${icon('arrow-right-s-line', 'chev')}</a>`; }).join('')}</div></section>`;
+      if (cls) body = CLASS_GROUPS.map((g) => { const list = CLASSES.filter((c) => c.group === g); return `<section class="trk-sec"><h2 class="trk-h">${g}<span>${list.filter((c) => classRead(c.id)).length}/${list.length}</span></h2><div class="ex-list">${list.map((c) => this.row({ href: '#aprender/clase/' + c.id, cls: 'mins ' + (c.lvl > lvl ? 'above' : ''), ico: classRead(c.id) ? 'check-line' : 'book-2-line', title: c.title, sub: c.sub, mark: `${c.min} min` })).join('')}</div></section>`; }).join('');
+      else body = `<section class="trk-sec"><div class="ex-list">${EAR_GAMES.map((g) => { const r = state.rec['ear:' + g.id]; return this.row({ href: '#aprender/oido/' + g.id, cls: 'nomark', ico: g.icon, title: g.title, sub: g.sub, label: r ? `${r.v}/10` : '', stars: r?.stars || 0 }); }).join('')}</div></section>`;
       return `<div class="screen">
         <div class="scr-top">
           <a class="btn btn-soft btn-icon" href="#aprender" aria-label="Volver">${icon('arrow-left-line')}</a>
@@ -5090,17 +5132,17 @@ const Learn = {
       const nL = CHORD_ORDER.filter((x) => state.learned[x]).length;
       body += `<a class="guide-link" href="#aprender/guia">${icon('book-open-line')}<span><b>Primeros pasos</b> Cómo sujetar la guitarra, pisar y leer un diagrama</span>${icon('arrow-right-s-line', 'chev')}</a>`;
       body += CHORD_GROUPS.map((g) => `<section class="trk-sec"><h2 class="trk-h">${g.name}<span>${g.ids.filter((x) => state.learned[x]).length}/${g.ids.length}</span></h2>
-        <div class="ctiles">${g.ids.map((id) => `<a class="ctile ${state.learned[id] ? 'learned' : ''} ${id === next ? 'next' : ''}" href="#aprender/acorde/${enc(id)}" title="${chordLongName(id)}">
+        <div class="ctiles">${g.ids.map((id) => `<a class="ctile ${state.learned[id] ? 'learned' : ''} ${id === next ? 'next' : ''} ${chordLabel(id).length > 6 ? 'long' : ''}" href="#aprender/acorde/${enc(id)}" title="${chordLongName(id)}">
           <b>${chordLabel(id)}</b><span>${id === next ? 'siguiente' : CHORDS[id].variant ? 'fácil' : SUFFIX_NAME[chordParts(id).suffix] ?? chordParts(id).suffix}</span>${state.learned[id] ? icon('check-line', 'ck') : ''}</a>`).join('')}</div></section>`).join('');
       body += `<section class="trk-sec"><h2 class="trk-h">Practica</h2><div class="ex-list">
         ${this.exRow(EXI.changes)}
-        <a class="ex-row ${nL < 2 ? 'off' : ''}" href="${nL < 2 ? '#aprender/acordes' : '#aprender/repaso'}" ${nL < 2 ? 'aria-disabled="true"' : ''}><span class="ex-ico">${icon('shuffle-line')}</span><span class="ex-txt"><b>Repaso de memoria</b><span>${nL < 2 ? 'Aprende dos acordes para desbloquearlo' : 'Un acorde que ya sabes, sin mirar el diagrama'}</span></span><span class="ex-meta"></span>${icon('arrow-right-s-line', 'chev')}</a>
+        <a class="ex-row ${nL < 2 ? 'off' : ''}" href="${nL < 2 ? '#aprender/acordes' : '#aprender/repaso'}" ${nL < 2 ? 'aria-disabled="true"' : ''}><span class="ex-ico">${icon('shuffle-line')}</span><span class="ex-txt"><b>Repaso de memoria</b><span>${nL < 2 ? 'Aprende dos acordes para desbloquearlo' : 'Un acorde que ya sabes, sin mirar el diagrama'}</span></span><span class="ex-rec"></span><span class="ex-mark"></span>${icon('arrow-right-s-line', 'chev')}</a>
       </div></section>`;
       body += `<section class="trk-sec"><h2 class="trk-h">Ritmo</h2><div class="ex-list">${EXERCISES.filter((e) => e.group === 'Ritmo').map((e) => this.exRow(e)).join('')}</div></section>`;
     } else {
       const groups = [...new Set(EXERCISES.filter((e) => e.track === 'punteo').map((e) => e.group))];
       body += groups.map((g) => `<section class="trk-sec"><h2 class="trk-h">${g}</h2><div class="ex-list">${EXERCISES.filter((e) => e.group === g).map((e) => this.exRow(e)).join('')}</div></section>`).join('');
-      body += `<section class="trk-sec"><h2 class="trk-h">Melodías</h2><div class="ex-list"><a class="ex-row" href="#canciones"><span class="ex-ico">${icon('music-2-line')}</span><span class="ex-txt"><b>Canciones en nivel Fácil</b><span>La melodía nota a nota, con la bola que marca el ritmo</span></span><span class="ex-meta"></span>${icon('arrow-right-s-line', 'chev')}</a></div></section>`;
+      body += `<section class="trk-sec"><h2 class="trk-h">Melodías</h2><div class="ex-list"><a class="ex-row" href="#canciones"><span class="ex-ico">${icon('music-2-line')}</span><span class="ex-txt"><b>Canciones en nivel Fácil</b><span>La melodía nota a nota, con la bola que marca el ritmo</span></span><span class="ex-rec"></span><span class="ex-mark"></span>${icon('arrow-right-s-line', 'chev')}</a></div></section>`;
     }
     return `<div class="screen">
       <div class="scr-top">
