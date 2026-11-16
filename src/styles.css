@@ -142,8 +142,8 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 .link-btn:hover { color: var(--text); }
 .tip { display: flex; gap: 10px; font-size: 14px; color: var(--muted); }
 .tip .ri { color: var(--accent); margin-top: 2px; }
-.dots { display: inline-flex; gap: 3px; }
-.dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--surface-3); }
+.dots { display: inline-flex; gap: 3px; align-items: center; }
+.dots i { width: 6px; height: 14px; border-radius: 3px; background: var(--surface-3); }
 .dots i.on { background: var(--accent); }
 .overlay-cta { position: absolute; inset: 0; z-index: 6; display: grid; place-items: center; text-align: center; padding: 24px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); }
 .overlay-cta h3 { font-size: 26px; }
