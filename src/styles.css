@@ -143,7 +143,7 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 .tip { display: flex; gap: 10px; font-size: 14px; color: var(--muted); }
 .tip .ri { color: var(--accent); margin-top: 2px; }
 .dots { display: inline-flex; gap: 3px; align-items: flex-end; height: 14px; }
-.dots i { width: 6px; height: 6px; border-radius: 2px; background: var(--surface-3); }
+.dots i { width: 3.6px; height: 6px; border-radius: 2px; background: var(--surface-3); }
 .dots i:nth-child(2) { height: 10px; }
 .dots i:nth-child(3) { height: 14px; }
 .dots i.on { background: var(--accent); }
