@@ -66,9 +66,9 @@ function makeChord(pc, suffix) {
 }
 
 /* ---------- lectura del texto ---------- */
-const SECTION_RE = /^[\s[(]*(intro(?:ducci[oó]n)?|estrofa|verso|verse|pre[- ]?estribillo|pre[- ]?coro|pre[- ]?chorus|estribillo|coro|chorus|puente|bridge|solo|interludio|instrumental|outro|final|riff|coda)\b\s*(\d+)?\s*[\])]*\s*:?\s*/i;
+const SECTION_RE = /^[\s[(*]*(intro(?:ducci[oó]n)?|estrofa|verso|verse|pre[- ]?estribillo|pre[- ]?coro|pre[- ]?chorus|estribillo|coro|chorus|puente|bridge|solo|interludio|instrumental|outro|final|riff|coda)\b\s*(\d+)?\s*[\])*]*\s*:?\s*/i;
 const TAB_LABEL = /^\s*\(?[eBGDAEbgdae1-6]?\)?\s*/;
-const isTabLine = (l) => { const r = l.replace(TAB_LABEL, ''); return /^[-–—|:]/.test(r) && /^[-–—|:0-9hpbrsx~\/\\()* ]+$/.test(r) && r.length >= 5 && (r.match(/[-–—]/g) || []).length >= 3; }; // se exige además un bloque de 6 líneas seguidas
+const isTabLine = (l) => { const r = l.replace(TAB_LABEL, ''); return /^[-–—|:]/.test(r) && /^[-–—|:0-9hpbrsxvt~=.\/\\()* ]+$/.test(r) && r.length >= 5 && (r.match(/[-–—]/g) || []).length >= 3; }; // se exige además un bloque de 6 líneas seguidas
 const isGridLine = (l) => /^[\s|xXoO0-9_\/·.-]+$/.test(l) && ((l.match(/\|/g) || []).length >= 4 || /_{6,}/.test(l));
 const SPECIAL = /^(\||\/|\/:|:\/|\(?x\d\)?|\(?\d+x\)?|-+|%|N\.?C\.?|\.{2,}|…)$/i;
 
@@ -117,30 +117,104 @@ function inlineChords(line) {
   return { chords, lyric: lyric.trim() ? lyric : null };
 }
 
-// bloque de 6 líneas de tablatura → notas con su tiempo (1 carácter ≈ 1/4 de tiempo)
-function parseTabBlock(lines) {
-  const strip = (l) => l.replace(TAB_LABEL, '');
-  const rows = lines.map(strip);
-  const width = Math.max(...rows.map((r) => r.length));
-  const notes = []; let col = 0, step = 0;
-  const used = rows.map(() => new Set());
-  for (let c = 0; c < width; c++) {
-    if (rows.every((r) => r[c] === '|' || r[c] === undefined)) continue; // barras de compás: no ocupan tiempo
-    const at = [];
-    rows.forEach((r, k) => {
-      if (used[k].has(c) || !/\d/.test(r[c] || '')) return;
-      let num = r[c]; if (/\d/.test(r[c + 1] || '') && Number(r[c] + r[c + 1]) <= 24) { num += r[c + 1]; used[k].add(c + 1); }
-      at.push({ string: k + 1, fret: Number(num) });
-    });
-    if (at.length) notes.push({ t: step * 0.25, notes: at });
-    step++; col = c;
+// cuerdas pegadas en una sola línea al copiar ("CGAme---/--5--/B---/…/E---/Ge---…"): se separan por sus letras
+const TAB_ORDER = ['e', 'B', 'G', 'D', 'A', 'E'];
+const CHORD_RUN = /(?:[A-G][#b♯♭]?(?:maj|min|sus|dim|aug|add|m|M|°|\+)?\d*(?:\/[A-G][#b]?)?)+\s*$/;
+function splitTabRun(line) {
+  const at = [];
+  for (let i = 0; i < line.length - 1; i++) if (TAB_ORDER.includes(line[i]) && /[-–—|:]/.test(line[i + 1])) at.push(i);
+  if (at.length < 6 || at.length % 6) return null;
+  if (!at.every((i, k) => line[i] === TAB_ORDER[k % 6] || (k % 6 === 0 && line[i] === 'E'))) return null;
+  const out = [];
+  const pre = line.slice(0, at[0]).trim();
+  if (pre && !CHORD_RUN.test(pre)) out.push(pre); // un título delante, no unos acordes pegados
+  // cada cuerda va de su letra a la siguiente; los acordes pegados al final pertenecen a la línea de después
+  at.forEach((i, k) => { const seg = line.slice(i + 1, at[k + 1] ?? line.length).replace(/\s+$/, ''); out.push(line[i] + seg.replace(CHORD_RUN, '')); });
+  return out;
+}
+
+// una cuerda de la tablatura → compases (separados por | o por una / que no sea un deslizamiento entre dos trastes)
+function tabBars(row) {
+  const bars = []; let cur = '';
+  for (let i = 0; i < row.length; i++) {
+    const c = row[i];
+    if (c === '|' || (c === '/' && !(/\d/.test(row[i - 1] || '') && /\d/.test(row[i + 1] || '')))) { bars.push(cur); cur = ''; continue; }
+    cur += c;
   }
-  return { notes, beats: Math.ceil(step * 0.25) };
+  bars.push(cur);
+  return bars;
+}
+// notas de un trozo de cuerda: traste, columna y si va ligada (martillo, tirón o deslizamiento)
+function rowNotes(seg) {
+  const out = [];
+  for (let c = 0; c < seg.length; c++) {
+    if (!/\d/.test(seg[c])) continue;
+    let num = seg[c];
+    if (/\d/.test(seg[c + 1] || '') && Number(seg[c] + seg[c + 1]) <= 24) num += seg[c + 1];
+    out.push({ col: c, fret: Number(num), slur: /[hpsHP\/\\]/.test(seg[c - 1] || '') });
+    c += num.length - 1;
+  }
+  return out;
+}
+const median = (a) => { const b = [...a].sort((x, y) => x - y); return b.length ? b[b.length >> 1] : 0; };
+const q4 = (t) => Math.round(t * 4) / 4;
+
+/* bloque de 6 líneas de tablatura → notas con su tiempo.
+   Una tablatura de texto no dice el ritmo, así que se deduce del espacio entre notas:
+   con barras de compás, cada compás dura 4 tiempos (uno mucho más corto, como una anacrusa, menos) y las notas
+   caen según su posición dentro; sin barras, el hueco más habitual entre notas vale medio tiempo. */
+function parseTabBlock(lines) {
+  const rows = lines.map((l) => l.replace(TAB_LABEL, ''));
+  const raw = [];
+  // fuera los compases vacíos de los extremos ("e|---|" empieza y acaba con una barra)
+  const bars = rows.map((r) => { const b = tabBars(r); if (b.length > 1 && /^[-–—\s]{0,2}$/.test(b[0])) b.shift(); if (b.length > 1 && !b[b.length - 1].trim().length) b.pop(); return b; });
+  let beats = 0;
+  // un trozo de tablatura → notas: el hueco más habitual entre notas se ajusta a una figura (½ tiempo, 1 tiempo…)
+  const place = (segs, cpb, minLen) => {
+    const notes = segs.flatMap((seg, s) => rowNotes(seg).map((n) => ({ ...n, string: s + 1 })));
+    const cols = [...new Set(notes.map((n) => n.col))].sort((x, y) => x - y);
+    const unit = cols.length > 1 ? Math.max(1, median(cols.slice(1).map((c, i) => c - cols[i]))) : cpb; // una nota sola: a negras
+    const dur = [0.25, 0.5, 1, 2].reduce((x, y) => (Math.abs(Math.log(y * cpb / unit)) < Math.abs(Math.log(x * cpb / unit)) ? y : x));
+    const pad = cols[0] <= (cols.length > 1 ? unit : 2) ? cols[0] : 0; // los guiones de relleno del principio no son un silencio
+    let last = -1;
+    for (const n of notes) { const t = q4((Math.round(((n.col - pad) / unit) * 2) / 2) * dur); last = Math.max(last, t); raw.push({ t: beats + t, string: n.string, fret: n.fret, slur: n.slur }); }
+    beats += Math.max(minLen, Math.ceil(last + dur - 1e-6));
+  };
+  if (bars[0].length > 1 && bars.every((b) => b.length === bars[0].length)) {
+    // con barras de compás: un compás normal dura 4 tiempos; uno mucho más corto (una anacrusa), lo que le toque
+    const widths = bars[0].map((_, k) => Math.max(...bars.map((b) => b[k].length)));
+    const full = median(widths.filter((w) => w > 0)) || 1;
+    widths.forEach((w, k) => {
+      if (!w) return;
+      const short = w < 0.7 * full;
+      place(bars.map((b) => b[k]), (short ? full : w) / 4, short ? Math.max(1, Math.round((4 * w) / full)) : 4);
+    });
+  } else {
+    // sin barras (o distintas en cada cuerda): el hueco más habitual vale medio tiempo
+    const flat = rows.map((r) => r.replace(/\|/g, ''));
+    const cols = [...new Set(flat.flatMap((r) => rowNotes(r).map((n) => n.col)))].sort((x, y) => x - y);
+    const gap = Math.max(1, median(cols.slice(1).map((c, i) => c - cols[i])));
+    place(flat, gap * 2, Math.ceil((Math.max(...flat.map((r) => r.length)) / gap) * 0.5));
+  }
+  // las notas que caen a la vez forman un golpe; dos en la misma cuerda no pueden sonar juntas
+  raw.sort((a, b) => a.t - b.t || a.string - b.string);
+  const notes = [];
+  for (const n of raw) {
+    let ev = notes[notes.length - 1];
+    if (ev && n.t <= ev.t && ev.notes.some((m) => m.string === n.string)) n.t = ev.t + 0.25;
+    if (!ev || n.t > ev.t) { ev = { t: n.t, notes: [] }; notes.push(ev); }
+    ev.notes.push({ string: n.string, fret: n.fret, ...(n.slur ? { slur: true } : {}) });
+  }
+  const end = notes.length ? notes[notes.length - 1].t + 0.5 : 0;
+  return { notes, beats: Math.max(1, Math.ceil(Math.max(beats, end))) };
 }
 
 function parseCifrado(text) {
-  const lines = String(text || '').replace(/\r/g, '').replace(/\t/g, '    ').replace(/ /g, ' ').split('\n');
-  const items = []; const warn = new Set();
+  const warn = new Set();
+  const lines = String(text || '').replace(/\r/g, '').replace(/\t/g, '    ').replace(/ /g, ' ').split('\n')
+    .filter((l) => !/^\s*(```|~~~)/.test(l))
+    .flatMap((l) => { const run = splitTabRun(l); if (run) warn.add('tabjoin'); return run || [l]; });
+  const items = [];
   let legendZone = 0;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].replace(/\s+$/, '');
@@ -150,11 +224,12 @@ function parseCifrado(text) {
     // tablatura: 6 líneas seguidas
     if (isTabLine(line)) {
       const block = [line]; while (block.length < 6 && i + block.length < lines.length && isTabLine(lines[i + block.length])) block.push(lines[i + block.length]);
-      if (block.length === 6) { items.push({ type: 'tab', ...parseTabBlock(block) }); i += 5; warn.add('tab'); continue; }
+      if (block.length === 6) { const tb = parseTabBlock(block); items.push({ type: 'tab', ...tb }); i += 5; warn.add('tab'); if (tb.notes.some((e) => e.notes.some((n) => n.slur))) warn.add('slur'); continue; }
       i += block.length - 1; continue;
     }
     // cabecera de parte, con o sin acordes detrás ("Intro: Am G")
     const hd = isHeader(line);
+    if (!hd && /^\s*\*/.test(line)) continue; // "*(segunda parte del solo)": un comentario
     if (hd) {
       items.push({ type: 'section', name: hd.name, times: hd.times });
       if (hd.chords && !hd.chords.legend) items.push({ type: 'line', chords: hd.chords.chords, lyric: null });
@@ -190,10 +265,7 @@ function toSections(items, warn) {
     if (it.type === 'ref') { close(); parts.push({ ref: it.names }); continue; }
     if (it.type === 'tab') {
       close();
-      const prev = parts[parts.length - 1];
-      // bloques de tablatura seguidos (separados solo por líneas en blanco): una sola parte
-      if (prev && prev.tab && !pendingName) { const off = prev.tab.beats; prev.tab = { notes: prev.tab.notes.concat(it.notes.map((e) => ({ ...e, t: e.t + off }))), beats: off + it.beats }; continue; }
-      parts.push({ name: pendingName || 'Intro', tab: it, lines: [] }); pendingName = null; continue;
+      parts.push({ name: pendingName || 'Intro', named: !!pendingName, tab: it, lines: [] }); pendingName = null; continue;
     }
     // la letra que empieza con "/:" abre una repetición y la que acaba con ":/" la cierra
     if (it.lyric && /\/:/.test(it.lyric)) { it.repStart = true; it.lyric = it.lyric.replace('/:', '  '); }
@@ -203,6 +275,13 @@ function toSections(items, warn) {
     cur.lines.push(it);
   }
   close();
+  // sin un solo acorde, las líneas de texto entre tablaturas son comentarios ("esto va después del coro")
+  if (parts.some((p) => p.tab) && !parts.some((p) => p.lines?.some((l) => l.chords.length))) for (let k = parts.length - 1; k >= 0; k--) if (!parts[k].tab && !parts[k].ref) parts.splice(k, 1);
+  // bloques de tablatura seguidos sin un título nuevo: una sola parte
+  for (let k = parts.length - 1; k > 0; k--) {
+    const a = parts[k - 1], b = parts[k];
+    if (a.tab && b.tab && !b.named) { const off = a.tab.beats; a.tab = { notes: a.tab.notes.concat(b.tab.notes.map((e) => ({ ...e, t: e.t + off }))), beats: off + b.tab.beats }; parts.splice(k, 1); }
+  }
   // nombres por defecto
   let n = 0;
   for (const p of parts) if (!p.ref && !p.tab && !p.name) p.name = p.lines.every((l) => !l.lyric) ? (n === 0 ? 'Intro' : 'Instrumental') : 'Estrofa', n++;
@@ -244,7 +323,7 @@ function buildCifrado(parsed, { barsPerLine = 2, getChord }) {
     if (p.tab) {
       if (last) { last.end = t; last = null; }
       for (const e of p.tab.notes) {
-        const ns = e.notes.map((n) => ({ string: n.string, fret: n.fret, midi: DSP.stringMidi(n.string) + n.fret })).sort((a, b) => a.midi - b.midi);
+        const ns = e.notes.map((n) => ({ string: n.string, fret: n.fret, midi: DSP.stringMidi(n.string) + n.fret, ...(n.slur ? { slur: true } : {}) })).sort((a, b) => a.midi - b.midi);
         const base = Math.min(...ns.filter((n) => n.fret > 0).map((n) => n.fret), 99);
         ns.forEach((n) => { n.finger = n.fret === 0 ? 0 : Math.max(1, Math.min(4, n.fret - (base === 99 ? n.fret : base) + 1)); });
         tabEv.push({ t: t + e.t, dur: 0.5, notes: [ns[0]], also: ns.slice(1) }); // se juzga la nota más grave
@@ -291,4 +370,4 @@ function buildCifrado(parsed, { barsPerLine = 2, getChord }) {
   return { built: { total, pickup: 0, chordTrack: track, levels, lyrics, sections }, chordList, nTab: tabEv.length };
 }
 
-if (typeof module !== 'undefined') module.exports = { parseChordName, makeChord, parseCifrado, buildCifrado, isTabLine, parseTabBlock };
+if (typeof module !== 'undefined') module.exports = { parseChordName, makeChord, parseCifrado, buildCifrado, isTabLine, parseTabBlock, splitTabRun };

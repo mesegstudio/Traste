@@ -145,6 +145,18 @@ const gen = {}, getChord = (id) => CHORDS[id] || (gen[id] ||= (() => { const c =
 const bc = C.buildCifrado(pc, { barsPerLine: 2, getChord });
 check(bc.built.levels.arp.length > 0 && bc.built.levels.arp.filter((e) => !e.also).every((e) => e.notes.length === 1 && e.of)
   && bc.built.levels.hard.length > bc.built.levels.easy.length && bc.built.lyrics.length >= 8 && bc.nTab === 3 && bc.chordList.includes('Bm7b5'), 'canción construida');
+// tablaturas copiadas de una web: barras «/», las seis cuerdas pegadas en una línea, acordes pegados y comentarios
+const flatTab = 'AmGe-------/--5h7--7--5----/B--3--1-/--------------/G-------/--------------/D-------/--------------/A-------/--------------/E-------/--------------/';
+const run = C.splitTabRun(flatTab);
+check(run && run.length === 6 && run[0].startsWith('e---') && run[5].startsWith('E---') && run.every((l) => C.isTabLine(l)), 'cuerdas pegadas en una línea se separan');
+const pt = C.parseCifrado(['```', 'e|---0---|---3---|', 'B|-1-----|-------|', 'G|-------|-------|', 'D|-------|-------|', 'A|-------|-------|', 'E|-------|-------|', '```', '', 'esto va despues del coro', '', '*Solo*', flatTab, '', '*(segunda parte)', 'e-----5/7---/B-----------/G-----------/D-----------/A-----------/E-----------/'].join('\n'));
+const solo = pt.parts.find((p) => p.name === 'Solo');
+check(pt.parts.length === 2 && pt.parts[0].tab && solo && solo.tab && pt.warnings.includes('tabjoin'), 'comentarios fuera y partes de tablatura');
+check(pt.parts[0].tab.notes.map((e) => e.t).join() === '0,1,5.5' && pt.parts[0].tab.beats === 8, 'barras de compás: 4 tiempos por compás');
+const sn = solo.tab.notes.flatMap((e) => e.notes);
+check(sn.find((n) => n.fret === 7 && n.string === 1)?.slur && sn.filter((n) => n.slur).length === 2 && !sn.some((n) => n.fret === 57), 'martillos y deslizamientos ligados');
+const st = solo.tab.notes.map((e) => e.t), gaps = st.slice(1).map((t, i) => t - st[i]);
+check(gaps.every((g) => g > 0), 'el solo avanza siempre');
 console.log(`Cifrado: ${pc.parts.length} partes · ${bc.chordList.join(' ')} · ${bc.built.levels.hard.length} rasgueos`);
 
 // ---------- Oído nuevo: ataques por espectro y nota que de verdad se pulsa ----------

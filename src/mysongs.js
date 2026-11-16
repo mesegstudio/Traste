@@ -4,7 +4,9 @@
    ============================================================ */
 const IMPORT_NOTES = {
   legend: 'He quitado los dibujos de acordes del principio, porque Traste usa los suyos.',
-  tab: 'La tablatura se toca nota a nota. Su ritmo es aproximado, así que ajusta la velocidad si hace falta.',
+  tab: 'La tablatura se toca nota a nota. El texto no dice el ritmo, así que lo saco del espacio entre las notas. Ajusta la velocidad si hace falta.',
+  tabjoin: 'Las seis cuerdas de la tablatura venían pegadas en una sola línea y las he separado.',
+  slur: 'Los martillos, tirones y deslizamientos se tocan como notas ligadas, sin volver a pulsar.',
   copied: 'Las estrofas que venían sin acordes llevan los de la estrofa anterior.',
   repeat: 'Las partes marcadas con /: … :/ se tocan dos veces.',
 };
@@ -94,7 +96,7 @@ const MySongs = {
             <div class="imp-opt"><span>Velocidad</span>
               <div class="stepper-num"><button type="button" class="btn btn-soft btn-icon btn-sm" data-imp="bpm-" aria-label="Más lenta">−</button><b class="num" id="impBpm">${d.bpm}</b><span class="muted">ppm</span><button type="button" class="btn btn-soft btn-icon btn-sm" data-imp="bpm+" aria-label="Más rápida">+</button></div>
               ${tab ? '' : `<button type="button" class="btn btn-ghost btn-sm" data-imp="tap" title="Toca al ritmo de la canción">${icon('pulse-line')}Marcar el pulso</button>`}</div>
-            ${tab ? '' : `<div class="imp-opt"><span>Cada línea de letra</span>
+            ${tab ? '' : `<div class="imp-opt" id="impBarsOpt"><span>Cada línea de letra</span>
               <div class="seg" role="group">${LINE_LEN.map(([v, n]) => `<button type="button" data-imp-bars="${v}" aria-pressed="${String(d.bars) === v}" title="${v} ${v === '1' ? 'compás' : 'compases'}">${n}</button>`).join('')}</div></div>`}
           </div>`}
           <p class="imp-note">${icon('information-line')}Se guarda solo en este navegador. Para uso personal.</p>
@@ -103,9 +105,10 @@ const MySongs = {
         <div class="imp-right" id="impPreview">${this.previewHTML()}</div>
       </div></div>
     </div>`;
+    this.syncOpts();
   },
   previewHTML() {
-    const d = this.draft; this.lastOk = false;
+    const d = this.draft; this.lastOk = false; this.onlyTab = false;
     if (d.kind === 'tab') {
       this.lastOk = d.ev.length > 0;
       const mins = d.total / d.bpm, stars = this.tabStars(d), tr = this.tracks.find((t) => t.i === d.track);
@@ -126,11 +129,12 @@ const MySongs = {
     let r;
     try { r = this.compile(d); } catch (err) { console.error(err); return `<div class="imp-empty">${icon('error-warning-line')}<b>No he podido leerlo</b></div>`; }
     this.lastOk = r.chordList.length > 0 || r.nTab > 0;
+    this.onlyTab = !r.chordList.length && r.nTab > 0; // sin acordes no hay líneas de letra que medir
     if (!this.lastOk) return `<div class="imp-empty">${icon('error-warning-line')}<b>No encuentro acordes ni tablatura</b><p>Comprueba que has copiado las líneas de acordes que van encima de la letra, o las seis líneas de la tablatura.</p></div>`;
     const secs = r.built.total / 4, mins = (r.built.total / d.bpm), stars = this.difficulty(r.chordList, r.nTab);
     const chips = r.chordList.map((id) => { const c = CHORDS[id]; return `<span class="imp-chord ${c.generated ? 'new' : ''}" title="${c.generated ? 'Nuevo en Traste, con cejilla' : ''}">${chordLabel(id)}${c.barre && id !== 'F_easy' ? '<small>cejilla</small>' : ''}</span>`; }).join('');
     const parts = r.parsed.parts.map((p) => {
-      if (p.tab) return `<div class="imp-part"><h4>${esc(cap(p.name))}<span>tablatura · ${p.tab.notes.length} notas</span></h4></div>`;
+      if (p.tab) return `<div class="imp-part"><h4>${esc(cap(p.name))}<span>tablatura · ${p.tab.notes.length} notas · ${Math.ceil(p.tab.beats / 4)} compases</span></h4></div>`;
       const lines = p.lines.map((l) => `<div class="imp-line"><span class="ch">${l.chords.map((c) => chordLabel(c.id)).join(' ') || '<i>—</i>'}</span><span class="ly">${esc((l.lyric || '').trim())}</span></div>`).join('');
       return `<div class="imp-part"><h4>${esc(cap(p.name))}${p.repeat ? '<span>se repite</span>' : p.copied ? '<span>acordes de la anterior</span>' : ''}</h4>${lines}</div>`;
     }).join('');
@@ -146,8 +150,9 @@ const MySongs = {
   },
   refresh() {
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => { $('#impPreview').innerHTML = this.previewHTML(); $('#impSave').disabled = !this.lastOk; }, 180);
+    this.timer = setTimeout(() => { $('#impPreview').innerHTML = this.previewHTML(); $('#impSave').disabled = !this.lastOk; this.syncOpts(); }, 180);
   },
+  syncOpts() { const o = $('#impBarsOpt'); if (o) o.hidden = !!this.onlyTab; },
   setBpm(v) { this.draft.bpm = clamp(Math.round(v), 40, 220); $('#impBpm').textContent = this.draft.bpm; this.refresh(); },
   tap() {
     const now = performance.now();
