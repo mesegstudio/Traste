@@ -142,8 +142,10 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 .link-btn:hover { color: var(--text); }
 .tip { display: flex; gap: 10px; font-size: 14px; color: var(--muted); }
 .tip .ri { color: var(--accent); margin-top: 2px; }
-.dots { display: inline-flex; flex-direction: column-reverse; gap: 2px; }
-.dots i { width: 14px; height: 4px; border-radius: 2px; background: var(--surface-3); }
+.dots { display: inline-flex; gap: 3px; align-items: flex-end; height: 14px; }
+.dots i { width: 6px; height: 6px; border-radius: 2px; background: var(--surface-3); }
+.dots i:nth-child(2) { height: 10px; }
+.dots i:nth-child(3) { height: 14px; }
 .dots i.on { background: var(--accent); }
 .overlay-cta { position: absolute; inset: 0; z-index: 6; display: grid; place-items: center; text-align: center; padding: 24px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); }
 .overlay-cta h3 { font-size: 26px; }
@@ -587,7 +589,7 @@ select { height: 36px; padding: 0 10px; max-width: 220px; }
 .imp-sum > div { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px; border-radius: 16px; background: var(--surface); }
 .imp-sum b { font-family: var(--display); font-size: 22px; line-height: 1.1; }
 .imp-sum span:not(.dots) { font-size: 12px; color: var(--muted); }
-.imp-sum .dots { height: 26px; justify-content: center; }
+.imp-sum .dots { margin: 6px 0; }
 .imp-chords { display: flex; flex-wrap: wrap; gap: 6px; }
 .imp-chord { display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 12px; border-radius: 12px; background: var(--surface-2); font-weight: 700; font-size: 15px; }
 .imp-chord small { font-size: 11px; font-weight: 600; color: var(--warn); }
